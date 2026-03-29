@@ -1,0 +1,30 @@
+<svg width="520" height="520" viewBox="0 0 520 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="520" height="520" rx="34" fill="#0f0f0f" />
+  <text x="64" y="84" font-family="Poppins, Arial, sans-serif" font-size="56" font-weight="800" fill="#fff">
+    DON’T
+  </text>
+  <text x="64" y="134" font-family="Poppins, Arial, sans-serif" font-size="56" font-weight="800" fill="#f2ce3f">
+    PANIC
+  </text>
+  <circle cx="120" cy="210" r="24" fill="#2cceff" />
+  <rect x="88" y="240" width="220" height="28" rx="12" fill="#f35590" />
+  <rect x="88" y="280" width="260" height="18" rx="8" fill="#4d61f4" />
+  <rect x="88" y="308" width="180" height="18" rx="8" fill="#14d07a" />
+  <rect x="88" y="336" width="148" height="18" rx="8" fill="#f2ce3f" />
+  <path
+    d="M320 170c48 0 86.5 38.5 86.5 86.5S368 343 320 343s-86.5-38.5-86.5-86.5S272 170 320 170Z"
+    fill="#f7f7f7"
+    opacity="0.9"
+  />
+  <path
+    d="M320 190c37 0 66.5 29.5 66.5 66s-29.5 66-66.5 66-66.5-29.5-66.5-66 29.5-66 66.5-66Z"
+    stroke="#0f0f0f"
+    stroke-width="6"
+  />
+  <rect x="300" y="210" width="40" height="40" rx="12" fill="#ef2987" />
+  <rect x="340" y="258" width="20" height="20" rx="6" fill="#4d61f4" />
+  <rect x="274" y="262" width="20" height="20" rx="6" fill="#14d07a" />
+  <text x="64" y="398" font-family="Poppins, Arial, sans-serif" font-size="14" fill="#c7c7c7">
+    High-detail DTF artwork ready for print on any garment.
+  </text>
+</svg>

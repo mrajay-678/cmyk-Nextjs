@@ -1,0 +1,19 @@
+<svg width="520" height="420" viewBox="0 0 520 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g8" x1="40" y1="60" x2="480" y2="360" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4d61f4" />
+      <stop offset="1" stop-color="#00c1f2" />
+    </linearGradient>
+  </defs>
+  <rect width="520" height="420" rx="32" fill="#fff" />
+  <rect x="56" y="70" width="408" height="280" rx="28" fill="url(#g8)" />
+  <text x="96" y="152" font-family="Poppins, Arial, sans-serif" font-size="28" font-weight="800" fill="#fff">
+    Event Merch
+  </text>
+  <rect x="96" y="174" width="220" height="14" rx="7" fill="#fff" opacity="0.9" />
+  <rect x="96" y="196" width="180" height="14" rx="7" fill="#fff" opacity="0.8" />
+  <circle cx="360" cy="210" r="60" fill="#ef2987" />
+  <text x="332" y="220" font-family="Poppins, Arial, sans-serif" font-size="22" font-weight="800" fill="#fff">
+    WOW
+  </text>
+</svg>

@@ -1,0 +1,38 @@
+<svg width="520" height="520" viewBox="0 0 520 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="520" height="520" rx="40" fill="#181818" />
+  <g filter="url(#shadow)">
+    <path
+      d="M160 130L220 100C248 150 320 150 350 100L410 130L376 190V394C376 410.5 362.5 424 346 424H194C177.5 424 164 410.5 164 394V190L160 130Z"
+      fill="#0f0f0f"
+      stroke="#2b2b2b"
+      stroke-width="3"
+    />
+  </g>
+  <text
+    x="192"
+    y="240"
+    font-family="Poppins, Arial, sans-serif"
+    font-size="38"
+    font-weight="800"
+    fill="#f7f7f7"
+  >
+    DON’T
+  </text>
+  <text
+    x="192"
+    y="280"
+    font-family="Poppins, Arial, sans-serif"
+    font-size="38"
+    font-weight="800"
+    fill="#f2ce3f"
+  >
+    PANIC
+  </text>
+  <rect x="192" y="300" width="132" height="14" rx="7" fill="#ef2987" />
+  <rect x="192" y="320" width="108" height="10" rx="5" fill="#4d61f4" />
+  <circle cx="182" cy="242" r="12" fill="#14d07a" />
+  <circle cx="330" cy="242" r="10" fill="#14d07a" />
+  <filter id="shadow" x="120" y="90" width="320" height="360" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+    <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#000" flood-opacity="0.35" />
+  </filter>
+</svg>

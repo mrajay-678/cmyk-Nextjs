@@ -1,0 +1,24 @@
+<svg width="520" height="520" viewBox="0 0 520 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g2" x1="60" y1="40" x2="440" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4d61f4" />
+      <stop offset="1" stop-color="#8fd5ff" />
+    </linearGradient>
+  </defs>
+  <rect width="520" height="520" rx="34" fill="url(#g2)" />
+  <rect x="84" y="120" width="180" height="220" rx="20" fill="#fff" opacity="0.92" />
+  <rect x="256" y="160" width="180" height="220" rx="20" fill="#111" opacity="0.16" />
+  <text x="116" y="192" font-family="Poppins, Arial, sans-serif" font-size="28" font-weight="800" fill="#4d61f4">
+    Sticker
+  </text>
+  <text x="116" y="226" font-family="Poppins, Arial, sans-serif" font-size="24" font-weight="700" fill="#4d61f4">
+    Pack
+  </text>
+  <circle cx="320" cy="260" r="70" fill="#ef2987" />
+  <text x="288" y="270" font-family="Poppins, Arial, sans-serif" font-size="30" font-weight="800" fill="#fff">
+    UV
+  </text>
+  <text x="274" y="302" font-family="Poppins, Arial, sans-serif" font-size="18" font-weight="600" fill="#fff">
+    Durable
+  </text>
+</svg>

@@ -1,0 +1,41 @@
+.banner {
+  width: 100%;
+}
+
+.body {
+  background: linear-gradient(
+    90deg,
+    #4d61f4 0%,
+    #5569fa 25%,
+    #4d61f4 50%,
+    #5569fa 75%,
+    #4d61f4 100%
+  );
+  color: #ffffff;
+  text-align: center;
+  padding: 38px 20px;
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 700;
+}
+
+.highlight {
+  color: #ffbe30;
+}
+
+.pattern {
+  height: 12px;
+  background-image: repeating-linear-gradient(
+      90deg,
+      #111 0,
+      #111 12px,
+      #fff 12px,
+      #fff 24px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      #111 0,
+      #111 12px,
+      #fff 12px,
+      #fff 24px
+    );
+}

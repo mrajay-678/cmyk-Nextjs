@@ -1,0 +1,9 @@
+<svg width="120" height="36" viewBox="0 0 120 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <text x="2" y="24" fill="#111" font-family="Poppins, Arial, sans-serif" font-size="18" font-weight="700">
+    CMYK
+  </text>
+  <circle cx="78" cy="18" r="4.5" fill="#00C1F2" />
+  <circle cx="89" cy="18" r="4.5" fill="#EF2987" />
+  <circle cx="100" cy="18" r="4.5" fill="#FFD233" />
+  <circle cx="111" cy="18" r="4.5" fill="#1A1A1A" />
+</svg>

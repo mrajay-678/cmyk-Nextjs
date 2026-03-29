@@ -1,0 +1,53 @@
+.section {
+	padding: 64px 20px 32px;
+}
+
+.container {
+	margin: 0 auto;
+	max-width: var(--content-width);
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.labels {
+	display: flex;
+	justify-content: space-between;
+	font-weight: 700;
+	color: var(--dark);
+	font-size: 15px;
+}
+
+.grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+	gap: 18px;
+}
+.cardLeft img {
+	margin-left: auto;
+}
+.card img {
+	/* width: 100%; */
+	height: auto;
+	display: block;
+}
+
+.actions {
+	display: flex;
+	justify-content: end;
+	margin-top: 16px;
+  width: 75%;
+}
+
+.button {
+	background: var(--primary);
+	color: #fff;
+	border-radius: 999px;
+	padding: 12px 18px;
+	font-weight: 600;
+	display: inline-flex;
+}
+
+.button:hover {
+	transform: translateY(-1px);
+}

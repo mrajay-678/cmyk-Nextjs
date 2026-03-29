@@ -1,0 +1,24 @@
+<svg width="520" height="640" viewBox="0 0 520 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g6" x1="60" y1="40" x2="460" y2="600" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4d61f4" />
+      <stop offset="1" stop-color="#ef2987" />
+    </linearGradient>
+  </defs>
+  <rect width="520" height="640" rx="36" fill="#f4f2f7" />
+  <rect x="76" y="96" width="368" height="448" rx="30" fill="url(#g6)" />
+  <text x="140" y="196" font-family="Poppins, Arial, sans-serif" font-size="34" font-weight="800" fill="#fff">
+    Premium
+  </text>
+  <text x="140" y="238" font-family="Poppins, Arial, sans-serif" font-size="26" font-weight="700" fill="#fff">
+    Garments
+  </text>
+  <rect x="140" y="268" width="120" height="14" rx="7" fill="#fff" opacity="0.85" />
+  <rect x="140" y="292" width="200" height="14" rx="7" fill="#fff" opacity="0.7" />
+  <text x="164" y="358" font-family="Poppins, Arial, sans-serif" font-size="16" font-weight="600" fill="#0f0f0f">
+    True-to-file color
+  </text>
+  <text x="164" y="384" font-family="Poppins, Arial, sans-serif" font-size="16" font-weight="600" fill="#0f0f0f">
+    Soft-hand feel
+  </text>
+</svg>
