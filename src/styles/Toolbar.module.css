@@ -1,0 +1,52 @@
+.toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #e7e1f2;
+  border-radius: 12px;
+  padding: 8px 10px;
+  box-shadow: var(--shadow-soft);
+}
+
+.button {
+  border: none;
+  background: #f6f2fd;
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.buttonPrimary {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 12px 30px rgba(239, 41, 135, 0.26);
+}
+
+.button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+}
+
+.slider {
+  width: 120px;
+}
+
+.label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.number {
+  width: 70px;
+}

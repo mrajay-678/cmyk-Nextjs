@@ -7,7 +7,6 @@ import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import OfferSection from "@/components/OfferSection";
 import Testimonial from "@/components/Testimonial";
-import styles from "@/styles/Page.module.css";
 
 const offers = [
   {
@@ -61,7 +60,7 @@ const decisionSteps = [
 
 export default function Home() {
   return (
-    <main className={styles.page}>
+    <main className="flex flex-col bg-white text-text">
       <Header />
       <Hero />
       <OfferSection items={offers} />

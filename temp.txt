@@ -1,0 +1,272 @@
+"use client";
+
+import Image from "next/image";
+import dynamic from "next/dynamic";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type Konva from "konva";
+import ControlsPanel from "@/components/ControlsPanel";
+import Footer from "@/components/Footer";
+import Header from "@/components/Header";
+import Toolbar from "@/components/Toolbar";
+import UploadPanel from "@/components/UploadPanel";
+import { useCanvasStore } from "@/store/useCanvasStore";
+import styles from "@/styles/Gangsheet.module.css";
+
+const CanvasEditor = dynamic(() => import("@/components/CanvasEditor"), {
+  ssr: false,
+});
+
+const sizeOptions = [
+  { label: '22" x 24"', preset: "22x24" as const, price: 8.77 },
+  { label: '22" x 60"', preset: "22x60" as const, price: 29.5 },
+  { label: '22" x 120"', preset: "22x120" as const, price: 58 },
+];
+
+const gallery = [
+  { src: "/assets/image/shirt-banner.png", alt: "Gang sheet builder on laptop" },
+  { src: "/assets/image/your-art.png", alt: "Artwork thumbnails" },
+  { src: "/assets/image/our-craft.png", alt: "Print crew at work" },
+  { src: "/assets/image/mug.png", alt: "Printed mug" },
+];
+
+export default function GangsheetPage() {
+  const stageRef = useRef<Konva.Stage | null>(null);
+  const builderRef = useRef<HTMLDivElement | null>(null);
+
+  const selectedId = useCanvasStore((s) => s.selectedId);
+  const deleteImage = useCanvasStore((s) => s.deleteImage);
+  const images = useCanvasStore((s) => s.images);
+  const sheet = useCanvasStore((s) => s.sheet);
+  const zoom = useCanvasStore((s) => s.zoom);
+  const setSheet = useCanvasStore((s) => s.setSheet);
+
+  const [activeImage, setActiveImage] = useState(gallery[0]);
+  const [selectedSize, setSelectedSize] = useState(sizeOptions[0]);
+  const [quantity, setQuantity] = useState(1);
+
+  useEffect(() => {
+    setSheet(selectedSize.preset);
+  }, [selectedSize.preset, setSheet]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedId) {
+        e.preventDefault();
+        deleteImage(selectedId);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [deleteImage, selectedId]);
+
+  const handleExport = () => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const prev = {
+      width: stage.width(),
+      height: stage.height(),
+      scaleX: stage.scaleX(),
+      scaleY: stage.scaleY(),
+      position: stage.position(),
+    };
+
+    stage.size({ width: sheet.width, height: sheet.height });
+    stage.scale({ x: 1, y: 1 });
+    stage.position({ x: 0, y: 0 });
+
+    const uri = stage.toDataURL({ pixelRatio: 2 });
+
+    stage.size({ width: prev.width, height: prev.height });
+    stage.scale({ x: prev.scaleX, y: prev.scaleY });
+    stage.position(prev.position);
+
+    const link = document.createElement("a");
+    link.href = uri;
+    link.download = "gangsheet.png";
+    link.click();
+  };
+
+  const handleScrollToBuilder = () => {
+    builderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const canvasPixels = useMemo(
+    () => ({ width: sheet.width * zoom, height: sheet.height * zoom }),
+    [sheet.width, sheet.height, zoom],
+  );
+
+  const totalPrice = (selectedSize.price * quantity).toFixed(2);
+
+  return (
+    <div className={styles.page}>
+      <Header />
+      <main className={styles.wrapper}>
+        <section className={styles.hero}>
+          <div className={styles.media}>
+            <div className={styles.thumbnailRail}>
+              {gallery.map((item) => (
+                <button
+                  key={item.src}
+                  type="button"
+                  className={
+                    item.src === activeImage.src
+                      ? `${styles.thumbnail} ${styles.thumbnailActive}`
+                      : styles.thumbnail
+                  }
+                  onClick={() => setActiveImage(item)}
+                >
+                  <Image
+                    src={item.src}
+                    alt={item.alt}
+                    width={96}
+                    height={96}
+                    className={styles.thumbnailImg}
+                  />
+                </button>
+              ))}
+            </div>
+
+            <div className={styles.mainImage}>
+              <Image
+                src={activeImage.src}
+                alt={activeImage.alt}
+                fill
+                sizes="(max-width: 900px) 100vw, 720px"
+                style={{ objectFit: "cover" }}
+                priority
+              />
+            </div>
+          </div>
+
+          <div className={styles.info}>
+            <div className={styles.breadcrumbs}>Home / DTF Transfer / DTF Gang Sheet Builder</div>
+            <h1 className={styles.title}>DTF Gang Sheet Builder</h1>
+            <div className={styles.priceRange}>
+              ${sizeOptions[0].price.toFixed(2)} - ${
+                sizeOptions[sizeOptions.length - 1].price.toFixed(2)
+              }
+            </div>
+            <p className={styles.copy}>
+              Upload your art, resize, auto-pack, and export print-ready gang sheets. Choose a sheet
+              size, click Build Your Own Gang Sheet, and check out with the exact quantity you need.
+            </p>
+
+            <ul className={styles.featureList}>
+              <li>Auto-build layout option for fastest setup</li>
+              <li>Grid + safe area overlay and per-image DPI warnings</li>
+              <li>High-res PNG export at 2x for crisp prints</li>
+              <li>Works great for cotton, polyester, and blends</li>
+            </ul>
+
+            <div className={styles.formRow}>
+              <label className={styles.label} htmlFor="size">
+                Size
+              </label>
+              <select
+                id="size"
+                className={styles.select}
+                value={selectedSize.preset}
+                onChange={(e) => {
+                  const option =
+                    sizeOptions.find((o) => o.preset === e.target.value) ?? sizeOptions[0];
+                  setSelectedSize(option);
+                }}
+              >
+                {sizeOptions.map((option) => (
+                  <option key={option.preset} value={option.preset}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className={styles.formRow}>
+              <label className={styles.label} htmlFor="qty">
+                Quantity
+              </label>
+              <div className={styles.quantityWrap}>
+                <button
+                  type="button"
+                  aria-label="Decrease quantity"
+                  onClick={() => setQuantity((v) => Math.max(1, v - 1))}
+                >
+                  -
+                </button>
+                <input
+                  id="qty"
+                  type="number"
+                  min={1}
+                  value={quantity}
+                  onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
+                />
+                <button
+                  type="button"
+                  aria-label="Increase quantity"
+                  onClick={() => setQuantity((v) => v + 1)}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.priceRow}>
+              <span className={styles.price}>${totalPrice}</span>
+              <span className={styles.subtle}>based on selected size</span>
+            </div>
+
+            <div className={styles.actions}>
+              <button type="button" className={styles.primary} onClick={handleScrollToBuilder}>
+                Build Your Own Gang Sheet
+              </button>
+              <button type="button" className={styles.secondary}>
+                Product Inquiry
+              </button>
+            </div>
+
+            <div className={styles.metaRow}>
+              <span className={styles.metaPill}>Fast 2-day production</span>
+              <span className={styles.metaPill}>Ships flat to avoid creasing</span>
+              <span className={styles.metaPill}>Need a proof? We can send one.</span>
+            </div>
+          </div>
+        </section>
+
+        <section ref={builderRef} className={styles.builderSection}>
+          <div className={styles.header}>
+            <div>
+              <div className={styles.title}>Gang Sheet Builder</div>
+              <div className={styles.subtitle}>
+                Drag, resize, rotate, auto-pack, and export print-ready sheets without leaving this
+                page.
+              </div>
+            </div>
+            <div className={styles.pill}>PNG uploads - Grid + safe area - 2x export</div>
+          </div>
+
+          <div className={styles.panel}>
+            <Toolbar onExport={handleExport} stagePixels={canvasPixels} />
+          </div>
+
+          <div className={styles.layout}>
+            <div className={styles.panel}>
+              <UploadPanel />
+            </div>
+
+            <div className={styles.editorShell}>
+              <CanvasEditor stageRef={stageRef} />
+            </div>
+
+            <div className={styles.panel}>
+              <ControlsPanel />
+            </div>
+          </div>
+
+          <div className={styles.subtitle}>
+            Items on sheet: {images.length} | Sheet presets: 22x24, 22x60, 22x120 (72 DPI base)
+          </div>
+        </section>
+      </main>
+      <Footer />
+    </div>
+  );
+}
