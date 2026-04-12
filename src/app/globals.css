@@ -1,10 +1,1 @@
 @import "tailwindcss";
-
-:root {
-  --content-width: 1200px;
-}
-
-body {
-  @apply min-h-screen bg-white text-text antialiased flex flex-col;
-  font-family: var(--font-primary, "Poppins", system-ui, -apple-system, sans-serif);
-}

@@ -1,10 +1,17 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  reactCompiler: true,
-  // Turbopack enabled by default in Next 16; leave empty config to silence mixed-mode warning.
-  turbopack: {},
-};
+	reactCompiler: true,
 
-export default nextConfig;
+	images: {
+		remotePatterns: [
+			{
+				protocol: "https",
+				hostname: "cmykprint.shop",
+				pathname: "/**",
+			},
+		],
+	},
+}
+
+export default nextConfig
