@@ -9,8 +9,8 @@ const Header = () => {
 			<div className="w-6/12">
 				<Menu />
 			</div>
-			<div className="w-6/12 flex justify-between items-center -ms-20">
-				<div className="relative h-28 w-36">
+			<div className="flex items-center justify-between w-6/12 -ms-20">
+				<div className="relative h-24 w-36">
 					<Image src="https://cmykprint.shop/wp-content/uploads/2025/11/cropped-logocymk-1.webp" fill objectFit="contain" alt="CMYK Print Shop" />
 				</div>
 				<div className="">
