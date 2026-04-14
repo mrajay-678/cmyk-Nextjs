@@ -1,7 +1,7 @@
 import React from "react"
 import Image from "next/image"
 import Menu from "./Menu"
-import { ShoppingCart } from "lucide-react"
+import CartButton from "./CartButton"
 
 const Header = () => {
 	return (
@@ -14,7 +14,7 @@ const Header = () => {
 					<Image src="https://cmykprint.shop/wp-content/uploads/2025/11/cropped-logocymk-1.webp" fill objectFit="contain" alt="CMYK Print Shop" />
 				</div>
 				<div className="">
-					<ShoppingCart color="#000000" />
+					<CartButton />
 				</div>
 			</div>
 		</header>

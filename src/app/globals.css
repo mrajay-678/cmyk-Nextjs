@@ -1,1 +1,13 @@
 @import "tailwindcss";
+
+.marquee-animation {
+    animation: marquee 20s 0ms linear infinite forwards;
+}
+@keyframes marquee {
+    0% {
+    transform: translateX(0%);
+    }
+    100% {
+    transform: translateX(-50%);
+    }
+}

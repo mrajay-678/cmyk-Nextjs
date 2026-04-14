@@ -32,11 +32,23 @@ export default function Menu() {
 								{/* FIRST PANEL */}
 								<div className="bg-black text-white rounded-2xl p-6 w-64 shadow-xl">
 									{item.children.map((child) => (
-										<div key={child.title} onMouseEnter={() => setActiveSubMenu(child)} onClick={() => setActiveSubMenu(child)} className="flex items-center justify-between py-2 cursor-pointer hover:text-gray-300">
-											<span>{child.title}</span>
-
-											{child.children && <ChevronRight size={16} />}
-										</div>
+										child.href ? (
+											<Link
+												key={child.title}
+												href={child.href}
+												onMouseEnter={() => setActiveSubMenu(child)}
+												onClick={() => setActiveSubMenu(child)}
+												className="flex items-center justify-between py-2 cursor-pointer hover:text-gray-300"
+											>
+												<span>{child.title}</span>
+												{child.children && <ChevronRight size={16} />}
+											</Link>
+										) : (
+											<div key={child.title} onMouseEnter={() => setActiveSubMenu(child)} onClick={() => setActiveSubMenu(child)} className="flex items-center justify-between py-2 cursor-pointer hover:text-gray-300">
+												<span>{child.title}</span>
+												{child.children && <ChevronRight size={16} />}
+											</div>
+										)
 									))}
 								</div>
 
