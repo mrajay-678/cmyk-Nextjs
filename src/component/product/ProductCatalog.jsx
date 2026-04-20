@@ -55,7 +55,8 @@ export default function ProductCatalog() {
 
 	const products = productsQuery.data?.pages?.flatMap((page) => page.products || []) || []
 	const productsError = productsQuery.data?.pages?.find((page) => page?.error)?.error || null
-	const error = productsQuery.error?.message || productsError || filtersQuery.error?.message || filtersQuery.data?.error || null
+	const filtersError = filtersQuery.error?.message || filtersQuery.data?.error || null
+	const error = productsQuery.error?.message || productsError || (!products.length ? filtersError : null)
 	const categories = filtersQuery.data?.categories || []
 	const tags = filtersQuery.data?.tags || []
 	const filtersKey = `${activeSearch}-${activeCategory}-${activeTag}-${activeSort}`
@@ -129,6 +130,7 @@ export default function ProductCatalog() {
 					onReset={handleReset}
 					isLoading={filtersQuery.isLoading}
 					isFetching={productsQuery.isFetching && !isFetchingNextPage}
+					error={filtersError}
 				/>
 			</aside>
 

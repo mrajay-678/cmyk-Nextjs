@@ -1,12 +1,13 @@
 import { sortOptions } from "./catalogConfig"
 
-export default function ProductFilters({ categories, tags, search, category, tag, sort, onSubmit, onReset, isLoading, isFetching }) {
+export default function ProductFilters({ categories, tags, search, category, tag, sort, onSubmit, onReset, isLoading, isFetching, error }) {
 	return (
 		<form onSubmit={onSubmit} className="flex flex-col gap-5 rounded-[2rem] border border-neutral-200 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
 			<div>
 				<p className="text-lg font-semibold tracking-[-0.03em] text-neutral-950">Filter Products</p>
 				<p className="mt-1 text-sm text-neutral-500">{isFetching ? "Filters are active and results refresh in the background." : "Use category and tags to narrow the catalog fast."}</p>
 			</div>
+			{error ? <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">Filter options are temporarily unavailable. You can still browse products.</p> : null}
 
 			<label className="grid gap-2">
 				<span className="text-sm font-medium text-neutral-700">Search products</span>
