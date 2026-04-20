@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-import { getProductCategories, getProductTags } from "../component/product/wooCommerce"
+import { getProductCategories, getProductTags } from "../../../../component/product/wooCommerce"
 
 export async function GET() {
 	const [{ categories, error: categoriesError }, { tags, error: tagsError }] = await Promise.all([getProductCategories(), getProductTags()])

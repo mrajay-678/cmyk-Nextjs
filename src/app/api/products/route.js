@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
-import { defaultSort, sortMap } from "../component/product/catalogConfig"
-import { getProducts } from "../component/product/wooCommerce"
+import { defaultSort, sortMap } from "../../../component/product/catalogConfig"
+import { getProducts } from "../../../component/product/wooCommerce"
 
 export async function GET(request) {
 	const { searchParams } = new URL(request.url)
