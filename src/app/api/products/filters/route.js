@@ -2,9 +2,9 @@ import { NextResponse } from "next/server"
 
 import { getProductCategories, getProductTags } from "../../../../component/product/wooCommerce"
 
-export const dynamic = "force-dynamic"
+export async function GET(request) {
+	void request.url
 
-export async function GET() {
 	const [{ categories, error: categoriesError }, { tags, error: tagsError }] = await Promise.all([getProductCategories(), getProductTags()])
 
 	return NextResponse.json({
