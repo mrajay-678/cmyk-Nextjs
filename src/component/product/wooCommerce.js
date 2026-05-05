@@ -1,5 +1,4 @@
 import { cacheLife, cacheTag } from "next/cache"
-import { buildQuantityPriceTable } from "./productHelpers"
 
 const WC_BASE_URL = process.env.NEXT_PUBLIC_WC_URL
 const WC_CONSUMER_KEY = process.env.WC_CONSUMER_KEY
@@ -95,36 +94,6 @@ async function fetchWooCommerceCached(path, query, tags = []) {
 	return fetchWooCommerce(path, query)
 }
 
-async function enrichProductsWithVariationPricing(products = []) {
-	return Promise.all(
-		products.map(async (product) => {
-			if (!product?.id || !product?.variations?.length) {
-				return {
-					...product,
-					variationPricingRows: [],
-				}
-			}
-
-			const { data } = await fetchWooCommerceCached(
-				`/products/${product.id}/variations`,
-				{
-					per_page: 100,
-					orderby: "menu_order",
-					order: "asc",
-				},
-				["woocommerce-products", `woocommerce-product-${product.id}-variations`]
-			)
-
-			const variations = Array.isArray(data) ? data : []
-
-			return {
-				...product,
-				variationPricingRows: buildQuantityPriceTable(product, variations),
-			}
-		})
-	)
-}
-
 export async function getProductCategories() {
 	const { data, error } = await fetchWooCommerceCached(
 		"/products/categories",
@@ -181,10 +150,9 @@ export async function getProducts(filters = {}) {
 	const { data, error, meta } = await fetchWooCommerceCached("/products", query, ["woocommerce-products"])
 
 	const products = Array.isArray(data) ? data : []
-	const enrichedProducts = await enrichProductsWithVariationPricing(products)
 
 	return {
-		products: enrichedProducts,
+		products,
 		total: meta.total || 0,
 		totalPages: meta.totalPages || 0,
 		error,
@@ -242,10 +210,9 @@ export async function getRelatedProductsByTags({ currentProductId, tagIds = [] }
 	)
 
 	const products = Array.isArray(data) ? data : []
-	const enrichedProducts = await enrichProductsWithVariationPricing(products)
 
 	return {
-		products: enrichedProducts,
+		products,
 		error,
 	}
 }

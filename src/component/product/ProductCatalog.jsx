@@ -116,7 +116,7 @@ export default function ProductCatalog() {
 	}
 
 	return (
-		<div className="mx-auto grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
+		<div className="mx-auto grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
 			<aside className="lg:sticky lg:top-28 lg:h-fit">
 				<ProductFilters
 					key={filtersKey}

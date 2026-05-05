@@ -11,7 +11,7 @@ const Header = () => {
 			</div>
 			<div className="flex items-center justify-between w-6/12 -ms-20">
 				<div className="relative h-24 w-36">
-					<Image src="https://cmykprint.shop/wp-content/uploads/2025/11/cropped-logocymk-1.webp" fill objectFit="contain" alt="CMYK Print Shop" />
+					<Image src="https://cmykprint.shop/wp-content/uploads/2025/11/cropped-logocymk-1.webp" fill className="object-contain" alt="CMYK Print Shop" />
 				</div>
 				<div className="">
 					<CartButton />
@@ -22,3 +22,4 @@ const Header = () => {
 }
 
 export default Header
+		
