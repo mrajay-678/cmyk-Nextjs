@@ -60,20 +60,20 @@ export const page = () => {
     <div>
       <section className="overflow-hidden max-w-screen">
         <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')] max-w-screen h-8"></div>
-        <div className="py-44 bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Group-13-scaled.png.webp')] bg-center">
-          <div className="flex justify-center gap-6 mx-auto text-5xl text-center md:text-6xl">
+        <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Group-13-scaled.png.webp')] bg-center px-6 py-24 sm:py-32 md:py-44">
+          <div className="mx-auto flex justify-center gap-6 text-center text-4xl sm:text-5xl md:text-6xl">
             <span className="font-bold text-white">Pressing Instructions</span>
           </div>
         </div>
         <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')] max-w-screen h-8"></div>
-        <div className="grid container mx-auto grid-cols-1 items-center gap-10 lg:grid-cols-2 py-28">
+        <div className="container mx-auto grid grid-cols-1 items-center gap-10 px-6 py-16 md:py-24 lg:grid-cols-2 lg:px-8 lg:py-28">
           {/* Left Content */}
           <div>
-            <p className="mb-4 text-2xl text-black">
+            <p className="mb-4 text-xl text-black md:text-2xl">
               DTF Transfers: Application is easy!
             </p>
 
-            <h2 className="mb-8 text-4xl font-bold">
+            <h2 className="mb-8 text-3xl font-bold md:text-4xl">
               {dtfTransferSection.heading}
             </h2>
 
@@ -81,7 +81,7 @@ export const page = () => {
               {dtfTransferSection.steps.map((step, index) => (
                 <div key={index} className="flex gap-4">
                   <span className="font-semibold">{index + 1}.</span>
-                  <p className="text-lg leading-relaxed">{step}</p>
+                  <p className="text-base leading-relaxed md:text-lg">{step}</p>
                 </div>
               ))}
             </div>
@@ -107,10 +107,10 @@ export const page = () => {
             />
           </div>
         </div>
-        <div className="grid container mx-auto grid-cols-1 items-center gap-10 lg:grid-cols-2 pb-28">
+        <div className="container mx-auto grid grid-cols-1 items-center gap-10 px-6 pb-16 md:pb-24 lg:grid-cols-2 lg:px-8 lg:pb-28">
           {/* Left Content */}
           <div>
-            <h2 className="mb-8 text-4xl font-bold">
+            <h2 className="mb-8 text-3xl font-bold md:text-4xl">
               {careTipsSection.heading}
             </h2>
 
@@ -118,12 +118,12 @@ export const page = () => {
               {careTipsSection.steps.map((step, index) => (
                 <div key={index} className="flex gap-4">
                   <span className="font-semibold">{index + 1}.</span>
-                  <p className="text-lg leading-relaxed">{step}</p>
+                  <p className="text-base leading-relaxed md:text-lg">{step}</p>
                 </div>
               ))}   
             </div>
 
-            <p className="mt-6 text-lg text-gray-600">
+            <p className="mt-6 text-base text-gray-600 md:text-lg">
               {careTipsSection.supportText}
             </p>
 
@@ -148,10 +148,10 @@ export const page = () => {
             />
           </div>
         </div>
-        <div className="grid container mx-auto grid-cols-1 items-center gap-10 lg:grid-cols-2 pb-28">
+        <div className="container mx-auto grid grid-cols-1 items-center gap-10 px-6 pb-16 md:pb-24 lg:grid-cols-2 lg:px-8 lg:pb-28">
           {/* Left Content */}
           <div>
-            <h2 className="mb-8 text-4xl font-bold">
+            <h2 className="mb-8 text-3xl font-bold md:text-4xl">
               {heatPressGuideSection.heading}
             </h2>
 
@@ -159,12 +159,12 @@ export const page = () => {
               {heatPressGuideSection.steps.map((step, index) => (
                 <div key={index} className="flex gap-4">
                   <span className="font-semibold">{index + 1}.</span>
-                  <p className="text-lg leading-relaxed">{step}</p>
+                  <p className="text-base leading-relaxed md:text-lg">{step}</p>
                 </div>
               ))}   
             </div>
 
-            <p className="mt-6 text-lg text-gray-600">
+            <p className="mt-6 text-base text-gray-600 md:text-lg">
               {heatPressGuideSection.supportText}
             </p>
 

@@ -78,6 +78,8 @@ export function buildQuantityPriceTable(product, variations = []) {
 			return {
 				quantity,
 				unitPrice: totalPrice,
+				variationId: variation.id,
+				variationAttributes: variation.attributes || [],
 			}
 		})
 		.filter(Boolean)

@@ -51,16 +51,16 @@ export default function ProductCard({ product }) {
 
 				<div className="space-y-3">
 					<div className="text-lg font-medium text-neutral-950">From {formatCurrency(price, currencySymbol)}</div>
-					<div className="flex items-center justify-between gap-3">
+					<div className="grid gap-3 sm:flex sm:items-center sm:justify-between">
 						<Link
 							href={`/products/${productSlug}`}
-							className="inline-flex rounded-full bg-neutral-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-pink-500"
+							className="inline-flex justify-center rounded-full bg-neutral-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-pink-500"
 						>
 							View Product
 						</Link>
 						<AddToCartButton
 							item={cartItem}
-							className="inline-flex rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50"
+							className="inline-flex justify-center rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50"
 						>
 							Add to cart
 						</AddToCartButton>

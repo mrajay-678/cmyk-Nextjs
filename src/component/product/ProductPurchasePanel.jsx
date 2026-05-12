@@ -6,16 +6,19 @@ import { useEffect, useState } from "react"
 import AddToCartButton from "./AddToCartButton"
 import { formatCurrency } from "./productHelpers"
 
-export default function ProductPurchasePanel({ product, quantityOptions, lowestPrice, currencySymbol }) {
+export default function ProductPurchasePanel({ product, quantityOptions, quantityRows = [], lowestPrice, currencySymbol }) {
 	const [selectedQuantity, setSelectedQuantity] = useState(String(quantityOptions[0] || 25))
 	const [selectedFile, setSelectedFile] = useState("")
 	const [previewUrl, setPreviewUrl] = useState("")
 	const numericQuantity = Number(selectedQuantity)
+	const selectedQuantityRow = quantityRows.find((row) => row.quantity === numericQuantity)
 	const selectedTotalPrice = lowestPrice[numericQuantity] ?? null
 	const selectedUnitPrice = selectedTotalPrice && numericQuantity ? selectedTotalPrice / numericQuantity : null
 	const cartItem = {
 		id: `${product.id}-${numericQuantity}-${selectedFile || "no-artwork"}`,
 		productId: product.id,
+		variationId: selectedQuantityRow?.variationId || null,
+		variationAttributes: selectedQuantityRow?.variationAttributes || [],
 		name: product.name,
 		productUrl: `/products/${product.slug || ""}`,
 		image: product.images?.[0]?.src || "",
@@ -52,7 +55,7 @@ export default function ProductPurchasePanel({ product, quantityOptions, lowestP
 	}
 
 	return (
-		<div className="space-y-6 rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+		<div className="space-y-6 rounded-[1.5rem] border border-neutral-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:rounded-[2rem] sm:p-6">
 			<div className="overflow-x-auto">
 				<table className="min-w-full bg-neutral-50 px-4 border-separate border-spacing-y-2 rounded-2xl">
 					<thead>
@@ -113,7 +116,7 @@ export default function ProductPurchasePanel({ product, quantityOptions, lowestP
 					type="file"
 					accept=".pdf,.png,.jpg,.jpeg,.psd,.ai,.svg"
 					onChange={handleFileChange}
-					className="block w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700 file:mr-4 file:rounded-full file:border-0 file:bg-neutral-950 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-pink-500"
+					className="block w-full rounded-xl border border-neutral-200 bg-white px-3 py-3 text-sm text-neutral-700 file:mb-2 file:mr-4 file:rounded-full file:border-0 file:bg-neutral-950 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-pink-500 sm:px-4 sm:file:mb-0"
 				/>
 				<p className="text-sm leading-6 text-neutral-500">
 					Use artwork at 300 DPI for best print quality. CMYK color mode, transparent backgrounds for stickers, and outlined fonts will help avoid production issues.

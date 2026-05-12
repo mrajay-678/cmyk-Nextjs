@@ -12,45 +12,36 @@ const marqueeItems = [
 export default function Footer() {
   return (
     <footer className="bg-[#1f1f1f] text-white overflow-hidden">
-      
-      {/* Marquee */}
-      <div className=" py-6 overflow-hidden">
-        <divs
-          className="flex whitespace-nowrap w-screen marquee-animation py-10"
-        >
+      <div className="overflow-hidden py-4 md:py-6">
+        <div className="flex w-screen whitespace-nowrap py-6 marquee-animation md:py-10">
           {[...marqueeItems, ...marqueeItems].map((item, i) => (
             <div
               key={i}
-              className="text-5xl md:text-7xl font-semibold mx-10 flex items-center gap-6"
+              className="mx-5 flex items-center gap-4 text-3xl font-semibold sm:text-5xl md:mx-10 md:gap-6 md:text-7xl"
             >
               <span>{item}</span>
 
-              {/* Logo Circle */}
-              <div className="w-10 h-10 rounded-full bg-yellow-400 flex items-center justify-center text-black text-sm font-bold">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-yellow-400 text-xs font-bold text-black md:h-10 md:w-10 md:text-sm">
                 CMYK
               </div>
             </div>
           ))}
-        </divs>
+        </div>
       </div>
 
-      {/* Footer Content */}
-      <div className="max-w-7xl mx-auto px-6 py-16 flex gap-10">
-        
-        {/* Left */}
-        <div className="w-6/12">
-          <h2 className="text-5xl font-semibold mb-4">
+      <div className="mx-auto grid max-w-7xl gap-10 px-6 py-12 md:grid-cols-[minmax(0,1.4fr)_minmax(160px,0.6fr)_minmax(160px,0.6fr)] md:py-16">
+        <div>
+          <h2 className="mb-4 text-3xl font-semibold leading-tight sm:text-4xl md:text-5xl">
             Print that makes good impressions.
           </h2>
 
-          <div className="flex gap-6 mt-6 opacity-70 text-sm">
+          <div className="mt-6 flex flex-wrap gap-4 text-sm opacity-70 md:gap-6">
             <span>ISO Certified</span>
             <span>SAGE Member</span>
           </div>
         </div>
 
-        {/* Address */}
-        <div className="w-3/12">
+        <div>
           <h3 className="text-sm uppercase opacity-60 mb-3">Address</h3>
           <p className="text-sm leading-6 opacity-80">
             9611 Canoga Ave,<br />
@@ -59,8 +50,7 @@ export default function Footer() {
           </p>
         </div>
 
-        {/* Contact */}
-        <div className="w-3/12">
+        <div>
           <h3 className="text-sm uppercase opacity-60 mb-3">Say Hello</h3>
           <p className="text-sm opacity-80">
             hello@cmykprint.shop <br />
@@ -69,8 +59,7 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Bottom */}
-      <div className="border-t border-white/10 py-4 px-6 flex flex-col md:flex-row justify-between text-sm opacity-70">
+      <div className="flex flex-col gap-2 border-t border-white/10 px-6 py-4 text-sm opacity-70 md:flex-row md:justify-between">
         <div>Privacy Policy | Terms of Service</div>
         <div>© 2025 CMYK Print Shop. All rights reserved</div>
       </div>

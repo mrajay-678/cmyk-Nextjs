@@ -31,9 +31,9 @@ export default function ContactPage() {
 				<div className="absolute inset-0 opacity-25 [background-image:linear-gradient(rgba(20,28,130,0.55)_1px,transparent_1px),linear-gradient(90deg,rgba(20,28,130,0.55)_1px,transparent_1px)] [background-size:28px_28px]" />
 				<div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.12),transparent_58%)]" />
 
-				<div className="relative mx-auto grid max-w-6/12 gap-10 rounded-[28px] bg-white px-6 py-10 shadow-[0_28px_90px_rgba(15,23,42,0.16)] md:grid-cols-[0.88fr_1.12fr] md:gap-14 md:rounded-[34px] md:px-12 md:py-14 lg:px-16">
+				<div className="relative mx-auto grid w-full max-w-6xl gap-10 rounded-[28px] bg-white px-5 py-8 shadow-[0_28px_90px_rgba(15,23,42,0.16)] sm:px-6 sm:py-10 md:grid-cols-[0.88fr_1.12fr] md:gap-14 md:rounded-[34px] md:px-12 md:py-14 lg:px-16">
 					<div>
-						<h1 className="text-4xl font-semibold tracking-normal text-neutral-950 md:text-5xl">Let&apos;s Talk!</h1>
+						<h1 className="text-3xl font-semibold tracking-normal text-neutral-950 sm:text-4xl md:text-5xl">Let&apos;s Talk!</h1>
 						<p className="mt-7 max-w-md text-base leading-7 text-neutral-500">
 							Got questions? Drop us a line. We&apos;re real humans and we&apos;ll get back to you within 3 business days.
 							Usually sooner.
@@ -49,11 +49,11 @@ export default function ContactPage() {
 								)
 
 								return href ? (
-									<a key={text} href={href} className="flex items-center gap-4 text-sm font-medium text-neutral-700 hover:text-pink-500">
+									<a key={text} href={href} className="flex items-start gap-4 break-words text-sm font-medium text-neutral-700 hover:text-pink-500">
 										{content}
 									</a>
 								) : (
-									<div key={text} className="flex items-center gap-4 text-sm font-medium text-neutral-700">
+									<div key={text} className="flex items-start gap-4 break-words text-sm font-medium text-neutral-700">
 										{content}
 									</div>
 								)

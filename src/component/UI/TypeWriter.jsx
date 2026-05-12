@@ -20,8 +20,8 @@ export default function TypeWriter({ appendClass, prefix }) {
     if (appendClass) className += " " + appendClass;
 
     // Typewriter effect base class
-    const typeWriterClass = "font-bold pr-1 text-start text-[#F6C520] "
-        + "animate-cursor overflow-hidden whitespace-nowrap transition-[width] ease-in-out duration-2000";
+    const typeWriterClass = "font-bold pr-1 text-center sm:text-start text-[#F6C520] "
+        + "animate-cursor overflow-hidden whitespace-normal sm:whitespace-nowrap transition-[width] ease-in-out duration-2000";
 
     // State of current hat index
     const [currentHat, setCurrentHat] = useState(0);
@@ -65,15 +65,15 @@ export default function TypeWriter({ appendClass, prefix }) {
     return (
         <section className='overflow-hidden max-w-screen'>
             <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')] max-w-screen h-8"></div>
-                <div className="py-44 bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Group-13-scaled.png.webp')] bg-center">
-                    <div className="flex justify-center gap-6 mx-auto text-5xl text-center md:text-6xl">
+                <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Group-13-scaled.png.webp')] bg-center px-6 py-24 sm:py-32 md:py-44">
+                    <div className="mx-auto flex max-w-5xl flex-col items-center justify-center gap-3 text-center text-4xl sm:flex-row sm:gap-6 sm:text-5xl md:text-6xl">
                         <span className="font-bold text-white">Made for real</span>
-                        <div className=''>
+                        <div className='min-h-[1.1em]'>
                             <div className={`${typeWriterClass} ${collapseClass}`}>{hats[currentHat].suffix}</div>
                         </div>
                     </div>
                 </div>
-            <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')] max-w-screen h-8"></div>ßß
+            <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')] max-w-screen h-8"></div>
         </section>
     )
 }

@@ -60,13 +60,13 @@ export const Page = () => {
     <div>
       <section className="overflow-hidden max-w-screen">
         <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')] max-w-screen h-8"></div>
-        <div className="py-44 bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Group-13-scaled.png.webp')] bg-center">
-          <div className="flex justify-center gap-6 mx-auto text-5xl text-center md:text-6xl">
+        <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Group-13-scaled.png.webp')] bg-center px-6 py-24 sm:py-32 md:py-44">
+          <div className="mx-auto flex justify-center gap-6 text-center text-4xl sm:text-5xl md:text-6xl">
             <span className="font-bold text-white">FAQs</span>
           </div>
         </div>
         <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')] max-w-screen h-8"></div>
-        <div className="mx-auto max-w-6xl py-20">
+        <div className="mx-auto max-w-6xl px-6 py-14 md:py-20">
         {faqData.map((item, index) => (
           <div
             key={index}
@@ -74,13 +74,13 @@ export const Page = () => {
           >
             <button
               onClick={() => toggleAccordion(index)}
-              className="flex w-full items-center justify-between py-8 text-left"
+              className="flex w-full items-center justify-between gap-4 py-6 text-left md:py-8"
             >
-              <h3 className="text-2xl font-regular  text-black md:text-3xl">
+              <h3 className="text-xl font-normal text-black md:text-3xl">
                 {item.question}
               </h3>
 
-              <span className="ml-6 shrink-0">
+              <span className="shrink-0">
                 {openIndex === index ? (
                   <Minus size={32} strokeWidth={1.5} />
                 ) : (
@@ -96,7 +96,7 @@ export const Page = () => {
                   : "max-h-0 opacity-0"
               }`}
             >
-              <p className="max-w-4xl text-lg leading-relaxed text-[#555]">
+              <p className="max-w-4xl text-base leading-relaxed text-[#555] md:text-lg">
                 {item.answer}
               </p>
             </div>

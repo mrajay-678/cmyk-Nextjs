@@ -2,8 +2,8 @@ import React from "react"
 
 const Hero = () => {
 	return (
-		<div>
-			<video src={"https://www.pexels.com/download/video/32434954/"} className="max-h-[75vh] h-full w-screen object-cover" autoPlay playsInline muted preload="auto" loop></video>
+		<div className="overflow-hidden">
+			<video src={"https://www.pexels.com/download/video/32434954/"} className="h-[48vh] min-h-[320px] w-full object-cover sm:h-[62vh] lg:h-[75vh]" autoPlay playsInline muted preload="auto" loop></video>
 		</div>
 	)
 }

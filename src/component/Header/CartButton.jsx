@@ -29,7 +29,7 @@ export default function CartButton() {
 			</button>
 
 			{isOpen ? (
-				<div className="absolute right-0 top-16 z-50 w-[24rem] rounded-[1.75rem] border border-neutral-200 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.16)]">
+				<div className="fixed inset-x-3 top-24 z-50 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-[1.5rem] border border-neutral-200 bg-white p-4 shadow-[0_24px_70px_rgba(15,23,42,0.16)] sm:absolute sm:inset-auto sm:right-0 sm:top-16 sm:w-[24rem] sm:p-5">
 					<div className="flex items-center justify-between gap-4">
 						<div>
 							<p className="text-lg font-semibold text-neutral-950">Cart</p>
@@ -77,7 +77,10 @@ export default function CartButton() {
 									<span className="text-white/70">Subtotal</span>
 									<span className="text-lg font-semibold">{formatCurrency(subtotal, items[0]?.currencySymbol || "$")}</span>
 								</div>
-								<div className="mt-4 flex gap-3">
+								<div className="mt-4 grid gap-3 sm:flex">
+									<Link href="/checkout" onClick={() => setIsOpen(false)} className="inline-flex h-11 flex-1 items-center justify-center rounded-full bg-pink-500 text-sm font-semibold text-white transition hover:bg-pink-600">
+										Checkout
+									</Link>
 									<Link href="/products" onClick={() => setIsOpen(false)} className="inline-flex h-11 flex-1 items-center justify-center rounded-full bg-white text-sm font-semibold text-neutral-950 transition hover:bg-neutral-100">
 										Keep shopping
 									</Link>

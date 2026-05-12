@@ -20,7 +20,7 @@ function ProductDetailFallback() {
 		<section className="bg-neutral-50 px-6 py-14 md:px-10 md:py-18 lg:px-16 lg:py-24">
 			<div className="mx-auto max-w-[92rem]">
 				<div className="mb-8 h-4 w-48 animate-pulse bg-neutral-200" />
-				<div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(420px,0.95fr)] lg:items-start">
+				<div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(380px,0.95fr)] lg:items-start xl:grid-cols-[minmax(0,1fr)_minmax(420px,0.95fr)]">
 					<div className="space-y-4">
 						<div className="aspect-[4/5] animate-pulse bg-neutral-200" />
 						<div className="grid grid-cols-4 gap-3">
@@ -67,7 +67,7 @@ async function ProductDetailContent({ slug }) {
 
 	return (
 		<section className="bg-neutral-50 px-6 py-14 md:px-10 md:py-18 lg:px-16 lg:py-24">
-			<div className="mx-auto max-w-10/12">
+			<div className="mx-auto w-full max-w-[92rem]">
 				<nav aria-label="Breadcrumb" className="mb-8 flex flex-wrap items-center gap-2 text-sm text-neutral-500">
 					<Link href="/" className="transition hover:text-neutral-950">
 						Home
@@ -80,8 +80,8 @@ async function ProductDetailContent({ slug }) {
 					<span className="text-neutral-950">{product.name}</span>
 				</nav>
 
-				<div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(420px,0.95fr)] lg:items-start">
-					<div className="sticky top-20">
+				<div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(380px,0.95fr)] lg:items-start xl:grid-cols-[minmax(0,1fr)_minmax(420px,0.95fr)]">
+					<div className="lg:sticky lg:top-28">
 						<ProductImageZoom images={product.images} title={product.name} />
 					</div>
 
@@ -89,7 +89,7 @@ async function ProductDetailContent({ slug }) {
 						<div className="space-y-3">
 							<p className="text-sm font-semibold uppercase tracking-[0.24em] text-pink-500">Product Detail</p>
 							<p className="text-sm text-neutral-500">SKU: {product.sku || "Not available"}</p>
-							<h1 className="text-4xl font-semibold tracking-[-0.05em] text-neutral-950 md:text-5xl">{product.name}</h1>
+							<h1 className="text-3xl font-semibold text-neutral-950 sm:text-4xl md:text-5xl">{product.name}</h1>
 							<p className="text-2xl font-semibold text-neutral-950">
 								As low as: {formatCurrency(lowestUnitPrice, "$")}
 							</p>
@@ -99,6 +99,7 @@ async function ProductDetailContent({ slug }) {
 						<ProductPurchasePanel
 							product={product}
 							quantityOptions={quantityOptions}
+							quantityRows={pricingRows}
 							lowestPrice={quantityMap}
 							currencySymbol={currencySymbol}
 						/>
