@@ -22,7 +22,7 @@ export default function ProductImageZoom({ images, title }) {
 				onMouseEnter={() => setIsZoomed(true)}
 				onMouseLeave={() => setIsZoomed(false)}
 				onMouseMove={handleMove}
-				className="relative overflow-hidden rounded-[2rem] border border-neutral-200 bg-white"
+				className="relative overflow-hidden border border-neutral-200 bg-white"
 			>
 				<div className="relative aspect-[4/5]">
 					<Image

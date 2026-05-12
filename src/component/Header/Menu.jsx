@@ -37,6 +37,7 @@ export default function Menu() {
 												key={child.title}
 												href={child.href}
 												onMouseEnter={() => setActiveSubMenu(child)}
+												onMouseLeave={() => setActiveSubMenu(child)}
 												onClick={() => setActiveSubMenu(child)}
 												className="flex items-center justify-between py-2 cursor-pointer hover:text-gray-300"
 											>
@@ -44,7 +45,7 @@ export default function Menu() {
 												{child.children && <ChevronRight size={16} />}
 											</Link>
 										) : (
-											<div key={child.title} onMouseEnter={() => setActiveSubMenu(child)} onClick={() => setActiveSubMenu(child)} className="flex items-center justify-between py-2 cursor-pointer hover:text-gray-300">
+											<div key={child.title} onMouseEnter={() => setActiveSubMenu(child)} onMouseLeave={() => setActiveSubMenu(child)} onClick={() => setActiveSubMenu(child)} className="flex items-center justify-between py-2 cursor-pointer hover:text-gray-300">
 												<span>{child.title}</span>
 												{child.children && <ChevronRight size={16} />}
 											</div>

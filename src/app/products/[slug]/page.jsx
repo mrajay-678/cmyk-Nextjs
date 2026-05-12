@@ -19,21 +19,21 @@ function ProductDetailFallback() {
 	return (
 		<section className="bg-neutral-50 px-6 py-14 md:px-10 md:py-18 lg:px-16 lg:py-24">
 			<div className="mx-auto max-w-[92rem]">
-				<div className="mb-8 h-4 w-48 animate-pulse rounded-full bg-neutral-200" />
+				<div className="mb-8 h-4 w-48 animate-pulse bg-neutral-200" />
 				<div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(420px,0.95fr)] lg:items-start">
 					<div className="space-y-4">
-						<div className="aspect-[4/5] animate-pulse rounded-[2rem] bg-neutral-200" />
+						<div className="aspect-[4/5] animate-pulse bg-neutral-200" />
 						<div className="grid grid-cols-4 gap-3">
 							{Array.from({ length: 4 }).map((_, index) => (
-								<div key={index} className="aspect-square animate-pulse rounded-[1.25rem] bg-neutral-200" />
+								<div key={index} className="aspect-square animate-pulse bg-neutral-200" />
 							))}
 						</div>
 					</div>
-					<div className="space-y-4 rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
-						<div className="h-4 w-28 animate-pulse rounded-full bg-neutral-200" />
-						<div className="h-4 w-36 animate-pulse rounded-full bg-neutral-200" />
+					<div className="space-y-4 border border-neutral-200 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+						<div className="h-4 w-28 animate-pulse  bg-neutral-200" />
+						<div className="h-4 w-36 animate-pulse  bg-neutral-200" />
 						<div className="h-12 w-3/4 animate-pulse rounded-2xl bg-neutral-200" />
-						<div className="h-6 w-40 animate-pulse rounded-full bg-neutral-200" />
+						<div className="h-6 w-40 animate-pulse  bg-neutral-200" />
 						<div className="h-28 animate-pulse rounded-2xl bg-neutral-200" />
 						<div className="h-56 animate-pulse rounded-2xl bg-neutral-200" />
 					</div>
@@ -91,7 +91,7 @@ async function ProductDetailContent({ slug }) {
 							<p className="text-sm text-neutral-500">SKU: {product.sku || "Not available"}</p>
 							<h1 className="text-4xl font-semibold tracking-[-0.05em] text-neutral-950 md:text-5xl">{product.name}</h1>
 							<p className="text-2xl font-semibold text-neutral-950">
-								Lowest price: {formatCurrency(lowestUnitPrice, "$")}
+								As low as: {formatCurrency(lowestUnitPrice, "$")}
 							</p>
 							<p className="max-w-2xl text-base leading-8 text-neutral-600">{stripHtml(product.short_description || product.description) || "Product details will appear here once the WooCommerce description is available."}</p>
 						</div>
