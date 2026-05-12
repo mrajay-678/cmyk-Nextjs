@@ -56,8 +56,19 @@ export default function ProductPurchasePanel({ product, quantityOptions, quantit
 
 	return (
 		<div className="space-y-6 rounded-[1.5rem] border border-neutral-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:rounded-[2rem] sm:p-6">
-			<div className="overflow-x-auto">
-				<table className="min-w-full bg-neutral-50 px-4 border-separate border-spacing-y-2 rounded-2xl">
+			<div className="grid grid-cols-2 gap-2 md:hidden">
+				{quantityOptions.map((quantity) => (
+					<div key={quantity} className="rounded-2xl bg-neutral-50 p-3">
+						<p className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400">{quantity} units</p>
+						<p className="mt-1 text-sm font-semibold text-neutral-950">
+							{formatCurrency(lowestPrice[quantity] / quantity, currencySymbol)}
+						</p>
+					</div>
+				))}
+			</div>
+
+			<div className="hidden overflow-x-auto md:block">
+				<table className="min-w-full rounded-2xl border-separate border-spacing-y-2 bg-neutral-50 px-4">
 					<thead>
 						<tr className="text-left text-xs uppercase tracking-[0.18em] text-neutral-400">
 							<th className="pb-2 pr-6">Quantity</th>
@@ -81,12 +92,12 @@ export default function ProductPurchasePanel({ product, quantityOptions, quantit
 				</table>
 			</div>
 
-			<div className="rounded-[1.5rem] bg-neutral-50 p-5">
+			<div className="rounded-[1.5rem] bg-neutral-50 p-4 sm:p-5">
 				<p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">Selected pricing</p>
-				<div className="mt-3 flex flex-wrap items-end gap-6">
+				<div className="mt-3 grid gap-4 sm:flex sm:flex-wrap sm:items-end sm:gap-6">
 					<div>
 						<p className="text-sm text-neutral-500">Total price</p>
-						<p className="text-3xl font-semibold tracking-[-0.04em] text-neutral-950">{formatCurrency(selectedTotalPrice, currencySymbol)}</p>
+						<p className="text-2xl font-semibold text-neutral-950 sm:text-3xl">{formatCurrency(selectedTotalPrice, currencySymbol)}</p>
 					</div>
 					<div>
 						<p className="text-sm text-neutral-500">Per unit</p>
