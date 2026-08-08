@@ -1,11 +1,19 @@
-import React from "react"
+import React from "react";
 
 const Hero = () => {
-	return (
-		<div className="overflow-hidden">
-			<video src={"https://www.pexels.com/download/video/32434954/"} className="h-[48vh] min-h-[320px] w-full object-cover sm:h-[62vh] lg:h-[75vh]" autoPlay playsInline muted preload="auto" loop></video>
-		</div>
-	)
-}
+  return (
+    <div className="overflow-hidden">
+      <video
+        src={"assets/video/hero.mp4"}
+        className="h-[48vh] min-h-80 w-full object-cover sm:h-[62vh] lg:h-[75vh]"
+        autoPlay
+        playsInline
+        muted
+        preload="auto"
+        loop
+      ></video>
+    </div>
+  );
+};
 
-export default Hero
+export default Hero;
