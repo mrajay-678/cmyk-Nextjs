@@ -75,7 +75,7 @@ export default function CartButton() {
 							<div className="mt-5 rounded-[1.25rem] bg-neutral-950 p-4 text-white">
 								<div className="flex items-center justify-between text-sm">
 									<span className="text-white/70">Subtotal</span>
-									<span className="text-lg font-semibold">{formatCurrency(subtotal, items[0]?.currencySymbol || "$")}</span>
+									<span className="text-lg font-semibold">{formatCurrency(subtotal, "$")}</span>
 								</div>
 								<div className="mt-4 grid gap-3 sm:flex">
 									<Link href="/checkout" onClick={() => setIsOpen(false)} className="inline-flex h-11 flex-1 items-center justify-center rounded-full bg-pink-500 text-sm font-semibold text-white transition hover:bg-pink-600">

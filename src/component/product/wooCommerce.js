@@ -1,4 +1,5 @@
 import { cacheLife, cacheTag } from "next/cache";
+import { buildQuantityPriceTable } from "./productHelpers";
 
 const WC_BASE_URL = process.env.NEXT_PUBLIC_WC_URL;
 const WC_CONSUMER_KEY = process.env.WC_CONSUMER_KEY;
@@ -108,7 +109,7 @@ export async function getProductCategories() {
       hide_empty: true,
       orderby: "name",
       order: "asc",
-
+    },
     ["woocommerce-products", "woocommerce-filters"],
   );
 
@@ -159,10 +160,24 @@ export async function getProducts(filters = {}) {
     ["woocommerce-products"],
   );
 
-  const products = Array.isArray(data) ? data : [];
+	const products = Array.isArray(data) ? data : [];
+	const productsWithPricing = await Promise.all(
+		products.map(async (product) => {
+			if (!product?.id || product.type !== "variable") {
+				return product;
+			}
 
-  return {
-    products,
+			const { variations } = await getProductVariations(product.id);
+
+			return {
+				...product,
+				variationPricingRows: buildQuantityPriceTable(product, variations),
+			};
+		}),
+	);
+
+	return {
+		products: productsWithPricing,
     total: meta.total || 0,
     totalPages: meta.totalPages || 0,
     error,
@@ -203,29 +218,58 @@ export async function getProductVariations(productId) {
   };
 }
 
-export async function getRelatedProductsByTags({
+export async function getRecommendedProducts({
   currentProductId,
   tagIds = [],
+  categoryIds = [],
 }) {
-  if (!tagIds.length) {
-    return { products: [], error: null };
+  const recommendationQueries = [];
+
+  if (tagIds.length) {
+    recommendationQueries.push({
+      query: { tag: tagIds.join(",") },
+      cacheKey: `tags-${tagIds.join("-")}`,
+    });
   }
 
-  const { data, error } = await fetchWooCommerceCached(
-    "/products",
-    {
-      tag: tagIds.join(","),
-      exclude: currentProductId,
-      status: "publish",
-      per_page: 4,
-    },
-    ["woocommerce-products", `woocommerce-related-${tagIds.join("-")}`],
+  if (categoryIds.length) {
+    recommendationQueries.push({
+      query: { category: categoryIds.join(",") },
+      cacheKey: `categories-${categoryIds.join("-")}`,
+    });
+  }
+
+  recommendationQueries.push({ query: {}, cacheKey: "catalog" });
+
+  const results = await Promise.all(
+    recommendationQueries.map(({ query, cacheKey }) =>
+      fetchWooCommerceCached(
+        "/products",
+        {
+          ...query,
+          exclude: currentProductId,
+          status: "publish",
+          per_page: 4,
+        },
+        ["woocommerce-products", `woocommerce-recommendations-${cacheKey}`],
+      ),
+    ),
   );
 
-  const products = Array.isArray(data) ? data : [];
+  const products = [];
+  const productIds = new Set();
+
+  results.forEach(({ data }) => {
+    ;(Array.isArray(data) ? data : []).forEach((product) => {
+      if (products.length < 4 && product?.id && !productIds.has(product.id)) {
+        productIds.add(product.id);
+        products.push(product);
+      }
+    });
+  });
 
   return {
     products,
-    error,
+    error: results.find((result) => result.error)?.error || null,
   };
 }

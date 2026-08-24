@@ -62,7 +62,7 @@ export function formatCurrency(amount, symbol = "$") {
 		return "Contact us"
 	}
 
-	return `$${amount.toFixed(2)}`
+	return `${symbol}${amount.toFixed(2)}`
 }
 
 export function buildQuantityPriceTable(product, variations = []) {

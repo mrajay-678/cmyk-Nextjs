@@ -1,19 +1,31 @@
 "use client"
 
 import Image from "next/image"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+
+import { ProductMediaSkeleton } from "./ProductDetailSkeleton"
 
 export default function ProductImageZoom({ images, title }) {
 	const gallery = images?.length ? images : [{ src: "https://placehold.co/900x1100/F5F0EA/1F1F1F?text=Product+Image", alt: title }]
 	const [activeImage, setActiveImage] = useState(gallery[0])
 	const [isZoomed, setIsZoomed] = useState(false)
 	const [position, setPosition] = useState({ x: 50, y: 50 })
+	const [isGalleryReady, setIsGalleryReady] = useState(false)
+
+	useEffect(() => {
+		const frameId = window.requestAnimationFrame(() => setIsGalleryReady(true))
+		return () => window.cancelAnimationFrame(frameId)
+	}, [])
 
 	function handleMove(event) {
 		const bounds = event.currentTarget.getBoundingClientRect()
 		const x = ((event.clientX - bounds.left) / bounds.width) * 100
 		const y = ((event.clientY - bounds.top) / bounds.height) * 100
 		setPosition({ x, y })
+	}
+
+	if (!isGalleryReady) {
+		return <ProductMediaSkeleton />
 	}
 
 	return (
@@ -30,7 +42,7 @@ export default function ProductImageZoom({ images, title }) {
 						alt={activeImage.alt || title}
 						fill
 						sizes="(max-width: 640px) 92vw, (max-width: 1023px) 70vw, 50vw"
-						className={`object-contain transition duration-300 sm:object-cover ${isZoomed ? "scale-[1.8]" : "scale-100"}`}
+						className={`object-contain transition duration-300 sm:object-cover p-5 ${isZoomed ? "scale-[1.8]" : "scale-100"}`}
 						style={isZoomed ? { transformOrigin: `${position.x}% ${position.y}%` } : undefined}
 					/>
 				</div>

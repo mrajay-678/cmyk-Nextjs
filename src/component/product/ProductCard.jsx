@@ -1,7 +1,7 @@
 import Image from "next/image"
-import Link from "next/link"
 
 import AddToCartButton from "./AddToCartButton"
+import ProductDetailLink from "./ProductDetailLink"
 import { extractCurrencySymbol, formatCurrency, getLowestUnitPrice, toSlug } from "./productHelpers"
 
 export default function ProductCard({ product }) {
@@ -9,9 +9,10 @@ export default function ProductCard({ product }) {
 	const currencySymbol = extractCurrencySymbol(product)
 	const productSlug = toSlug(product.slug || product.name)
 	const quantityPricing = product.variationPricingRows || []
-	const largestQuantityBreak = quantityPricing[quantityPricing.length - 1] || null
 	const defaultQuantityBreak = quantityPricing[0] || null
-	const price = largestQuantityBreak ? largestQuantityBreak.unitPrice / largestQuantityBreak.quantity : getLowestUnitPrice(product)
+	const price = quantityPricing.length
+		? Math.min(...quantityPricing.map((row) => row.unitPrice / row.quantity))
+		: getLowestUnitPrice(product)
 	const defaultQuantity = defaultQuantityBreak?.quantity || 1
 	const defaultTotalPrice = defaultQuantityBreak?.unitPrice || price
 	const cartItem = {
@@ -30,17 +31,17 @@ export default function ProductCard({ product }) {
 
 	return (
 		<article className="overflow-hidden rounded-[1.75rem] border border-neutral-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.06)] transition hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
-			<div className="relative aspect-[4/4] bg-neutral-100">
+			<div className="relative aspect-[4/3] bg-white m-5">
 				{image ? (
 					<Image
 						src={image.src}
 						alt={image.alt || product.name}
 						fill
 						sizes="(max-width: 767px) 100vw, (max-width: 1279px) 50vw, 33vw"
-						className="object-cover"
+						className="object-contain"
 					/>
 				) : (
-					<div className="flex h-full items-center justify-center bg-neutral-100 text-sm text-neutral-400">No image</div>
+					<div className="flex h-full items-center aspect-[4/3] justify-center bg-neutral-100 text-sm text-neutral-400">No image</div>
 				)}
 			</div>
 
@@ -50,14 +51,14 @@ export default function ProductCard({ product }) {
 				</div>
 
 				<div className="space-y-3">
-					<div className="text-lg font-medium text-neutral-950">From {formatCurrency(price, currencySymbol)}</div>
+					<div className="text-lg font-medium text-neutral-950">As low as {formatCurrency(price, "$")}</div>
 					<div className="grid gap-3 sm:flex sm:items-center sm:justify-between">
-						<Link
+						<ProductDetailLink
 							href={`/products/${productSlug}`}
 							className="inline-flex justify-center rounded-full bg-neutral-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-pink-500"
 						>
 							View Product
-						</Link>
+						</ProductDetailLink>
 						<AddToCartButton
 							item={cartItem}
 							className="inline-flex justify-center rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50"

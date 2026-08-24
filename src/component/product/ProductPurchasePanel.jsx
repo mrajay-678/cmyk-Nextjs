@@ -73,7 +73,7 @@ export default function ProductPurchasePanel({ product, quantityOptions, quantit
 						<tr className="text-left text-xs uppercase tracking-[0.18em] text-neutral-400">
 							<th className="pb-2 pr-6">Quantity</th>
 							{quantityOptions.map((quantity) => (
-								<th key={quantity} className="pb-2 pr-6 font-medium">
+								<th key={quantity} className="px-4 py-3 text-center font-medium">
 									{quantity}
 								</th>
 							))}
@@ -84,7 +84,7 @@ export default function ProductPurchasePanel({ product, quantityOptions, quantit
 							<td className="rounded-l-2xl py-3 font-medium text-neutral-950">Per unit price</td>
 							{quantityOptions.map((quantity) => (
 								<td key={quantity} className="px-4 py-3">
-									{formatCurrency(lowestPrice[quantity] / quantity, currencySymbol)}
+									{formatCurrency(lowestPrice[quantity] / quantity, "$")}
 								</td>
 							))}
 						</tr>
@@ -97,11 +97,11 @@ export default function ProductPurchasePanel({ product, quantityOptions, quantit
 				<div className="mt-3 grid gap-4 sm:flex sm:flex-wrap sm:items-end sm:gap-6">
 					<div>
 						<p className="text-sm text-neutral-500">Total price</p>
-						<p className="text-2xl font-semibold text-neutral-950 sm:text-3xl">{formatCurrency(selectedTotalPrice, currencySymbol)}</p>
+						<p className="text-2xl font-semibold text-neutral-950 sm:text-3xl">{formatCurrency(selectedTotalPrice, "$")}</p>
 					</div>
 					<div>
 						<p className="text-sm text-neutral-500">Per unit</p>
-						<p className="text-lg font-medium text-neutral-950">{formatCurrency(selectedUnitPrice, currencySymbol)}</p>
+						<p className="text-lg font-medium text-neutral-950">{formatCurrency(selectedUnitPrice, "$")}</p>
 					</div>
 				</div>
 			</div>
