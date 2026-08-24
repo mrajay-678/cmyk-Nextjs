@@ -11,7 +11,7 @@ const Header = () => {
           <Menu />
         </div>
         <div className="flex flex-1 items-center justify-center lg:justify-between">
-          <div className="relative h-16 w-28 sm:h-20 sm:w-32 lg:h-24 lg:w-36">
+          <div className="relative h-16 w-28 sm:h-20 sm:w-32 lg:h-24 lg:w-36 translate-x-[-50%]">
             <Image
               src="https://cmykprint.shop/wp-content/uploads/2025/11/cropped-logocymk-1.webp"
               fill
