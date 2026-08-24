@@ -1,6 +1,10 @@
+"use client"
+
+import { memo } from "react"
+
 import { sortOptions } from "./catalogConfig"
 
-export default function ProductFilters({ categories, tags, search, category, tag, sort, onSubmit, onReset, isLoading, isFetching, error }) {
+function ProductFilters({ categories, tags, search, category, tag, sort, onSubmit, onReset, isLoading, isFetching, error }) {
 	return (
 		<form onSubmit={onSubmit} className="flex flex-col gap-5 rounded-[2rem] border border-neutral-200 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
 			<div>
@@ -12,6 +16,7 @@ export default function ProductFilters({ categories, tags, search, category, tag
 			<label className="grid gap-2">
 				<span className="text-sm font-medium text-neutral-700">Search products</span>
 				<input
+					key={`search-${search}`}
 					type="search"
 					name="q"
 					defaultValue={search}
@@ -23,6 +28,7 @@ export default function ProductFilters({ categories, tags, search, category, tag
 			<label className="grid gap-2">
 				<span className="text-sm font-medium text-neutral-700">Category</span>
 				<select
+					key={`category-${category}`}
 					name="category"
 					defaultValue={category}
 					disabled={isLoading}
@@ -40,6 +46,7 @@ export default function ProductFilters({ categories, tags, search, category, tag
 			<label className="grid gap-2">
 				<span className="text-sm font-medium text-neutral-700">Tags</span>
 				<select
+					key={`tag-${tag}`}
 					name="tag"
 					defaultValue={tag}
 					disabled={isLoading}
@@ -57,6 +64,7 @@ export default function ProductFilters({ categories, tags, search, category, tag
 			<label className="grid gap-2">
 				<span className="text-sm font-medium text-neutral-700">Sort by</span>
 				<select
+					key={`sort-${sort}`}
 					name="sort"
 					defaultValue={sort}
 					className="h-12 rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-pink-400"
@@ -84,3 +92,5 @@ export default function ProductFilters({ categories, tags, search, category, tag
 		</form>
 	)
 }
+
+export default memo(ProductFilters)

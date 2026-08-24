@@ -1,6 +1,10 @@
+"use client"
+
+import { memo } from "react"
+
 import ProductCard from "./ProductCard"
 
-export default function ProductGrid({ products }) {
+function ProductGrid({ products }) {
 	if (!products.length) {
 		return (
 			<div className="rounded-[2rem] border border-dashed border-neutral-300 bg-white px-6 py-16 text-center">
@@ -18,3 +22,5 @@ export default function ProductGrid({ products }) {
 		</div>
 	)
 }
+
+export default memo(ProductGrid)

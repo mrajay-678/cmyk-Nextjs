@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useCallback, useEffect, useMemo, useRef } from "react"
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
@@ -19,7 +19,7 @@ async function fetchJson(url) {
 	return response.json()
 }
 
-export default function ProductCatalog() {
+export default function ProductCatalog({ initialProductsData = null, initialFiltersData = null, initialParams = null }) {
 	const router = useRouter()
 	const pathname = usePathname()
 	const searchParams = useSearchParams()
@@ -29,21 +29,45 @@ export default function ProductCatalog() {
 	const activeTag = searchParams.get("tag") || ""
 	const activeSort = searchParams.get("sort") || defaultSort
 	const loadMoreRef = useRef(null)
+	const productQueryKey = useMemo(
+		() => ["products", { q: activeSearch, category: activeCategory, tag: activeTag, sort: activeSort }],
+		[activeCategory, activeSearch, activeSort, activeTag]
+	)
+	const isUsingInitialParams =
+		initialParams?.q === activeSearch &&
+		initialParams?.category === activeCategory &&
+		initialParams?.tag === activeTag &&
+		initialParams?.sort === activeSort
 
 	const filtersQuery = useQuery({
 		queryKey: ["product-filters"],
 		queryFn: () => fetchJson("/api/products/filters"),
+		initialData: initialFiltersData || undefined,
 		staleTime: 1000 * 60 * 30,
 		gcTime: 1000 * 60 * 60,
 		refetchOnWindowFocus: false,
 	})
 
 	const productsQuery = useInfiniteQuery({
-		queryKey: ["products", { q: activeSearch, category: activeCategory, tag: activeTag, sort: activeSort }],
-		queryFn: ({ pageParam = 1 }) =>
-			fetchJson(
-				`/api/products?q=${encodeURIComponent(activeSearch)}&category=${encodeURIComponent(activeCategory)}&tag=${encodeURIComponent(activeTag)}&sort=${encodeURIComponent(activeSort)}&page=${pageParam}`
-			),
+		queryKey: productQueryKey,
+		queryFn: ({ pageParam = 1 }) => {
+			const params = new URLSearchParams({
+				q: activeSearch,
+				category: activeCategory,
+				tag: activeTag,
+				sort: activeSort,
+				page: String(pageParam),
+			})
+
+			return fetchJson(`/api/products?${params.toString()}`)
+		},
+		initialData:
+			isUsingInitialParams && initialProductsData
+				? {
+						pages: [initialProductsData],
+						pageParams: [1],
+				  }
+				: undefined,
 		initialPageParam: 1,
 		getNextPageParam: (lastPage, allPages) => {
 			const totalPages = lastPage?.totalPages || 0
@@ -53,13 +77,12 @@ export default function ProductCatalog() {
 	})
 	const { fetchNextPage, hasNextPage, isFetchingNextPage } = productsQuery
 
-	const products = productsQuery.data?.pages?.flatMap((page) => page.products || []) || []
-	const productsError = productsQuery.data?.pages?.find((page) => page?.error)?.error || null
+	const products = useMemo(() => productsQuery.data?.pages?.flatMap((page) => page.products || []) || [], [productsQuery.data])
+	const productsError = useMemo(() => productsQuery.data?.pages?.find((page) => page?.error)?.error || null, [productsQuery.data])
 	const filtersError = filtersQuery.error?.message || filtersQuery.data?.error || null
 	const error = productsQuery.error?.message || productsError || (!products.length ? filtersError : null)
 	const categories = filtersQuery.data?.categories || []
 	const tags = filtersQuery.data?.tags || []
-	const filtersKey = `${activeSearch}-${activeCategory}-${activeTag}-${activeSort}`
 
 	useEffect(() => {
 		const node = loadMoreRef.current
@@ -82,7 +105,7 @@ export default function ProductCatalog() {
 		return () => observer.disconnect()
 	}, [fetchNextPage, hasNextPage, isFetchingNextPage])
 
-	function updateParams(nextValues) {
+	const updateParams = useCallback((nextValues) => {
 		const params = new URLSearchParams(searchParams.toString())
 
 		Object.entries(nextValues).forEach(([key, value]) => {
@@ -97,9 +120,9 @@ export default function ProductCatalog() {
 
 		const nextQueryString = params.toString()
 		router.replace(nextQueryString ? `${pathname}?${nextQueryString}` : pathname, { scroll: false })
-	}
+	}, [pathname, router, searchParams])
 
-	function handleApply(event) {
+	const handleApply = useCallback((event) => {
 		event.preventDefault()
 		const formData = new FormData(event.currentTarget)
 
@@ -109,17 +132,16 @@ export default function ProductCatalog() {
 			tag: String(formData.get("tag") || ""),
 			sort: String(formData.get("sort") || defaultSort),
 		})
-	}
+	}, [updateParams])
 
-	function handleReset() {
+	const handleReset = useCallback(() => {
 		router.replace(pathname, { scroll: false })
-	}
+	}, [pathname, router])
 
 	return (
 		<div className="mx-auto grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
 			<aside className="lg:sticky lg:top-28 lg:h-fit">
 				<ProductFilters
-					key={filtersKey}
 					categories={categories}
 					tags={tags}
 					search={activeSearch}
@@ -137,7 +159,7 @@ export default function ProductCatalog() {
 			<div className="space-y-6">
 				{error ? <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">{error}</div> : null}
 				{productsQuery.isLoading ? <ProductGridSkeleton /> : <ProductGrid products={products} />}
-				{isFetchingNextPage ? <ProductGridSkeleton /> : null}
+				{isFetchingNextPage ? <ProductGridSkeleton count={3} /> : null}
 				{products.length ? <div ref={loadMoreRef} className="h-4" aria-hidden="true" /> : null}
 				{hasNextPage ? (
 					<div className="flex justify-center">

@@ -11,9 +11,9 @@ export default function ProductQueryProvider({ children }) {
 					queries: {
 						staleTime: 1000 * 60 * 5,
 						gcTime: 1000 * 60 * 30,
-						refetchOnWindowFocus: true,
+						refetchOnWindowFocus: false,
 						refetchOnReconnect: true,
-						refetchInterval: 1000 * 60 * 5,
+						refetchInterval: false,
 					},
 				},
 			})

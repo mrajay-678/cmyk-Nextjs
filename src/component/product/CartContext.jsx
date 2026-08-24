@@ -1,10 +1,11 @@
 "use client"
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 
 const STORAGE_KEY = "cmyk-cart-items"
 
-const CartContext = createContext(null)
+const CartStateContext = createContext(null)
+const CartActionsContext = createContext(null)
 
 export function CartProvider({ children }) {
 	const [items, setItems] = useState([])
@@ -26,7 +27,7 @@ export function CartProvider({ children }) {
 		window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
 	}, [items, isHydrated])
 
-	function addItem(item) {
+	const addItem = useCallback((item) => {
 		setItems((currentItems) => {
 			const existingItem = currentItems.find((entry) => entry.id === item.id)
 
@@ -43,17 +44,17 @@ export function CartProvider({ children }) {
 					: entry
 			)
 		})
-	}
+	}, [])
 
-	function removeItem(id) {
+	const removeItem = useCallback((id) => {
 		setItems((currentItems) => currentItems.filter((item) => item.id !== id))
-	}
+	}, [])
 
-	function clearCart() {
+	const clearCart = useCallback(() => {
 		setItems([])
-	}
+	}, [])
 
-	const value = useMemo(() => {
+	const stateValue = useMemo(() => {
 		const itemCount = items.reduce((total, item) => total + item.cartQuantity, 0)
 		const subtotal = items.reduce((total, item) => total + item.totalPrice * item.cartQuantity, 0)
 
@@ -61,20 +62,41 @@ export function CartProvider({ children }) {
 			items,
 			itemCount,
 			subtotal,
-			addItem,
-			removeItem,
-			clearCart,
 		}
 	}, [items])
 
-	return <CartContext.Provider value={value}>{children}</CartContext.Provider>
+	const actionsValue = useMemo(
+		() => ({
+			addItem,
+			removeItem,
+			clearCart,
+		}),
+		[addItem, removeItem, clearCart]
+	)
+
+	return (
+		<CartActionsContext.Provider value={actionsValue}>
+			<CartStateContext.Provider value={stateValue}>{children}</CartStateContext.Provider>
+		</CartActionsContext.Provider>
+	)
 }
 
 export function useCart() {
-	const context = useContext(CartContext)
+	const stateContext = useContext(CartStateContext)
+	const actionsContext = useContext(CartActionsContext)
+
+	if (!stateContext || !actionsContext) {
+		throw new Error("useCart must be used within a CartProvider")
+	}
+
+	return { ...stateContext, ...actionsContext }
+}
+
+export function useCartActions() {
+	const context = useContext(CartActionsContext)
 
 	if (!context) {
-		throw new Error("useCart must be used within a CartProvider")
+		throw new Error("useCartActions must be used within a CartProvider")
 	}
 
 	return context

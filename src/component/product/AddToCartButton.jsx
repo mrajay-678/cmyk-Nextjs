@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { memo, useCallback, useEffect, useState } from "react"
 
-import { useCart } from "./CartContext"
+import { useCartActions } from "./CartContext"
 
-export default function AddToCartButton({ item, className, children }) {
-	const { addItem } = useCart()
+function AddToCartButton({ item, className, children }) {
+	const { addItem } = useCartActions()
 	const [wasAdded, setWasAdded] = useState(false)
 
 	useEffect(() => {
@@ -17,10 +17,10 @@ export default function AddToCartButton({ item, className, children }) {
 		return () => window.clearTimeout(timeoutId)
 	}, [wasAdded])
 
-	function handleAddToCart() {
+	const handleAddToCart = useCallback(() => {
 		addItem(item)
 		setWasAdded(true)
-	}
+	}, [addItem, item])
 
 	return (
 		<button type="button" onClick={handleAddToCart} className={className}>
@@ -28,3 +28,5 @@ export default function AddToCartButton({ item, className, children }) {
 		</button>
 	)
 }
+
+export default memo(AddToCartButton)
