@@ -12,6 +12,13 @@ const Hero = () => {
         preload="auto"
         loop
       ></video>
+      <div
+        className="bg-black text-white p-4 w-full shadow-xl h-full"
+        style={{
+          backgroundImage:
+            "url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')",
+        }}
+      ></div>
     </div>
   );
 };

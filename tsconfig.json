@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "src/app/gangsheet/page.jsx"  ],
   "exclude": ["node_modules"]
 }

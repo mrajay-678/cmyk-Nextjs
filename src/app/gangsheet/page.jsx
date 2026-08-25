@@ -4,27 +4,20 @@
 
 import Image from "next/image";
 import Script from "next/script";
-import { useCallback, useMemo, useState } from "react";
-import styles from "@/styles/Gangsheet.module.css";
+import { useEffect, useMemo, useState } from "react";
+import styles from "./Gangsheet.module.css";
 
-declare const gs_builder: any;
-
-type SizeOption = {
-  id: number;
-  width: number;
-  height: number;
-  label: string;
-  price: number;
-};
-
-const sizeOptions: SizeOption[] = [
+const sizeOptions = [
   { id: 1, width: 22, height: 24, label: '22" x 24"', price: 8.77 },
   { id: 2, width: 22, height: 60, label: '22" x 60"', price: 29.5 },
   { id: 3, width: 22, height: 120, label: '22" x 120"', price: 58 },
 ];
 
 const gallery = [
-  { src: "/assets/image/shirt-banner.png", alt: "Gang sheet builder on laptop" },
+  {
+    src: "/assets/image/shirt-banner.png",
+    alt: "Gang sheet builder on laptop",
+  },
   { src: "/assets/image/your-art.png", alt: "Artwork thumbnails" },
   { src: "/assets/image/our-craft.png", alt: "Print crew at work" },
   { src: "/assets/image/mug.png", alt: "Printed mug" },
@@ -33,11 +26,11 @@ const gallery = [
 export default function GangsheetPage() {
   const shopId = process.env.NEXT_PUBLIC_GS_SHOP_ID;
   const [activeImage, setActiveImage] = useState(gallery[0]);
-  const [selectedSize, setSelectedSize] = useState<SizeOption>(sizeOptions[0]);
+  const [selectedSize, setSelectedSize] = useState(sizeOptions[0]);
   const [quantity, setQuantity] = useState(1);
   const [builderReady, setBuilderReady] = useState(false);
-  const [latestDesignId, setLatestDesignId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [latestDesignId, setLatestDesignId] = useState(null);
+  const [error, setError] = useState(null);
   const [isOpening, setIsOpening] = useState(false);
 
   const totalPrice = useMemo(
@@ -45,11 +38,13 @@ export default function GangsheetPage() {
     [selectedSize.price, quantity],
   );
 
-  const openBuilder = useCallback(() => {
+  const openBuilder = () => {
     setError(null);
     setIsOpening(true);
     if (!shopId) {
-      setError("Shop ID missing. Set NEXT_PUBLIC_GS_SHOP_ID in .env.local and refresh.");
+      setError(
+        "Shop ID missing. Set NEXT_PUBLIC_GS_SHOP_ID in .env.local and refresh.",
+      );
       setIsOpening(false);
       return;
     }
@@ -78,12 +73,12 @@ export default function GangsheetPage() {
           enableQuantity: false,
         },
       })
-      .on("design:created", (e: any) => {
+      .on("design:created", (e) => {
         if (e?.design_id) setLatestDesignId(String(e.design_id));
         gs_builder.close();
         setIsOpening(false);
       })
-      .on("design:updated", (e: any) => {
+      .on("design:updated", (e) => {
         if (e?.design_id) setLatestDesignId(String(e.design_id));
         gs_builder.close();
         setIsOpening(false);
@@ -91,11 +86,11 @@ export default function GangsheetPage() {
       .on("closed", () => {
         setIsOpening(false);
       })
-      .on("error", (e: any) => {
+      .on("error", (e) => {
         setError(e?.reason ?? "Builder error");
         setIsOpening(false);
       });
-  }, [quantity, selectedSize.id, shopId]);
+  };
 
   return (
     <div className={styles.page}>
@@ -145,14 +140,17 @@ export default function GangsheetPage() {
           </div>
 
           <div className={styles.info}>
-            <div className={styles.breadcrumbs}>Home / DTF Transfer / DTF Gang Sheet Builder</div>
+            <div className={styles.breadcrumbs}>
+              Home / DTF Transfer / DTF Gang Sheet Builder
+            </div>
             <h1 className={styles.title}>DTF Gang Sheet Builder</h1>
             <div className={styles.priceRange}>
-              ${sizeOptions[0].price.toFixed(2)} - ${sizeOptions[sizeOptions.length - 1].price.toFixed(2)}
+              ${sizeOptions[0].price.toFixed(2)} - $
+              {sizeOptions[sizeOptions.length - 1].price.toFixed(2)}
             </div>
             <p className={styles.copy}>
-              Launch the official DripApps Gang Sheet Builder modal, create your sheet, and check out
-              without leaving the page.
+              Launch the official DripApps Gang Sheet Builder modal, create your
+              sheet, and check out without leaving the page.
             </p>
 
             <div className={styles.formRow}>
@@ -164,7 +162,9 @@ export default function GangsheetPage() {
                 className={styles.select}
                 value={selectedSize.id}
                 onChange={(e) => {
-                  const next = sizeOptions.find((o) => o.id === Number(e.target.value));
+                  const next = sizeOptions.find(
+                    (o) => o.id === Number(e.target.value),
+                  );
                   if (next) setSelectedSize(next);
                 }}
               >
@@ -193,7 +193,9 @@ export default function GangsheetPage() {
                   type="number"
                   min={1}
                   value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
+                  onChange={(e) =>
+                    setQuantity(Math.max(1, Number(e.target.value) || 1))
+                  }
                 />
                 <button
                   type="button"
@@ -212,9 +214,13 @@ export default function GangsheetPage() {
 
             {error && <div className={styles.error}>{error}</div>}
             {latestDesignId && (
-              <div className={styles.success}>Saved design ID: {latestDesignId}</div>
+              <div className={styles.success}>
+                Saved design ID: {latestDesignId}
+              </div>
             )}
-            {isOpening && <div className={styles.loader}>Launching builder…</div>}
+            {isOpening && (
+              <div className={styles.loader}>Launching builder…</div>
+            )}
 
             <div className={styles.actions}>
               <button
@@ -231,8 +237,12 @@ export default function GangsheetPage() {
             </div>
 
             <div className={styles.metaRow}>
-              <span className={styles.metaPill}>Uses official DripApps builder</span>
-              <span className={styles.metaPill}>Size + quantity sent automatically</span>
+              <span className={styles.metaPill}>
+                Uses official DripApps builder
+              </span>
+              <span className={styles.metaPill}>
+                Size + quantity sent automatically
+              </span>
               <span className={styles.metaPill}>Keeps your checkout flow</span>
             </div>
           </div>
@@ -241,7 +251,8 @@ export default function GangsheetPage() {
         <section className={styles.builderSection}>
           <div className={styles.panel}>
             <div className={styles.subtitle}>
-              The builder opens in a modal. We pass size, quantity, and shop ID to their SDK.
+              The builder opens in a modal. We pass size, quantity, and shop ID
+              to their SDK.
             </div>
             <div
               id="gs-builder-modal"

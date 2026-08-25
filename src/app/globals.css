@@ -15,8 +15,11 @@ p,
 span,
 div {
   font-family: "Outfit", sans-serif;
+  font-weight: 400;
 }
-
+.text-body-color {
+  color: #111111;
+}
 .marquee-animation {
   animation: marquee 20s 0ms linear infinite forwards;
 }
