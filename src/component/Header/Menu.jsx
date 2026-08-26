@@ -21,7 +21,7 @@ export default function Menu() {
         {isMobileOpen ? <X size={20} /> : <MenuIcon size={20} />}
       </button>
 
-      <nav className="hidden gap-8 text-sm font-medium lg:flex">
+      <nav className="hidden gap-8 text-sm font-medium lg:flex h-fit">
         {menu.map(item => (
           <div
             key={item.title}
@@ -42,7 +42,7 @@ export default function Menu() {
             {/* DROPDOWN */}
             {activeMenu?.title === item.title && item.children && (
               <div
-                className="absolute left-0 top-full z-50 flex gap-4 pt-4"
+                className="absolute left-0 top-full z-50 flex gap-4 pt-4 h-fit"
                 onMouseEnter={() => setActiveMenu(item)}
                 onMouseLeave={() => {
                   setActiveMenu(null);
@@ -50,12 +50,12 @@ export default function Menu() {
                 }}
               >
                 {/* FIRST PANEL */}
-                <div className="w-64 rounded-2xl bg-black p-6 text-white shadow-xl">
+                <div className="w-64 rounded-2xl bg-black p-6 text-white shadow-xl h-fit">
                   {item.children.map(child => (
                     <div
                       key={child.title}
                       onMouseEnter={() => setActiveSubMenu(child)}
-                      className="flex cursor-pointer items-center justify-between py-2 hover:text-gray-300"
+                      className="flex cursor-pointer items-center justify-between py-2 hover:text-gray-300 h-fit"
                     >
                       {child.href ? (
                         <Link
@@ -78,7 +78,7 @@ export default function Menu() {
                 {/* SECOND PANEL */}
                 {activeSubMenu?.children && (
                   <div
-                    className="w-64 rounded-2xl bg-black p-6 text-white shadow-xl"
+                    className="w-64 rounded-2xl bg-black p-6 text-white shadow-xl h-fit"
                     onMouseEnter={() => setActiveSubMenu(activeSubMenu)}
                   >
                     {activeSubMenu.children.map(sub => (

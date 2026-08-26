@@ -5,12 +5,11 @@ export default function ArtToCraft() {
     <section className="bg-white px-6 py-16 md:py-20">
       <div className="grid items-center">
         <div className="relative flex flex-col items-center md:items-center">
-          <div className="relative mb-6 max-h-2/4 w-full max-w-2/4 sm:h-[56vh]">
-            <Image
+          <div className="relative mb-6 w-full md:max-h-2/4 w-full md:max-w-2/4 sm:h-[56vh]">
+            <img
               src="https://cmykprint.shop/wp-content/uploads/2025/12/6-3.png"
               alt="Our Craft"
-              fill
-              className=""
+              className="h-full"
             />
           </div>
           <div className="w-full max-w-6xl text-center sm:text-end">

@@ -56,7 +56,7 @@ export default function ServiceGuide() {
     <section className="bg-white px-6 py-20 md:px-10 lg:px-16 lg:py-28">
       <div className="relative mx-auto grid max-w-7xl gap-16 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-24">
         {/* Left */}
-        <div className="sticky top-40 h-fit max-w-2xl">
+        <div className="md:sticky top-40 h-fit max-w-2xl">
           <div className="w-full font-heading text-4xl font-medium leading-tight text-neutral-900 sm:text-5xl lg:text-6xl lg:leading-[0.95]">
             Not sure which service you need?
           </div>

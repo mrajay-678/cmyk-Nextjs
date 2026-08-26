@@ -1,14 +1,15 @@
 import Image from "next/image"
+import Link from "next/link"
 
 const products = [
-	{ title: "Drinkware" ,url: "https://cmykprint.shop/wp-content/uploads/2025/11/Gemini_Generated_Image_5uyf8h5uyf8h5uyf-e1766170470865.png.webp"},
-	{ title: "Buttons" ,url: "https://cmykprint.shop/wp-content/uploads/2025/11/pin-e1766176511733.png.webp"},
-	{ title: "Hoodies" ,url: "https://cmykprint.shop/wp-content/uploads/2025/12/Gemini_Generated_Image_jybgfvjybgfvjybg.png.webp"},
-	{ title: "Mugs" ,url: "https://cmykprint.shop/wp-content/uploads/2025/12/Gemini_Generated_Image_1qlwyb1qlwyb1qlw.png.webp"},
-	{ title: "Sticker Sheets" ,url:"https://cmykprint.shop/wp-content/uploads/2025/12/MKE-KG-2-211-2-scaled.jpg"},
-	{ title: "Tees" ,url:"https://cmykprint.shop/wp-content/uploads/2025/12/Gemini_Generated_Image_4zhh8x4zhh8x4zhh.png"},
-	{ title: "Packaging" ,url:"https://cmykprint.shop/wp-content/uploads/2025/12/Gemini_Generated_Image_pedxrwpedxrwpedx.png"},
-	{ title: "Tote Bags" ,url:"https://cmykprint.shop/wp-content/uploads/2025/12/Gemini_Generated_Image_nz5rrnnz5rrnnz5r-e1766555560955.png"},
+	{ title: "Drinkware" ,href:"./products/25-oz-hydrapeak-stainless-steel-insulated-oasis-water-bottle/" ,url: "https://cmykprint.shop/wp-content/uploads/2025/11/Gemini_Generated_Image_5uyf8h5uyf8h5uyf-e1766170470865.png.webp"},
+	{ title: "Buttons" ,href:"./products/2-25-round-button-w-pin/",url: "https://cmykprint.shop/wp-content/uploads/2025/11/pin-e1766176511733.png.webp"},
+	{ title: "Hoodies" ,href:"./products/gildan-50-50-cotton-polyester-fleece-hoodie-7-75-oz/" ,url: "https://cmykprint.shop/wp-content/uploads/2025/12/Gemini_Generated_Image_jybgfvjybgfvjybg.png.webp"},
+	{ title: "Mugs" ,href:"./products/11-oz-ceramic-mug/" ,url: "https://cmykprint.shop/wp-content/uploads/2025/12/Gemini_Generated_Image_1qlwyb1qlwyb1qlw.png.webp"},
+	{ title: "Sticker Sheets", href:"/products?category=labels&sort=date-desc" ,url:"https://cmykprint.shop/wp-content/uploads/2025/12/MKE-KG-2-211-2-scaled.jpg"},
+	{ title: "Tees", href:"./products/100-preshrunk-cotton-t-shirt-with-custom-imprint/" ,url:"https://cmykprint.shop/wp-content/uploads/2025/12/Gemini_Generated_Image_4zhh8x4zhh8x4zhh.png"},
+	{ title: "Packaging", href:"./products/100-preshrunk-cotton-t-shirt-with-custom-imprint/" ,url:"https://cmykprint.shop/wp-content/uploads/2025/12/Gemini_Generated_Image_pedxrwpedxrwpedx.png"},
+	{ title: "Tote Bags", href:"./products/100-preshrunk-cotton-t-shirt-with-custom-imprint/" ,url:"https://cmykprint.shop/wp-content/uploads/2025/12/Gemini_Generated_Image_nz5rrnnz5rrnnz5r-e1766555560955.png"},
 ]
 
 export default function ProductGallery() {
@@ -17,8 +18,9 @@ export default function ProductGallery() {
 			<div className="mx-auto max-w-7xl">
 				<div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
 					{products.map((product) => (
-						<article
+						<Link
 							key={product.title}
+							href={product.href}
 							className="group relative overflow-hidden bg-neutral-100 shadow-[0_18px_50px_rgba(15,23,42,0.08)]"
 						>
 							<div className="relative aspect-[4/4] overflow-hidden">
@@ -41,7 +43,7 @@ export default function ProductGallery() {
 									Buy Now
 								</button>
 							</div>
-						</article>
+						</Link>
 					))}
 				</div>
 			</div>
