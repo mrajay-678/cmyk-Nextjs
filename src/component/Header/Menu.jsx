@@ -13,7 +13,7 @@ export default function Menu() {
     <div className="relative">
       <button
         type="button"
-        onClick={() => setIsMobileOpen((open) => !open)}
+        onClick={() => setIsMobileOpen(open => !open)}
         className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 text-neutral-900 transition hover:bg-neutral-50 lg:hidden"
         aria-label="Toggle navigation"
         aria-expanded={isMobileOpen}
@@ -22,7 +22,7 @@ export default function Menu() {
       </button>
 
       <nav className="hidden gap-8 text-sm font-medium lg:flex">
-        {menu.map((item) => (
+        {menu.map(item => (
           <div
             key={item.title}
             className="relative"
@@ -41,45 +41,51 @@ export default function Menu() {
 
             {/* DROPDOWN */}
             {activeMenu?.title === item.title && item.children && (
-              <div className="absolute top-3 left-0 mt-4 flex gap-4 z-50">
+              <div
+                className="absolute left-0 top-full z-50 flex gap-4 pt-4"
+                onMouseEnter={() => setActiveMenu(item)}
+                onMouseLeave={() => {
+                  setActiveMenu(null);
+                  setActiveSubMenu(null);
+                }}
+              >
                 {/* FIRST PANEL */}
-                <div className="bg-black text-white rounded-2xl p-6 w-64 shadow-xl h-fit">
-                  {item.children.map((child) =>
-                    child.href ? (
-                      <Link
-                        key={child.title}
-                        href={child.href}
-                        onMouseEnter={() => setActiveSubMenu(child)}
-                        onMouseLeave={() => setActiveSubMenu(child)}
-                        onClick={() => setActiveSubMenu(child)}
-                        className="flex items-center justify-between py-2 cursor-pointer hover:text-gray-300 h-fit"
-                      >
-                        <span>{child.title}</span>
-                        {child.children && <ChevronRight size={16} />}
-                      </Link>
-                    ) : (
-                      <div
-                        key={child.title}
-                        onMouseEnter={() => setActiveSubMenu(child)}
-                        onMouseLeave={() => setActiveSubMenu(child)}
-                        onClick={() => setActiveSubMenu(child)}
-                        className="flex items-center justify-between py-2 cursor-pointer hover:text-gray-300 h-fit"
-                      >
-                        <span>{child.title}</span>
-                        {child.children && <ChevronRight size={16} />}
-                      </div>
-                    ),
-                  )}
+                <div className="w-64 rounded-2xl bg-black p-6 text-white shadow-xl">
+                  {item.children.map(child => (
+                    <div
+                      key={child.title}
+                      onMouseEnter={() => setActiveSubMenu(child)}
+                      className="flex cursor-pointer items-center justify-between py-2 hover:text-gray-300"
+                    >
+                      {child.href ? (
+                        <Link
+                          href={child.href}
+                          className="flex flex-1 items-center justify-between"
+                        >
+                          <span>{child.title}</span>
+                          {child.children && <ChevronRight size={16} />}
+                        </Link>
+                      ) : (
+                        <>
+                          <span>{child.title}</span>
+                          {child.children && <ChevronRight size={16} />}
+                        </>
+                      )}
+                    </div>
+                  ))}
                 </div>
 
                 {/* SECOND PANEL */}
                 {activeSubMenu?.children && (
-                  <div className="bg-black text-white rounded-2xl p-6 w-64 shadow-xl h-fit">
-                    {activeSubMenu.children.map((sub) => (
+                  <div
+                    className="w-64 rounded-2xl bg-black p-6 text-white shadow-xl"
+                    onMouseEnter={() => setActiveSubMenu(activeSubMenu)}
+                  >
+                    {activeSubMenu.children.map(sub => (
                       <Link
                         key={sub.title}
                         href={sub.href || "#"}
-                        className="block py-2 hover:text-gray-300 "
+                        className="block py-2 hover:text-gray-300"
                       >
                         {sub.title}
                       </Link>
@@ -95,11 +101,14 @@ export default function Menu() {
       {isMobileOpen ? (
         <div className="absolute left-0 top-14 z-50 w-[calc(100vw-2rem)] max-w-sm rounded-3xl border border-neutral-200 bg-white p-4 shadow-[0_24px_70px_rgba(15,23,42,0.18)] lg:hidden">
           <nav className="space-y-1">
-            {menu.map((item) => {
+            {menu.map(item => {
               const isActive = activeMenu?.title === item.title;
 
               return (
-                <div key={item.title} className="rounded-2xl">
+                <div
+                  key={item.title}
+                  className="rounded-2xl"
+                >
                   <div className="flex items-center justify-between gap-3">
                     <Link
                       href={item.href || "#"}
@@ -125,7 +134,7 @@ export default function Menu() {
 
                   {isActive && item.children ? (
                     <div className="ml-3 border-l border-neutral-200 pl-3">
-                      {item.children.map((child) => (
+                      {item.children.map(child => (
                         <Link
                           key={child.title}
                           href={child.href || "#"}

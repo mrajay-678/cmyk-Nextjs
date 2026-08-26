@@ -79,9 +79,9 @@ export const page = () => {
 
             <div className="space-y-6">
               {dtfTransferSection.steps.map((step, index) => (
-                <div key={index} className="flex gap-4">
+                <div key={index} className="flex gap-4 mb-2">
                   <span className="font-semibold">{index + 1}.</span>
-                  <p className="text-base leading-relaxed md:text-lg">{step}</p>
+                  <p className="text-base leading-tight md:text-lg">{step}</p>
                 </div>
               ))}
             </div>
@@ -116,9 +116,9 @@ export const page = () => {
 
             <div className="space-y-6">
               {careTipsSection.steps.map((step, index) => (
-                <div key={index} className="flex gap-4">
+                <div key={index} className="flex gap-4 mb-2">
                   <span className="font-semibold">{index + 1}.</span>
-                  <p className="text-base leading-relaxed md:text-lg">{step}</p>
+                  <p className="text-base leading-tight md:text-lg">{step}</p>
                 </div>
               ))}   
             </div>
@@ -157,9 +157,9 @@ export const page = () => {
 
             <div className="space-y-6">
               {heatPressGuideSection.steps.map((step, index) => (
-                <div key={index} className="flex gap-4">
+                <div key={index} className="flex gap-4 mb-2">
                   <span className="font-semibold">{index + 1}.</span>
-                  <p className="text-base leading-relaxed md:text-lg">{step}</p>
+                  <p className="text-base leading-tight  md:text-lg">{step}</p>
                 </div>
               ))}   
             </div>
