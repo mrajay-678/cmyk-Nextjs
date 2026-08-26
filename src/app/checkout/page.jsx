@@ -124,7 +124,7 @@ export default function CheckoutPage() {
 												{item.variationId ? <p className="mt-1 text-xs text-neutral-400">WooCommerce variation #{item.variationId}</p> : null}
 											</div>
 											<div className="flex flex-col gap-3 md:items-end">
-												<p className="text-lg font-semibold text-neutral-950">{formatCurrency(item.totalPrice * item.cartQuantity, item.currencySymbol)}</p>
+												<p className="text-lg font-semibold text-neutral-950">{formatCurrency(item.totalPrice * item.cartQuantity, "$")}</p>
 												<div className="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap">
 													{checkoutUrl ? (
 														<a href={checkoutUrl} className="inline-flex h-10 items-center justify-center rounded-full bg-neutral-950 px-4 text-sm font-semibold text-white transition hover:bg-pink-500">
@@ -156,7 +156,7 @@ export default function CheckoutPage() {
 							<div className="mt-5 space-y-3 text-sm">
 								<div className="flex items-center justify-between text-neutral-600">
 									<span>Subtotal</span>
-									<span className="font-semibold text-neutral-950">{formatCurrency(subtotal, currencySymbol)}</span>
+									<span className="font-semibold text-neutral-950">{formatCurrency(subtotal, "$")}</span>
 								</div>
 								<div className="flex items-center justify-between text-neutral-600">
 									<span>Shipping</span>
@@ -170,7 +170,7 @@ export default function CheckoutPage() {
 							<div className="mt-5 border-t border-neutral-100 pt-5">
 								<div className="flex items-center justify-between">
 									<span className="font-semibold text-neutral-950">Estimated total</span>
-									<span className="text-2xl font-semibold text-neutral-950">{formatCurrency(subtotal, currencySymbol)}</span>
+									<span className="text-2xl font-semibold text-neutral-950">{formatCurrency(subtotal, "$")}</span>
 								</div>
 							</div>
 
