@@ -2,6 +2,7 @@ import React from "react";
 import Image from "next/image";
 import Menu from "./Menu";
 import CartButton from "./CartButton";
+import Link from "next/link";
 
 const Header = () => {
   return (
@@ -12,12 +13,14 @@ const Header = () => {
         </div>
         <div className="flex flex-1 items-center justify-center lg:justify-between">
           <div className="relative h-16 w-28 sm:h-20 sm:w-32 lg:h-24 lg:w-36 translate-x-[-50%]">
-            <Image
-              src="https://cmykprint.shop/wp-content/uploads/2025/11/cropped-logocymk-1.webp"
-              fill
-              className="object-contain"
-              alt="CMYK Print Shop"
-            />
+            <Link href={'./'}>
+              <Image
+                src="https://cmykprint.shop/wp-content/uploads/2025/11/cropped-logocymk-1.webp"
+                fill
+                className="object-contain"
+                alt="CMYK Print Shop"
+              />
+            </Link>
           </div>
           <div className="hidden lg:block">
             <CartButton />
