@@ -21,9 +21,6 @@ export default function CartButton() {
 		const query = searchTerm.trim()
 
 		if (query.length < 2) {
-			setSearchResults([])
-			setSearchError("")
-			setIsSearching(false)
 			return undefined
 		}
 
@@ -72,6 +69,18 @@ export default function CartButton() {
 		document.addEventListener("keydown", handleKeyDown)
 		return () => document.removeEventListener("keydown", handleKeyDown)
 	}, [isSearchOpen])
+
+	function handleSearchTermChange(event) {
+		const value = event.target.value
+
+		setSearchTerm(value)
+
+		if (value.trim().length < 2) {
+			setSearchResults([])
+			setSearchError("")
+			setIsSearching(false)
+		}
+	}
 
 	return (
 		<div className="relative">
@@ -178,7 +187,7 @@ export default function CartButton() {
 						<h2 id="product-search-title" className="sr-only">Search products</h2>
 						<div className="relative pr-10">
 							<Search size={18} className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-neutral-400" />
-							<input autoFocus type="search" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Search products..." className="h-12 w-full border-b border-neutral-300 bg-transparent pl-8 text-lg text-neutral-950 outline-none placeholder:text-neutral-400 focus:border-pink-500" aria-label="Search products" />
+							<input autoFocus type="search" value={searchTerm} onChange={handleSearchTermChange} placeholder="Search products..." className="h-12 w-full border-b border-neutral-300 bg-transparent pl-8 text-lg text-neutral-950 outline-none placeholder:text-neutral-400 focus:border-pink-500" aria-label="Search products" />
 						</div>
 
 						<div className="mt-7 max-h-[min(60vh,28rem)] overflow-y-auto">

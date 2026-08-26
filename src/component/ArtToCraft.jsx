@@ -9,7 +9,7 @@ export default function ArtToCraft() {
             <img
               src="https://cmykprint.shop/wp-content/uploads/2025/12/6-3.png"
               alt="Our Craft"
-              className="h-full"
+              className="h-full object-contain"
             />
           </div>
           <div className="w-full max-w-6xl text-center sm:text-end">

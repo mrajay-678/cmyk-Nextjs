@@ -25,7 +25,7 @@ export default function Footer() {
               <Image
                 src="https://cmykprint.shop/wp-content/uploads/2025/11/Vector.png.webp"
                 alt="CMYK"
-                className="object-contain ms-0 md:ms-12 w-12 h-12"
+                className="object-contain ms-0 md:ms-12 w-12 h-12 md:w-full md:h-full"
                 width={100}
                 height={100}
               />
