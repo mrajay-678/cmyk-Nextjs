@@ -22,12 +22,12 @@ export default function WhatWeOffer() {
   return (
     <section className="bg-gray-50 px-6 py-16 text-center md:pt-28">
       <div className="mb-6">
-        <h2 className="inline-block px-4 py-1 text-4xl font-semibold leading-tight text-body-color sm:text-5xl md:text-6xl">
+        <h2 className="inline-block px-4 py-1 text-4xl font-regular font-heading leading-tight text-body-color sm:text-5xl md:text-6xl">
           What we offer
         </h2>
       </div>
 
-      <p className="mx-auto mb-12 max-w-3xl text-base leading-7 text-body-color sm:text-2xl md:text-2xl">
+      <p className="mx-auto mb-12 max-w-2/4 text-base leading-7 text-[#282828] sm:text-2xl md:text-2xl">
         Be it team uniforms, corporate gifts or trade show giveaways, there are
         three ways to get what you need.
       </p>
@@ -43,9 +43,11 @@ export default function WhatWeOffer() {
               />
             </div>
 
-            <h3 className="text-2xl font-semibold mb-3">{item.title}</h3>
+            <h3 className="text-2xl font-regular font-heading mb-3">
+              {item.title}
+            </h3>
 
-            <p className="mb-6 text-base leading-7 text-body-color sm:text-xl">
+            <p className="mb-6 text-base leading-7 text-[#282828] sm:text-xl">
               {item.desc}
             </p>
 

@@ -1,5 +1,4 @@
 @import url("https://fonts.googleapis.com/css2?family=Belanosima:wght@400;600;700&family=Outfit:wght@100..900&display=swap");
-@import "tailwindcss";
 
 h1,
 h2,
@@ -8,8 +7,12 @@ h4,
 h5,
 h6 {
   font-family: "Belanosima", sans-serif;
-  font-weight: 400;
 }
+
+.font-heading {
+  font-family: "Belanosima", sans-serif;
+}
+
 body,
 p,
 span,
@@ -20,6 +23,7 @@ div {
 .text-body-color {
   color: #111111;
 }
+@import "tailwindcss";
 .marquee-animation {
   animation: marquee 20s 0ms linear infinite forwards;
 }
