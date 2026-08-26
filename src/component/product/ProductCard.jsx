@@ -4,7 +4,6 @@ import Image from "next/image"
 import { memo, useMemo } from "react"
 import Link from "next/link"
 import AddToCartButton from "./AddToCartButton"
-import ProductDetailLink from "./ProductDetailLink"
 import { extractCurrencySymbol, formatCurrency, getLowestUnitPrice, toSlug } from "./productHelpers"
 
 function ProductCard({ product }) {
@@ -17,6 +16,7 @@ function ProductCard({ product }) {
 		const price = quantityPricing.length
 			? Math.min(...quantityPricing.map((row) => row.unitPrice / row.quantity))
 			: getLowestUnitPrice(product)
+		  console.log("price", quantityPricing)
 		const defaultQuantity = defaultQuantityBreak?.quantity || 1
 		const defaultTotalPrice = defaultQuantityBreak?.unitPrice || price
 

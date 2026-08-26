@@ -18,12 +18,6 @@ export default function ProductRecommendations({ products }) {
 					<ProductCard key={product.id} product={product} />
 				))}
 			</div>
-
-			<div>
-				<Link href="/products" className="inline-flex rounded-full border border-neutral-200 px-5 py-3 text-sm font-medium text-neutral-700 transition hover:border-neutral-300 hover:bg-white">
-					Back to all products
-				</Link>
-			</div>
 		</section>
 	)
 }

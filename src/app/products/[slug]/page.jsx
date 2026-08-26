@@ -8,6 +8,7 @@ import ProductRecommendations from "@/component/product/ProductRecommendations";
 import { ProductPurchaseSkeleton, ProductRecommendationsSkeleton } from "@/component/product/ProductDetailSkeleton";
 import { buildQuantityPriceTable, extractCurrencySymbol, toSlug } from "@/component/product/productHelpers";
 import { getProductBySlug, getProductVariations, getRecommendedProducts } from "@/component/product/wooCommerce";
+import { formatCurrency } from "@/component/product/productHelpers";
 
 function buildQuantityMap(priceRows) {
   return priceRows.reduce((result, row) => {
@@ -35,6 +36,7 @@ async function ProductPurchaseSection({ product, variationsPromise }) {
 
 async function ProductRecommendationsSection({ relatedProductsPromise }) {
   const { products } = await relatedProductsPromise;
+  console.log('products',products)
   return <ProductRecommendations products={products} />;
 }
 
@@ -50,7 +52,13 @@ async function ProductDetailContent({ slug }) {
     currentProductId: product.id,
     tagIds: product.tags?.map(tag => tag.id) || [],
     categoryIds: product.categories?.map(category => category.id) || [],
+    variations: variationsPromise
   });
+    const { variations } = await variationsPromise;
+  const currencySymbol = extractCurrencySymbol(product);
+  const pricingRows = buildQuantityPriceTable(product, variations);
+  const price = Math.min(...pricingRows.map((row) => row.unitPrice / row.quantity))
+  
   return (
     <section className="overflow-hidden bg-neutral-50 px-4 py-8 sm:px-6 sm:py-12 md:px-10 md:py-18 lg:px-16 lg:py-24">
       <div className="mx-auto w-full max-w-[92rem]">
@@ -86,6 +94,7 @@ async function ProductDetailContent({ slug }) {
               </nav>
               <p className="break-words text-sm">SKU: {product.sku || "Not available"}</p>
               <h1 className="break-words text-2xl  leading-tight sm:text-4xl md:text-4xl">{product.name}</h1>
+              <div className="text-lg font-medium text-[#EF2987]">As low as {formatCurrency(price, "$")}</div>
               <p
                 className="max-w-2xl break-words text-sm leading-7 text-neutral-600 sm:text-base sm:leading-8 product-dis"
                 dangerouslySetInnerHTML={{ __html: product.short_description || "Product details will appear here once the WooCommerce description is available." }}

@@ -27,15 +27,14 @@ export default function TestimonialSection() {
     <section className="relative px-6 overflow-hidden text-white py-18 md:px-10 md:py-22 lg:px-16 lg:py-28">
       <div className="absolute inset-0">
         <Image
-          src="https://cmykprint.shop/wp-content/uploads/2025/11/7-1.png.webp"
+          src="/assets/image/testimonial-bg.png"
           alt=""
           fill
-          sizes="100vw"
-          className="object-cover"
+          className="object-cover w-full h-full"
         />
       </div>
 
-      <div className="relative max-w-[1440px] mx-auto">
+      <div className="relative max-w-11/12 mx-auto">
         <h2 className="text-center text-3xl font-regural tracking-[-0.03em] text-white md:text-4xl lg:text-5xl">
           Don&apos;t just take our word for it.
         </h2>
