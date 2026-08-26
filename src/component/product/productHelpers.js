@@ -83,10 +83,19 @@ export function buildQuantityPriceTable(product, variations = []) {
 			}
 		})
 		.filter(Boolean)
-		.sort((left, right) => left.quantity - right.quantity)
 
-	if (mappedFromVariations.length >= 2) {
-		return mappedFromVariations
+	const uniqueRows = new Map()
+	for (const row of mappedFromVariations) {
+		const existingRow = uniqueRows.get(row.quantity)
+		if (!existingRow || row.unitPrice < existingRow.unitPrice) {
+			uniqueRows.set(row.quantity, row)
+		}
+	}
+
+	const quantityRows = [...uniqueRows.values()].sort((left, right) => left.quantity - right.quantity)
+
+	if (quantityRows.length >= 2) {
+		return quantityRows
 	}
 
 	const basePrice = getLowestUnitPrice(product, variations)

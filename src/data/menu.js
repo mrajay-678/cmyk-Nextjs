@@ -13,15 +13,15 @@ export const menu = [
 		children: [
 			{
 				title: "DTF By Size",
-				href: "/dtf-by-size",
+				href: "/products/dtf-by-size",
 			},
 			{
 				title: "DTF Gang Sheet",
-				href: "/dtf-gang-sheet",
+				href: "/products/dtf-gang-sheet",
 			},
 			{
 				title: "DTF Gang Sheet Builder",
-				href: "/dtf-gang-sheet-builder",
+				href: "/products/dtf-gang-sheet-builder",
 			},
 		],
 	},
@@ -31,15 +31,15 @@ export const menu = [
 		children: [
 			{
 				title: "UV DTF By Size",
-				href: "/uv-dtf-by-size",
+				href: "/products/uv-dtf-by-size",
 			},
 			{
 				title: "UV DTF Gang Sheet",
-				href: "/uv-dtf-gang-sheet",
+				href: "/products/uv-dtf-gang-sheet",
 			},
 			{
 				title: "UV DTF Gang Sheet Builder",
-				href: "/uv-dtf-gang-sheet-builder",
+				href: "/products/uv-dtf-gang-sheet-builder",
 			},
 		],
 	},

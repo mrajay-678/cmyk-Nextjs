@@ -10,8 +10,7 @@ export default function ProductRecommendations({ products }) {
 	return (
 		<section className="mt-12 space-y-6 md:mt-18">
 			<div>
-				<p className="text-sm font-semibold uppercase tracking-[0.24em] text-pink-500">Recommended for you</p>
-				<h2 className="mt-3 text-2xl font-semibold leading-tight text-neutral-950 md:text-3xl">Related products you may also want</h2>
+				<h2 className="mt-3 text-2xl leading-tight text-neutral-950 md:text-4xl">Related products</h2>
 			</div>
 
 			<div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">

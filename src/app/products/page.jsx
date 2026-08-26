@@ -44,7 +44,7 @@ export default async function ProductsPage({ searchParams }) {
   };
 
   return (
-    <section className="min-h-screen bg-neutral-50 px-6 py-16 md:px-10 md:py-20 lg:px-16 lg:py-24">
+    <section className="min-h-screen bg-neutral-50 px-6 py-10">
       <div className="mx-auto xl:max-w-368">
         <div className="mt-10">
           <Suspense fallback={<ProductCatalogFallback />}>

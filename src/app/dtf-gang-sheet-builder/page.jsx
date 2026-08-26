@@ -247,19 +247,6 @@ export default function GangsheetPage() {
             </div>
           </div>
         </section>
-
-        <section className={styles.builderSection}>
-          <div className={styles.panel}>
-            <div className={styles.subtitle}>
-              The builder opens in a modal. We pass size, quantity, and shop ID
-              to their SDK.
-            </div>
-            <div
-              id="gs-builder-modal"
-              className={`${styles.modalHost} ${isOpening ? styles.isOpen : ""}`}
-            />
-          </div>
-        </section>
       </main>
     </div>
   );

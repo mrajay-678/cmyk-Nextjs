@@ -42,7 +42,7 @@ export default function ProductImageZoom({ images, title }) {
 						alt={activeImage.alt || title}
 						fill
 						sizes="(max-width: 640px) 92vw, (max-width: 1023px) 70vw, 50vw"
-						className={`object-contain transition duration-300 sm:object-cover p-5 ${isZoomed ? "scale-[1.8]" : "scale-100"}`}
+						className={`object-contain transition duration-300 p-5 ${isZoomed ? "scale-[1.8]" : "scale-100"}`}
 						style={isZoomed ? { transformOrigin: `${position.x}% ${position.y}%` } : undefined}
 					/>
 				</div>

@@ -59,13 +59,13 @@ export const Page = () => {
   return (
     <div>
       <section className="overflow-hidden max-w-screen">
-        <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')] max-w-screen h-8"></div>
-        <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Group-13-scaled.png.webp')] bg-center px-6 py-24 sm:py-32 md:py-44">
-          <div className="mx-auto flex justify-center gap-6 text-center text-4xl sm:text-5xl md:text-6xl">
-            <span className="font-bold text-white">FAQs</span>
+        <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')] max-w-screen h-4"></div>
+        <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Group-13-scaled.png.webp')] bg-center px-6 py-24 sm:py-32 md:py-24">
+          <div className="mx-auto flex justify-center gap-6 text-center text-4xl sm:text-5xl md:text-7xl">
+            <span className="font-heading text-white">FAQs</span>
           </div>
         </div>
-        <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')] max-w-screen h-8"></div>
+        <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')] max-w-screen h-4"></div>
         <div className="mx-auto max-w-6xl px-6 py-14 md:py-20">
         {faqData.map((item, index) => (
           <div

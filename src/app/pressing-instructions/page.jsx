@@ -44,7 +44,7 @@ const heatPressGuideSection = {
     "260°F (125°C) for poly/cotton blends.",
     "280°F (140°C) for 100% cotton and similar materials."
   ],
-  supportText: "Optimal temperatures may vary between heat press models.",
+  supportText: "*Note: Optimal temperatures may vary between heat press models.",
   button: {
     text: "Build a Gang Sheet",
     link: "#"
@@ -59,21 +59,21 @@ export const page = () => {
   return (
     <div>
       <section className="overflow-hidden max-w-screen">
-        <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')] max-w-screen h-8"></div>
-        <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Group-13-scaled.png.webp')] bg-center px-6 py-24 sm:py-32 md:py-44">
-          <div className="mx-auto flex justify-center gap-6 text-center text-4xl sm:text-5xl md:text-6xl">
-            <span className="font-bold text-white">Pressing Instructions</span>
+        <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')] max-w-screen h-4"></div>
+        <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Group-13-scaled.png.webp')] bg-center px-6 py-24 sm:py-32 md:py-24">
+          <div className="mx-auto flex justify-center gap-6 text-center text-4xl sm:text-5xl md:text-7xl">
+            <span className="font-bold font-heading text-white">Pressing Instructions</span>
           </div>
         </div>
-        <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')] max-w-screen h-8"></div>
+        <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')] max-w-screen h-4"></div>
         <div className="container mx-auto grid grid-cols-1 items-center gap-10 px-6 py-16 md:py-24 lg:grid-cols-2 lg:px-8 lg:py-28">
           {/* Left Content */}
           <div>
-            <p className="mb-4 text-xl text-black md:text-2xl">
+            <p className="mb-4 text-xl text-black md:text-lg">
               DTF Transfers: Application is easy!
             </p>
 
-            <h2 className="mb-8 text-3xl font-bold md:text-4xl">
+            <h2 className="mb-8 text-3xl md:text-4xl">
               {dtfTransferSection.heading}
             </h2>
 
@@ -110,7 +110,7 @@ export const page = () => {
         <div className="container mx-auto grid grid-cols-1 items-center gap-10 px-6 pb-16 md:pb-24 lg:grid-cols-2 lg:px-8 lg:pb-28">
           {/* Left Content */}
           <div>
-            <h2 className="mb-8 text-3xl font-bold md:text-4xl">
+            <h2 className="mb-8 text-3xl md:text-4xl">
               {careTipsSection.heading}
             </h2>
 
@@ -123,7 +123,7 @@ export const page = () => {
               ))}   
             </div>
 
-            <p className="mt-6 text-base text-gray-600 md:text-lg">
+            <p className="mt-6 text-base md:text-lg font-heading" >
               {careTipsSection.supportText}
             </p>
 
@@ -151,7 +151,7 @@ export const page = () => {
         <div className="container mx-auto grid grid-cols-1 items-center gap-10 px-6 pb-16 md:pb-24 lg:grid-cols-2 lg:px-8 lg:pb-28">
           {/* Left Content */}
           <div>
-            <h2 className="mb-8 text-3xl font-bold md:text-4xl">
+            <h2 className="mb-8 text-3xl md:text-4xl">
               {heatPressGuideSection.heading}
             </h2>
 
@@ -164,7 +164,7 @@ export const page = () => {
               ))}   
             </div>
 
-            <p className="mt-6 text-base text-gray-600 md:text-lg">
+            <p className="mt-6 text-base md:text-lg font-heading" >
               {heatPressGuideSection.supportText}
             </p>
 

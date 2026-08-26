@@ -23,6 +23,11 @@ div {
 .text-body-color {
   color: #111111;
 }
+
+.product-dis table {
+  display: none;
+}
+
 @import "tailwindcss";
 .marquee-animation {
   animation: marquee 20s 0ms linear infinite forwards;

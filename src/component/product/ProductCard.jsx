@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { memo, useMemo } from "react"
-
+import Link from "next/link"
 import AddToCartButton from "./AddToCartButton"
 import ProductDetailLink from "./ProductDetailLink"
 import { extractCurrencySymbol, formatCurrency, getLowestUnitPrice, toSlug } from "./productHelpers"
@@ -41,9 +41,10 @@ function ProductCard({ product }) {
 
 
 	return (
-		<article
+		<Link
 			className="overflow-hidden rounded-[1.75rem] border border-neutral-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.06)] transition hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(15,23,42,0.12)]"
 			style={{ contentVisibility: "auto", containIntrinsicSize: "420px" }}
+			href={`/products/${productMeta.productSlug}`}
 		>
 			<div className="relative aspect-[4/3] bg-white m-5">
 				{image ? (
@@ -61,18 +62,17 @@ function ProductCard({ product }) {
 
 			<div className="space-y-4 p-5">
 				<div className="space-y-2">
-					<h2 className="text-xl font-semibold tracking-[-0.03em] text-neutral-950">{product.name}</h2>
+					<p className="text-xl tracking-[-0.03em] text-neutral-950">{product.name}</p>
 				</div>
 
 				<div className="space-y-3">
 					<div className="text-lg font-medium text-neutral-950">As low as {formatCurrency(productMeta.price, "$")}</div>
 					<div className="grid gap-3 sm:flex sm:items-center sm:justify-between">
-						<ProductDetailLink
-							href={`/products/${productMeta.productSlug}`}
+						<div
 							className="inline-flex justify-center rounded-full bg-neutral-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-pink-500"
 						>
 							View Product
-						</ProductDetailLink>
+						</div>
 						<AddToCartButton
 							item={productMeta.cartItem}
 							className="inline-flex justify-center rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50"
@@ -82,7 +82,7 @@ function ProductCard({ product }) {
 					</div>
 				</div>
 			</div>
-		</article>
+		</Link>
 	)
 }
 
