@@ -27,27 +27,44 @@ function normalizeStoreUrl() {
   }
 }
 
-async function addAllItemsToWooCart(items) {
+async function addAllItemsToWooCart(items, getArtworkFile) {
   try {
+    const formData = new FormData();
+
+    formData.append(
+      "items",
+      JSON.stringify(
+        items.map((item) => ({
+          ...item,
+          hasArtworkFile: Boolean(getArtworkFile(item.id)),
+        })),
+      ),
+    );
+
+    items.forEach((item, index) => {
+      const artworkFile = getArtworkFile(item.id);
+
+      if (artworkFile) {
+        formData.append(`artwork-${index}`, artworkFile, artworkFile.name);
+      }
+    });
+
     const response = await fetch("/api/checkout/cart", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ items }),
+      body: formData,
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       console.error("Failed to add items to cart:", errorData.error);
-      return null;
+      return { error: errorData.error || "Failed to add items to cart." };
     }
 
     const data = await response.json();
-    return data.checkoutUrl;
+    return { checkoutUrl: data.checkoutUrl };
   } catch (error) {
     console.error("Error adding items to WooCommerce cart:", error);
-    return null;
+    return { error: "Error adding items to WooCommerce cart." };
   }
 }
 
@@ -66,11 +83,31 @@ function itemDescription(item) {
 }
 
 export default function CheckoutPage() {
-  const { items, itemCount, subtotal, removeItem, clearCart } = useCart();
+  const {
+    items,
+    itemCount,
+    subtotal,
+    removeItem,
+    updateArtworkFile,
+    clearCart,
+    getArtworkFile,
+  } = useCart();
   const currencySymbol = items[0]?.currencySymbol || "$";
   const hasStoreUrl = Boolean(normalizeStoreUrl());
+  const hasMissingArtwork = items.some((item) => !getArtworkFile(item.id));
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [checkoutError, setCheckoutError] = useState(null);
+
+  function handleArtworkChange(itemId, event) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    updateArtworkFile(itemId, file);
+    setCheckoutError(null);
+  }
 
   const handleCheckout = async () => {
     if (!items.length || !hasStoreUrl) return;
@@ -79,13 +116,28 @@ export default function CheckoutPage() {
     setCheckoutError(null);
 
     try {
-      const checkoutUrl = await addAllItemsToWooCart(items);
+      const missingArtwork = items.find(
+        (item) => !getArtworkFile(item.id),
+      );
+
+      if (missingArtwork) {
+        setCheckoutError(
+          `Please upload artwork for ${missingArtwork.name} before checkout.`,
+        );
+        setIsRedirecting(false);
+        return;
+      }
+
+      const { checkoutUrl, error } = await addAllItemsToWooCart(
+        items,
+        getArtworkFile,
+      );
 
       if (checkoutUrl) {
         clearCart();
         window.location.href = checkoutUrl;
       } else {
-        setCheckoutError("Failed to add items to cart. Please try again.");
+        setCheckoutError(error || "Failed to add items to cart. Please try again.");
         setIsRedirecting(false);
       }
     } catch {
@@ -159,59 +211,80 @@ export default function CheckoutPage() {
 
             {items.length ? (
               <div className="divide-y divide-neutral-100">
-                {items.map((item) => (
-                  <article
-                    key={item.id}
-                    className="grid gap-4 py-5 md:grid-cols-[96px_minmax(0,1fr)_auto] md:items-center"
-                  >
-                    <div className="relative h-24 w-24 overflow-hidden rounded-2xl bg-neutral-100">
-                      {item.image ? (
-                        <Image
-                          src={item.image}
-                          alt={item.name}
-                          fill
-                          sizes="96px"
-                          className="object-cover"
-                        />
-                      ) : null}
-                    </div>
-                    <div>
-                      <Link
-                        href={item.productUrl || "/products"}
-                        className="text-lg font-semibold text-neutral-950 transition hover:text-pink-500"
-                      >
-                        {item.name}
-                      </Link>
-                      <p className="mt-1 text-sm text-neutral-500">
-                        {itemDescription(item)}
-                      </p>
-                      <p className="mt-2 text-sm text-neutral-500">
-                        Per unit:{" "}
-                        {formatCurrency(item.unitPrice, currencySymbol)}
-                      </p>
-                      {item.variationId ? (
-                        <p className="mt-1 text-xs text-neutral-400">
-                          WooCommerce variation #{item.variationId}
+                {items.map((item) => {
+                  const hasArtworkFile = Boolean(getArtworkFile(item.id));
+
+                  return (
+                    <article
+                      key={item.id}
+                      className="grid gap-4 py-5 md:grid-cols-[96px_minmax(0,1fr)_auto] md:items-start"
+                    >
+                      <div className="relative h-24 w-24 overflow-hidden rounded-2xl bg-neutral-100">
+                        {item.image ? (
+                          <Image
+                            src={item.image}
+                            alt={item.name}
+                            fill
+                            sizes="96px"
+                            className="object-cover"
+                          />
+                        ) : null}
+                      </div>
+                      <div>
+                        <Link
+                          href={item.productUrl || "/products"}
+                          className="text-lg font-semibold text-neutral-950 transition hover:text-pink-500"
+                        >
+                          {item.name}
+                        </Link>
+                        <p className="mt-1 text-sm text-neutral-500">
+                          {itemDescription(item)}
                         </p>
-                      ) : null}
-                    </div>
-                    <div className="flex flex-col gap-3 md:items-end">
-                      <p className="text-lg font-semibold text-neutral-950">
-                        {formatCurrency(
-                          item.totalPrice * item.cartQuantity,
-                          currencySymbol,
-                        )}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => removeItem(item.id)}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition hover:bg-neutral-50"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </article>
-                ))}
+                        <p className="mt-2 text-sm text-neutral-500">
+                          Per unit:{" "}
+                          {formatCurrency(item.unitPrice, currencySymbol)}
+                        </p>
+                        {item.variationId ? (
+                          <p className="mt-1 text-xs text-neutral-400">
+                            WooCommerce variation #{item.variationId}
+                          </p>
+                        ) : null}
+                        <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
+                          <p
+                            className={`text-sm font-medium ${
+                              hasArtworkFile ? "text-emerald-700" : "text-red-700"
+                            }`}
+                          >
+                            {hasArtworkFile
+                              ? "Artwork file ready for checkout"
+                              : "Artwork file required before checkout"}
+                          </p>
+                          <input
+                            type="file"
+                            accept=".pdf,.png,.jpg,.jpeg,.psd,.ai,.svg"
+                            onChange={(event) => handleArtworkChange(item.id, event)}
+                            className="mt-3 block w-full rounded-xl border border-neutral-200 bg-white px-3 py-3 text-sm text-neutral-700 file:mb-2 file:mr-4 file:rounded-full file:border-0 file:bg-neutral-950 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-pink-500 sm:file:mb-0"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-3 md:items-end">
+                        <p className="text-lg font-semibold text-neutral-950">
+                          {formatCurrency(
+                            item.totalPrice * item.cartQuantity,
+                            currencySymbol,
+                          )}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => removeItem(item.id)}
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition hover:bg-neutral-50"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             ) : (
               <div className="py-16 text-center">
@@ -264,11 +337,13 @@ export default function CheckoutPage() {
                 <button
                   type="button"
                   onClick={handleCheckout}
-                  disabled={isRedirecting || !hasStoreUrl}
+                  disabled={isRedirecting || !hasStoreUrl || hasMissingArtwork}
                   className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-pink-500 px-5 text-sm font-semibold text-white transition hover:bg-pink-600 disabled:bg-neutral-200 disabled:text-neutral-500"
                 >
                   {isRedirecting ? (
                     "Redirecting to checkout..."
+                  ) : hasMissingArtwork ? (
+                    "Upload artwork to continue"
                   ) : (
                     <>
                       Continue to secure checkout

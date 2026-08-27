@@ -17,22 +17,30 @@ export default function ProductPurchasePanel({
 }) {
   const router = useRouter();
   const { addItem } = useCartActions();
-  const [selectedQuantity, setSelectedQuantity] = useState(
-    String(quantityOptions[0] || 25),
-  );
+  const [selectedQuantity, setSelectedQuantity] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
-  const numericQuantity = Number(selectedQuantity);
+  const numericQuantity = Number.parseInt(selectedQuantity, 10);
+  const hasSelectedQuantity = Number.isFinite(numericQuantity) && numericQuantity > 0;
   const selectedQuantityRow = quantityRows.find(
     (row) => row.quantity === numericQuantity,
   );
-  const selectedTotalPrice = lowestPrice[numericQuantity] ?? null;
+  const selectedTotalPrice = hasSelectedQuantity
+    ? lowestPrice[numericQuantity] ?? null
+    : null;
   const selectedUnitPrice =
     selectedTotalPrice && numericQuantity
       ? selectedTotalPrice / numericQuantity
       : null;
+  const isCheckoutReady = hasSelectedQuantity && Boolean(selectedFile);
   const cartItem = {
-    id: `${product.id}-${numericQuantity}-${selectedFile?.name || "no-artwork"}`,
+    id: [
+      product.id,
+      numericQuantity,
+      selectedFile?.name || "no-artwork",
+      selectedFile?.size || 0,
+      selectedFile?.lastModified || 0,
+    ].join("-"),
     productId: product.id,
     variationId: selectedQuantityRow?.variationId || null,
     variationAttributes: selectedQuantityRow?.variationAttributes || [],
@@ -72,7 +80,11 @@ export default function ProductPurchasePanel({
   }
 
   function handleBuyNow() {
-    addItem(cartItem);
+    if (!isCheckoutReady) {
+      return;
+    }
+
+    addItem(cartItem, selectedFile);
     router.push("/checkout");
   }
 
@@ -149,7 +161,11 @@ export default function ProductPurchasePanel({
           value={selectedQuantity}
           onChange={(event) => setSelectedQuantity(event.target.value)}
           className="h-12 rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-pink-400"
+          required
         >
+          <option value="" disabled>
+            Select quantity
+          </option>
           {quantityOptions.map((quantity) => (
             <option key={quantity} value={quantity}>
               {quantity} units
@@ -199,14 +215,17 @@ export default function ProductPurchasePanel({
       <div className="flex flex-col gap-3 sm:flex-row">
         <AddToCartButton
           item={cartItem}
-          className="inline-flex h-13 w-full items-center justify-center rounded-full border border-neutral-200 px-6 text-base font-semibold text-neutral-800 transition hover:border-neutral-300 hover:bg-neutral-50"
+          artworkFile={selectedFile}
+          disabled={!isCheckoutReady}
+          className="inline-flex h-13 w-full items-center justify-center rounded-full border border-neutral-200 px-6 text-base font-semibold text-neutral-800 transition hover:border-neutral-300 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:border-neutral-100 disabled:bg-neutral-100 disabled:text-neutral-400"
         >
           Add to cart
         </AddToCartButton>
         <button
           type="button"
           onClick={handleBuyNow}
-          className="inline-flex h-13 w-full items-center justify-center rounded-full bg-pink-500 px-6 text-base font-semibold text-white transition hover:bg-pink-600"
+          disabled={!isCheckoutReady}
+          className="inline-flex h-13 w-full items-center justify-center rounded-full bg-pink-500 px-6 text-base font-semibold text-white transition hover:bg-pink-600 disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-500"
         >
           Buy Now
         </button>

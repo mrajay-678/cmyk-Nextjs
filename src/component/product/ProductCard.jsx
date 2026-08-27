@@ -3,41 +3,23 @@
 import Image from "next/image"
 import { memo, useMemo } from "react"
 import Link from "next/link"
-import AddToCartButton from "./AddToCartButton"
-import { extractCurrencySymbol, formatCurrency, getLowestUnitPrice, toSlug } from "./productHelpers"
+import { formatCurrency, getLowestUnitPrice, toSlug } from "./productHelpers"
 
 function ProductCard({ product }) {
 	const image = product.images?.[0]
 	const productMeta = useMemo(() => {
-		const currencySymbol = extractCurrencySymbol(product)
 		const productSlug = toSlug(product.slug || product.name)
 		const quantityPricing = product.variationPricingRows || []
-		const defaultQuantityBreak = quantityPricing[0] || null
 		const price = quantityPricing.length
 			? Math.min(...quantityPricing.map((row) => row.unitPrice / row.quantity))
 			: getLowestUnitPrice(product)
 		  console.log("price", quantityPricing)
-		const defaultQuantity = defaultQuantityBreak?.quantity || 1
-		const defaultTotalPrice = defaultQuantityBreak?.unitPrice || price
 
 		return {
-			currencySymbol,
 			productSlug,
 			price,
-			cartItem: {
-				id: `${product.id}-${defaultQuantity}`,
-				productId: product.id,
-				name: product.name,
-				productUrl: `/products/${productSlug}`,
-				image: image?.src || "",
-				selectedQuantity: defaultQuantity,
-				totalPrice: defaultTotalPrice,
-				unitPrice: defaultQuantity ? defaultTotalPrice / defaultQuantity : price,
-				currencySymbol,
-				artworkName: "",
-			},
 		}
-	}, [image?.src, product])
+	}, [product])
 
 
 	return (
@@ -71,14 +53,11 @@ function ProductCard({ product }) {
 						<div
 							className="inline-flex justify-center rounded-full bg-neutral-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-pink-500"
 						>
-							View Product
+							Customize
 						</div>
-						<AddToCartButton
-							item={productMeta.cartItem}
-							className="inline-flex justify-center rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50"
-						>
-							Add to cart
-						</AddToCartButton>
+						<span className="inline-flex justify-center rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50">
+							Upload artwork
+						</span>
 					</div>
 				</div>
 			</div>

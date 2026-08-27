@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -15,21 +16,36 @@ const CartStateContext = createContext(null);
 const CartActionsContext = createContext(null);
 
 export function CartProvider({ children }) {
-  const [items, setItems] = useState(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const savedItems = window.localStorage.getItem(STORAGE_KEY);
-      return savedItems ? JSON.parse(savedItems) : [];
-    } catch {
-      return [];
-    }
-  });
+  const artworkFilesRef = useRef(new Map());
+  const hasLoadedSavedCartRef = useRef(false);
+  const [items, setItems] = useState([]);
 
   useEffect(() => {
+    window.queueMicrotask(() => {
+      try {
+        const savedItems = window.localStorage.getItem(STORAGE_KEY);
+        setItems(savedItems ? JSON.parse(savedItems) : []);
+      } catch {
+        setItems([]);
+      } finally {
+        hasLoadedSavedCartRef.current = true;
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedSavedCartRef.current) {
+      return;
+    }
+
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items]);
 
-  const addItem = useCallback((item) => {
+  const addItem = useCallback((item, artworkFile = null) => {
+    if (artworkFile instanceof File) {
+      artworkFilesRef.current.set(item.id, artworkFile);
+    }
+
     setItems((currentItems) => {
       const existingItem = currentItems.find((entry) => entry.id === item.id);
 
@@ -49,11 +65,35 @@ export function CartProvider({ children }) {
   }, []);
 
   const removeItem = useCallback((id) => {
+    artworkFilesRef.current.delete(id);
     setItems((currentItems) => currentItems.filter((item) => item.id !== id));
   }, []);
 
+  const updateArtworkFile = useCallback((id, artworkFile) => {
+    if (!(artworkFile instanceof File)) {
+      return;
+    }
+
+    artworkFilesRef.current.set(id, artworkFile);
+    setItems((currentItems) =>
+      currentItems.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              artworkName: artworkFile.name,
+            }
+          : item,
+      ),
+    );
+  }, []);
+
   const clearCart = useCallback(() => {
+    artworkFilesRef.current.clear();
     setItems([]);
+  }, []);
+
+  const getArtworkFile = useCallback((id) => {
+    return artworkFilesRef.current.get(id) || null;
   }, []);
 
   const stateValue = useMemo(() => {
@@ -77,9 +117,11 @@ export function CartProvider({ children }) {
     () => ({
       addItem,
       removeItem,
+      updateArtworkFile,
       clearCart,
+      getArtworkFile,
     }),
-    [addItem, removeItem, clearCart],
+    [addItem, removeItem, updateArtworkFile, clearCart, getArtworkFile],
   );
 
   return (

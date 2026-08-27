@@ -4,7 +4,13 @@ import { memo, useCallback, useEffect, useState } from "react"
 
 import { useCartActions } from "./CartContext"
 
-function AddToCartButton({ item, className, children }) {
+function AddToCartButton({
+	item,
+	artworkFile = null,
+	disabled = false,
+	className,
+	children,
+}) {
 	const { addItem } = useCartActions()
 	const [wasAdded, setWasAdded] = useState(false)
 
@@ -18,12 +24,21 @@ function AddToCartButton({ item, className, children }) {
 	}, [wasAdded])
 
 	const handleAddToCart = useCallback(() => {
-		addItem(item)
+		if (disabled) {
+			return
+		}
+
+		addItem(item, artworkFile)
 		setWasAdded(true)
-	}, [addItem, item])
+	}, [addItem, artworkFile, disabled, item])
 
 	return (
-		<button type="button" onClick={handleAddToCart} className={className}>
+		<button
+			type="button"
+			onClick={handleAddToCart}
+			disabled={disabled}
+			className={className}
+		>
 			{wasAdded ? "Added to cart" : children}
 		</button>
 	)

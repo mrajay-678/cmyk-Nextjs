@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { defaultSort, sortMap } from "@/component/product/catalogConfig";
 import ProductCatalog from "@/component/product/ProductCatalog";
 import ProductCatalogFallback from "@/component/product/ProductCatalogFallback";
+import TransferProductCards from "@/component/product/TransferProductCards";
 import { getProductCategories, getProducts, getProductTags } from "@/component/product/wooCommerce";
 
 function getParamValue(searchParams, key, fallback = "") {
@@ -47,6 +48,7 @@ export default async function ProductsPage({ searchParams }) {
     <section className="min-h-screen bg-neutral-50 px-6 py-10">
       <div className="mx-auto xl:max-w-368">
         <div className="mt-10">
+          <TransferProductCards />
           <Suspense fallback={<ProductCatalogFallback />}>
             <ProductCatalog initialProductsData={initialProductsData} initialFiltersData={initialFiltersData} initialParams={activeParams} />
           </Suspense>
