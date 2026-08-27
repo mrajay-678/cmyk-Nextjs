@@ -18,7 +18,7 @@ export default function Footer() {
           {[...marqueeItems, ...marqueeItems].map((item, i) => (
             <div
               key={i}
-              className="mx-5 flex items-center gap-4 text-5xl font-medium sm:text-5xl md:mx-24 md:gap-6 md:text-9xl"
+              className="mx-5 flex items-center gap-4 text-5xl font-medium sm:text-5xl md:mx-24 md:gap-6 md:text-8xl"
             >
               <span className="whitespace-nowrap font-heading">{item}</span>
 

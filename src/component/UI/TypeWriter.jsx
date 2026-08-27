@@ -67,10 +67,12 @@ export default function TypeWriter({ appendClass, prefix }) {
     <section className="overflow-hidden max-w-screen">
       <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')] max-w-screen h-8"></div>
       <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Group-13-scaled.png.webp')] bg-center px-6 py-20 sm:py-32 md:py-40">
-        <div className="mx-auto flex max-w-5xl flex-col items-center justify-center gap-3 text-center text-4xl sm:flex-row sm:gap-6 sm:text-5xl md:text-6xl">
-          <span className="font-bold text-white">Made for real</span>
-          <div className="min-h-[1.1em]">
-            <div className={`${typeWriterClass} ${collapseClass}`}>
+        <div className="mx-auto font-heading flex max-w-5xl flex-col items-center justify-center gap-3 text-center text-4xl sm:flex-row sm:gap-6 sm:text-5xl md:text-6xl">
+          <span className="font-heading font-bold text-white">
+            Made for real
+          </span>
+          <div className="min-h-[1.1em] font-heading">
+            <div className={`${typeWriterClass} ${collapseClass} font-heading`}>
               {hats[currentHat].suffix}
             </div>
           </div>
