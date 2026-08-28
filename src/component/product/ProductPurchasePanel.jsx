@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import AddToCartButton from "./AddToCartButton";
 import { useCartActions } from "./CartContext";
 import { formatCurrency } from "./productHelpers";
+import GangSheetBuilder from "@/component/gang-sheet/GangSheetBuilder";
 
 export default function ProductPurchasePanel({
   product,
@@ -38,7 +39,6 @@ export default function ProductPurchasePanel({
     selectedTotalPrice && numericQuantity
       ? selectedTotalPrice / numericQuantity
       : null;
-  console.log("selectedSize", variation);
   const isCheckoutReady = hasSelectedQuantity && Boolean(selectedFile);
   const cartItem = {
     id: [
@@ -68,6 +68,9 @@ export default function ProductPurchasePanel({
     };
   }, [previewUrl]);
 
+  const isDtfBySize =
+    Number(product.id) === 28426 || product.slug === "dtf-by-size";
+
   function handleFileChange(event) {
     const file = event.target.files?.[0];
 
@@ -92,6 +95,23 @@ export default function ProductPurchasePanel({
 
     addItem(cartItem, selectedFile);
     router.push("/checkout");
+  }
+
+  if (isDtfBySize) {
+    return (
+      <div className="space-y-5 rounded-[1.5rem] border border-neutral-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:rounded-[2rem] sm:p-6">
+        <GangSheetBuilder
+          mode="woo-product"
+          productId="28426"
+          productType="7"
+          sdkVersion="1.7.7"
+          label="Upload Image By Size"
+          buttonClassName="inline-flex h-13 w-full items-center justify-center rounded-full bg-pink-500 px-6 text-base font-semibold text-white transition hover:bg-pink-600 disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-500"
+        >
+          Upload Image By Size
+        </GangSheetBuilder>
+      </div>
+    );
   }
 
   return (

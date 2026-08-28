@@ -1,16 +1,24 @@
 "use client";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import Image from "next/image";
-import Script from "next/script";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import GangSheetBuilder from "@/component/gang-sheet/GangSheetBuilder";
 import styles from "./Gangsheet.module.css";
 
 const sizeOptions = [
-  { id: 1, width: 22, height: 24, label: '22" x 24"', price: 8.77 },
-  { id: 2, width: 22, height: 60, label: '22" x 60"', price: 29.5 },
-  { id: 3, width: 22, height: 120, label: '22" x 120"', price: 58 },
+  { id: 28748, width: 22, height: 12, label: '22" x 12"', price: 8.77 },
+  { id: 28776, width: 22, height: 18, label: '22" x 18"', price: 11.17 },
+  { id: 28777, width: 22, height: 24, label: '22" x 24"', price: 14.77 },
+  { id: 28778, width: 22, height: 36, label: '22" x 36"', price: 20.77 },
+  { id: 28779, width: 22, height: 48, label: '22" x 48"', price: 25.77 },
+  { id: 28780, width: 22, height: 60, label: '22" x 60"', price: 35.77 },
+  { id: 28781, width: 22, height: 72, label: '22" x 72"', price: 40.77 },
+  { id: 28782, width: 22, height: 84, label: '22" x 84"', price: 45.77 },
+  { id: 28783, width: 22, height: 108, label: '22" x 108"', price: 57.77 },
+  { id: 28756, width: 22, height: 120, label: '22" x 120"', price: 62.77 },
+  { id: 28757, width: 22, height: 144, label: '22" x 144"', price: 84.77 },
+  { id: 28784, width: 22, height: 180, label: '22" x 180"', price: 101.97 },
+  { id: 28761, width: 22, height: 240, label: '22" x 240"', price: 117.77 },
 ];
 
 const gallery = [
@@ -24,7 +32,9 @@ const gallery = [
 ];
 
 export default function GangsheetPage() {
-  const shopId = process.env.NEXT_PUBLIC_GS_SHOP_ID;
+  const shopId =
+    process.env.NEXT_PUBLIC_GS_SHOP_ID ||
+    "e28e4f98-a0b2-4b75-b1fd-e809863d91de";
   const [activeImage, setActiveImage] = useState(gallery[0]);
   const [selectedSize, setSelectedSize] = useState(sizeOptions[0]);
   const [quantity, setQuantity] = useState(1);
@@ -38,68 +48,13 @@ export default function GangsheetPage() {
     [selectedSize.price, quantity],
   );
 
-  const openBuilder = () => {
+  const handleOpenBuilder = () => {
     setError(null);
     setIsOpening(true);
-    if (!shopId) {
-      setError(
-        "Shop ID missing. Set NEXT_PUBLIC_GS_SHOP_ID in .env.local and refresh.",
-      );
-      setIsOpening(false);
-      return;
-    }
-    if (typeof window === "undefined" || typeof gs_builder === "undefined") {
-      setError("Builder script not loaded. Please wait and try again.");
-      setIsOpening(false);
-      return;
-    }
-
-    gs_builder
-      .open({
-        // let the SDK manage its own modal container to avoid zero-size canvas issues
-        mode: "production",
-        shop_id: shopId,
-        size_id: selectedSize.id,
-        quantity,
-        sizes: sizeOptions.map((s) => ({
-          id: s.id,
-          width: s.width,
-          height: s.height,
-          unit: "in",
-          title: s.label,
-        })),
-        settings: {
-          showStartModal: false,
-          enableQuantity: false,
-        },
-      })
-      .on("design:created", (e) => {
-        if (e?.design_id) setLatestDesignId(String(e.design_id));
-        gs_builder.close();
-        setIsOpening(false);
-      })
-      .on("design:updated", (e) => {
-        if (e?.design_id) setLatestDesignId(String(e.design_id));
-        gs_builder.close();
-        setIsOpening(false);
-      })
-      .on("closed", () => {
-        setIsOpening(false);
-      })
-      .on("error", (e) => {
-        setError(e?.reason ?? "Builder error");
-        setIsOpening(false);
-      });
   };
 
   return (
     <div className={styles.page}>
-      <Script
-        src="https://app.buildagangsheet.com/assets/v1/scripts/gs-builder.min.js"
-        strategy="afterInteractive"
-        onLoad={() => setBuilderReady(true)}
-        onError={() => setError("Failed to load builder script.")}
-      />
       <main className={styles.wrapper}>
         <section className={styles.hero}>
           <div className={styles.media}>
@@ -223,14 +178,39 @@ export default function GangsheetPage() {
             )}
 
             <div className={styles.actions}>
-              <button
-                type="button"
-                className={styles.primary}
-                onClick={openBuilder}
+              <GangSheetBuilder
+                mode="external"
+                productId="28471"
+                shopUuid={shopId}
+                sizes={sizeOptions}
+                sizeId={selectedSize.id}
+                quantity={quantity}
+                buttonClassName={styles.primary}
                 disabled={!builderReady || isOpening}
+                externalSettings={{
+                  showStartModal: false,
+                  enableQuantity: false,
+                }}
+                onReady={() => setBuilderReady(true)}
+                onOpen={handleOpenBuilder}
+                onDesignCreated={(event) => {
+                  if (event?.design_id) setLatestDesignId(String(event.design_id));
+                  window.gs_builder?.close();
+                  setIsOpening(false);
+                }}
+                onDesignUpdated={(event) => {
+                  if (event?.design_id) setLatestDesignId(String(event.design_id));
+                  window.gs_builder?.close();
+                  setIsOpening(false);
+                }}
+                onClose={() => setIsOpening(false)}
+                onError={(event) => {
+                  setError(event?.reason ?? "Builder error");
+                  setIsOpening(false);
+                }}
               >
                 Build Your Own Gang Sheet
-              </button>
+              </GangSheetBuilder>
               <button type="button" className={styles.secondary}>
                 Product Inquiry
               </button>
