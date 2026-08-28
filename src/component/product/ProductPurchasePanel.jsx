@@ -14,11 +14,15 @@ export default function ProductPurchasePanel({
   quantityRows = [],
   lowestPrice,
   currencySymbol,
+  variation,
 }) {
-  console.log("Product", product);
+  const sizeOptions = product.attributes[0].options.includes('22" x 12"')
+    ? product.attributes[0].options
+    : [];
   const router = useRouter();
   const { addItem } = useCartActions();
   const [selectedQuantity, setSelectedQuantity] = useState("");
+  const [selectedSize, setSelectedSize] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const numericQuantity = Number.parseInt(selectedQuantity, 10);
@@ -34,6 +38,7 @@ export default function ProductPurchasePanel({
     selectedTotalPrice && numericQuantity
       ? selectedTotalPrice / numericQuantity
       : null;
+  console.log("selectedSize", variation);
   const isCheckoutReady = hasSelectedQuantity && Boolean(selectedFile);
   const cartItem = {
     id: [
@@ -109,14 +114,24 @@ export default function ProductPurchasePanel({
           <thead>
             <tr className="text-left text-xs uppercase tracking-[0.18em] text-neutral-400">
               <th className="pb-2 pr-6">Quantity</th>
-              {quantityOptions.map((quantity) => (
-                <th
-                  key={quantity}
-                  className="px-4 py-3 text-center font-medium"
-                >
-                  {quantity}
-                </th>
-              ))}
+              {sizeOptions?.length === 0 &&
+                quantityOptions.map((quantity) => (
+                  <th
+                    key={quantity}
+                    className="px-4 py-3 text-center font-medium"
+                  >
+                    {quantity}
+                  </th>
+                ))}
+              {sizeOptions?.length !== 0 &&
+                variation.map((variation) => (
+                  <th
+                    key={variation.id}
+                    className="px-4 min-w-[8rem] py-3 text-center font-medium"
+                  >
+                    {variation.attributes[0].option}
+                  </th>
+                ))}
             </tr>
           </thead>
           <tbody>
@@ -124,24 +139,31 @@ export default function ProductPurchasePanel({
               <td className="rounded-l-2xl py-3 font-medium text-neutral-950">
                 Per unit price
               </td>
-              {quantityOptions.map((quantity) => (
-                <td key={quantity} className="px-4 py-3">
-                  {formatCurrency(lowestPrice[quantity] / quantity, "$")}
-                </td>
-              ))}
+              {sizeOptions?.length === 0 &&
+                quantityOptions.map((quantity) => (
+                  <td key={quantity} className="px-4 py-3">
+                    {formatCurrency(lowestPrice[quantity] / quantity, "$")}
+                  </td>
+                ))}
+              {sizeOptions &&
+                variation.map((variationItem, index) => (
+                  <td key={variationItem.id} className="px-4 py-3 text-center">
+                    $ {variation[index]?.regular_price}
+                  </td>
+                ))}
             </tr>
           </tbody>
         </table>
       </div>
 
-      {selectedQuantity && (
+      {sizeOptions?.length === 0 && selectedQuantity && (
         <div className="rounded-[1.5rem] bg-neutral-50 p-4 sm:p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
             Selected pricing
           </p>
           <div className="mt-3 grid gap-4 sm:flex sm:flex-wrap sm:items-end sm:gap-6">
             <div>
-              <p className="text-sm text-neutral-500">Total price</p>
+              <p className="text-sm text-neutral-500">Size</p>
               <p className="text-2xl font-semibold text-neutral-950 sm:text-3xl">
                 {formatCurrency(selectedTotalPrice, "$")}
               </p>
@@ -155,6 +177,31 @@ export default function ProductPurchasePanel({
           </div>
         </div>
       )}
+      {sizeOptions?.length !== 0 && selectedQuantity && (
+        <div className="rounded-[1.5rem] bg-neutral-50 p-4 sm:p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
+            Selected pricing
+          </p>
+          <div className="mt-3 grid gap-4 sm:flex sm:flex-wrap sm:items-end sm:gap-6">
+            <div>
+              <p className="text-sm text-neutral-500">Total price</p>
+              <p className="text-2xl font-semibold text-neutral-950 sm:text-3xl">
+                {selectedSize}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-neutral-500">Per unit</p>
+              <p className="text-lg font-medium text-neutral-950">
+                ${" "}
+                {
+                  variation?.find((item) => item.name === selectedSize)
+                    ?.regular_price
+                }
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <label className="grid gap-2">
         <span className="text-sm font-medium text-neutral-700">
@@ -162,18 +209,29 @@ export default function ProductPurchasePanel({
         </span>
         <select
           value={selectedQuantity}
-          onChange={(event) => setSelectedQuantity(event.target.value)}
+          onChange={(event) => {
+            setSelectedQuantity(event.target.value);
+            setSelectedSize(event.target.value);
+          }}
           className="h-12 rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-pink-400"
           required
         >
           <option value="" disabled>
             Select quantity
           </option>
-          {quantityOptions.map((quantity) => (
-            <option key={quantity} value={quantity}>
-              {quantity} units
-            </option>
-          ))}
+
+          {sizeOptions &&
+            sizeOptions.map((size) => (
+              <option key={size} value={size}>
+                {size}
+              </option>
+            ))}
+          {sizeOptions?.length === 0 &&
+            quantityOptions.map((quantity) => (
+              <option key={quantity} value={quantity}>
+                {quantity} units
+              </option>
+            ))}
         </select>
       </label>
 

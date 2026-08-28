@@ -40,3 +40,13 @@ div {
     transform: translateX(-50%);
   }
 }
+
+.header-container {
+  @apply max-w-[95vw];
+}
+
+@media (max-width: 1600px) {
+  .header-container {
+    @apply max-w-7xl;
+  }
+}

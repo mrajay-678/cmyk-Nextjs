@@ -24,17 +24,17 @@ const careTipsSection = {
     "Turn garment inside out before washing. Wash in cold water only.",
     "Use mild detergent without bleach, whiteners, brighteners, OxiClean, or fabric softeners.",
     "Tumble dry on low heat setting or hang to air dry.",
-    "Avoid ironing directly over the printed design."
+    "Avoid ironing directly over the printed design.",
   ],
   supportText: "Need help? Contact our team for assistance.",
   button: {
     text: "Contact Us",
-    link: "#"
+    link: "#",
   },
   video: {
     src: "https://cmykprint.shop/wp-content/uploads/2025/12/press-it.mp4",
-    alt: "DTF garment care process"
-  }
+    alt: "DTF garment care process",
+  },
 };
 
 const heatPressGuideSection = {
@@ -42,17 +42,18 @@ const heatPressGuideSection = {
   steps: [
     "240°F (115°C) for 100% polyester fabrics.",
     "260°F (125°C) for poly/cotton blends.",
-    "280°F (140°C) for 100% cotton and similar materials."
+    "280°F (140°C) for 100% cotton and similar materials.",
   ],
-  supportText: "*Note: Optimal temperatures may vary between heat press models.",
+  supportText:
+    "*Note: Optimal temperatures may vary between heat press models.",
   button: {
     text: "Build a Gang Sheet",
-    link: "#"
+    link: "#",
   },
   video: {
     src: "https://cmykprint.shop/wp-content/uploads/2025/12/peel-it.mp4",
-    alt: "Heat press temperature guide"
-  }
+    alt: "Heat press temperature guide",
+  },
 };
 
 export const page = () => {
@@ -62,11 +63,13 @@ export const page = () => {
         <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')] max-w-screen h-4"></div>
         <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Group-13-scaled.png.webp')] bg-center px-6 py-24 sm:py-32 md:py-24">
           <div className="mx-auto flex justify-center gap-6 text-center text-4xl sm:text-5xl md:text-7xl">
-            <span className="font-bold font-heading text-white">Pressing Instructions</span>
+            <span className="font-bold font-heading text-white">
+              Pressing Instructions
+            </span>
           </div>
         </div>
         <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')] max-w-screen h-4"></div>
-        <div className="container mx-auto grid grid-cols-1 items-center gap-10 px-6 py-16 md:py-24 lg:grid-cols-2 lg:px-8 lg:py-28">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 items-center gap-10 pb-20 pt-40 lg:grid-cols-2">
           {/* Left Content */}
           <div>
             <p className="mb-4 text-xl text-black md:text-lg">
@@ -107,7 +110,7 @@ export const page = () => {
             />
           </div>
         </div>
-        <div className="container mx-auto grid grid-cols-1 items-center gap-10 px-6 pb-16 md:pb-24 lg:grid-cols-2 lg:px-8 lg:pb-28">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 items-center gap-10 pb-20 lg:grid-cols-2">
           {/* Left Content */}
           <div>
             <h2 className="mb-8 text-3xl md:text-4xl">
@@ -120,10 +123,10 @@ export const page = () => {
                   <span className="font-semibold">{index + 1}.</span>
                   <p className="text-base leading-tight md:text-lg">{step}</p>
                 </div>
-              ))}   
+              ))}
             </div>
 
-            <p className="mt-6 text-base md:text-lg font-heading" >
+            <p className="mt-6 text-base md:text-lg font-heading">
               {careTipsSection.supportText}
             </p>
 
@@ -148,7 +151,7 @@ export const page = () => {
             />
           </div>
         </div>
-        <div className="container mx-auto grid grid-cols-1 items-center gap-10 px-6 pb-16 md:pb-24 lg:grid-cols-2 lg:px-8 lg:pb-28">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 items-center gap-10 pb-20 lg:grid-cols-2">
           {/* Left Content */}
           <div>
             <h2 className="mb-8 text-3xl md:text-4xl">
@@ -161,10 +164,10 @@ export const page = () => {
                   <span className="font-semibold">{index + 1}.</span>
                   <p className="text-base leading-tight  md:text-lg">{step}</p>
                 </div>
-              ))}   
+              ))}
             </div>
 
-            <p className="mt-6 text-base md:text-lg font-heading" >
+            <p className="mt-6 text-base md:text-lg font-heading">
               {heatPressGuideSection.supportText}
             </p>
 

@@ -34,7 +34,7 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="mx-auto grid max-w-360 px-5 md:px-0 gap-6 md:gap-20 pb-10 md:pb-24 md:grid-cols-[minmax(0,1.4fr)_minmax(160px,0.6fr)_minmax(160px,0.6fr)]">
+      <div className="mx-auto grid max-w-7xl px-5 md:px-0 gap-6 md:gap-20 pb-10 md:pb-24 md:grid-cols-[minmax(0,1.4fr)_minmax(160px,0.6fr)_minmax(160px,0.6fr)]">
         <div>
           <p className="mb-4 text-4xl font-light leading-tight sm:text-4xl md:text-5xl md:pb-16">
             Print that makes good impressions.
@@ -80,7 +80,7 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 border-t border-white px-5 md:px-0 py-4 text-sm md:text-lg md:flex-row md:justify-between max-w-360 mx-auto">
+      <div className="flex flex-col gap-2 border-t border-white px-5 md:px-0 py-4 text-sm md:text-lg md:flex-row md:justify-between max-w-7xl mx-auto">
         <div>Privacy Policy | Terms of Service</div>
         <div>© 2025 CMYK Print Shop. All rights reserved</div>
       </div>

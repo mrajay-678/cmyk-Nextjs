@@ -34,7 +34,7 @@ export default function TestimonialSection() {
         />
       </div>
 
-      <div className="relative max-w-11/12 mx-auto">
+      <div className="relative max-w-7xl mx-auto">
         <h2 className="text-center text-3xl font-regural tracking-[-0.03em] text-white md:text-4xl lg:text-5xl">
           Don&apos;t just take our word for it.
         </h2>
