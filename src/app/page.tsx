@@ -15,7 +15,7 @@ export default function Home() {
 				<Hero />
 				<WhatWeOffer />
 				<ArtToCraft />
-				<TypeWriter appendClass={""} prefix={""}/>
+				<TypeWriter appendClass={""}/>
 				<ServiceGuide />
 				<ProductGallery />
 				<TestimonialSection />
