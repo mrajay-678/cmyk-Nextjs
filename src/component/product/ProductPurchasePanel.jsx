@@ -15,18 +15,20 @@ export default function ProductPurchasePanel({
   lowestPrice,
   currencySymbol,
 }) {
+  console.log("Product", product);
   const router = useRouter();
   const { addItem } = useCartActions();
   const [selectedQuantity, setSelectedQuantity] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const numericQuantity = Number.parseInt(selectedQuantity, 10);
-  const hasSelectedQuantity = Number.isFinite(numericQuantity) && numericQuantity > 0;
+  const hasSelectedQuantity =
+    Number.isFinite(numericQuantity) && numericQuantity > 0;
   const selectedQuantityRow = quantityRows.find(
     (row) => row.quantity === numericQuantity,
   );
   const selectedTotalPrice = hasSelectedQuantity
-    ? lowestPrice[numericQuantity] ?? null
+    ? (lowestPrice[numericQuantity] ?? null)
     : null;
   const selectedUnitPrice =
     selectedTotalPrice && numericQuantity
@@ -53,7 +55,6 @@ export default function ProductPurchasePanel({
     currencySymbol,
     artworkName: selectedFile?.name || "",
   };
-
   useEffect(() => {
     return () => {
       if (previewUrl) {
@@ -133,25 +134,27 @@ export default function ProductPurchasePanel({
         </table>
       </div>
 
-      <div className="rounded-[1.5rem] bg-neutral-50 p-4 sm:p-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
-          Selected pricing
-        </p>
-        <div className="mt-3 grid gap-4 sm:flex sm:flex-wrap sm:items-end sm:gap-6">
-          <div>
-            <p className="text-sm text-neutral-500">Total price</p>
-            <p className="text-2xl font-semibold text-neutral-950 sm:text-3xl">
-              {formatCurrency(selectedTotalPrice, "$")}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-neutral-500">Per unit</p>
-            <p className="text-lg font-medium text-neutral-950">
-              {formatCurrency(selectedUnitPrice, "$")}
-            </p>
+      {selectedQuantity && (
+        <div className="rounded-[1.5rem] bg-neutral-50 p-4 sm:p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
+            Selected pricing
+          </p>
+          <div className="mt-3 grid gap-4 sm:flex sm:flex-wrap sm:items-end sm:gap-6">
+            <div>
+              <p className="text-sm text-neutral-500">Total price</p>
+              <p className="text-2xl font-semibold text-neutral-950 sm:text-3xl">
+                {formatCurrency(selectedTotalPrice, "$")}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-neutral-500">Per unit</p>
+              <p className="text-lg font-medium text-neutral-950">
+                {formatCurrency(selectedUnitPrice, "$")}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <label className="grid gap-2">
         <span className="text-sm font-medium text-neutral-700">
