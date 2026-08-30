@@ -326,18 +326,20 @@ export default function ProductPurchasePanel({
           item={cartItem}
           artworkFile={selectedFile}
           disabled={!isCheckoutReady}
-          className="inline-flex h-13 w-full items-center justify-center rounded-full border border-neutral-200 px-6 text-base font-semibold text-neutral-800 transition hover:border-neutral-300 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:border-neutral-100 disabled:bg-neutral-100 disabled:text-neutral-400"
+          className="inline-flex w-full h-13 items-center justify-center rounded-full border border-neutral-200 px-6 text-base font-semibold text-neutral-800 transition hover:border-neutral-300 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:border-neutral-100 disabled:bg-neutral-100 disabled:text-neutral-400"
         >
           Add to cart
         </AddToCartButton>
-        <button
-          type="button"
-          onClick={handleBuyNow}
-          disabled={!isCheckoutReady || isBuyingNow}
-          className="inline-flex h-13 w-full items-center justify-center rounded-full bg-pink-500 px-6 text-base font-semibold text-white transition hover:bg-pink-600 disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-500"
-        >
-          {isBuyingNow ? "Adding..." : "Buy Now"}
-        </button>
+        <div className="w-full">
+          <button
+            type="button"
+            onClick={handleBuyNow}
+            disabled={!isCheckoutReady || isBuyingNow}
+            className="inline-flex w-full h-13 items-center justify-center rounded-full bg-pink-500 px-6 text-base font-semibold text-white transition hover:bg-pink-600 disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-500"
+          >
+            {isBuyingNow ? "Adding..." : "Buy Now"}
+          </button>
+        </div>
       </div>
       {checkoutError ? (
         <p className="text-sm font-medium text-red-700">{checkoutError}</p>
