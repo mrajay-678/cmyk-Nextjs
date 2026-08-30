@@ -20,6 +20,7 @@ import {
   getRecommendedProducts,
 } from "@/component/product/wooCommerce";
 import { formatCurrency } from "@/component/product/productHelpers";
+import { buildMetadata, cleanSeoText, DEFAULT_DESCRIPTION, titleFromSlug } from "@/lib/seo";
 
 function buildQuantityMap(priceRows) {
   return priceRows.reduce((result, row) => {
@@ -142,6 +143,31 @@ async function ProductDetailContent({ slug }) {
       </div>
     </section>
   );
+}
+
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  const { product, error } = await getProductBySlug(slug);
+
+  if (error || !product) {
+    return buildMetadata({
+      title: titleFromSlug(slug),
+      description: DEFAULT_DESCRIPTION,
+      path: `/products/${slug}`,
+    });
+  }
+
+  const description = cleanSeoText(
+    product.short_description || product.description,
+  );
+  const image = product.images?.[0]?.src;
+
+  return buildMetadata({
+    title: product.name || titleFromSlug(slug),
+    description,
+    path: `/products/${product.slug || slug}`,
+    image,
+  });
 }
 
 export default async function ProductDetailPage({ params }) {

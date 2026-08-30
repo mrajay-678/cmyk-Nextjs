@@ -1,11 +1,13 @@
 import { Mail, MapPin, Smartphone } from "lucide-react";
 import ContactForm from "@/component/Contact/ContactForm";
+import { buildMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Contact | CMYK Print Shop",
+export const metadata = buildMetadata({
+  title: "Contact",
   description:
     "Contact CMYK Print Shop for DTF transfers, UV DTF stickers, apparel, and custom print projects.",
-};
+  path: "/contact",
+});
 
 const contactItems = [
   {

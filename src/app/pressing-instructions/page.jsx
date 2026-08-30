@@ -1,4 +1,12 @@
 import React from "react";
+import { buildMetadata } from "@/lib/seo";
+
+export const metadata = buildMetadata({
+  title: "Pressing Instructions",
+  description:
+    "Learn how to press and care for DTF transfers from CMYK Print Shop.",
+  path: "/pressing-instructions",
+});
 
 const dtfTransferSection = {
   heading: "Quick guide",

@@ -9,7 +9,7 @@ export const menu = [
   },
   {
     title: "DTF Transfer",
-    href: "#",
+    href: "/products?category=dtf-transfer&sort=date-desc",
     children: [
       {
         title: "DTF By Size",
@@ -27,7 +27,7 @@ export const menu = [
   },
   {
     title: "UV DTF Stickers",
-    href: "#",
+    href: "/products?category=uv-dtf-transfer&sort=date-desc",
     children: [
       {
         title: "UV DTF By Size",

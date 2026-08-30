@@ -8,6 +8,7 @@ import {
   getProducts,
   getProductTags,
 } from "@/component/product/wooCommerce";
+import { buildMetadata, titleFromSlug } from "@/lib/seo";
 
 function getParamValue(searchParams, key, fallback = "") {
   const value = searchParams?.[key];
@@ -17,6 +18,22 @@ function getParamValue(searchParams, key, fallback = "") {
   }
 
   return value || fallback;
+}
+
+export async function generateMetadata({ searchParams }) {
+  const resolvedSearchParams = await searchParams;
+  const category = getParamValue(resolvedSearchParams, "category");
+  const title = category ? titleFromSlug(category) : "Products";
+
+  return buildMetadata({
+    title,
+    description: category
+      ? `Shop ${title.toLowerCase()} and custom print products from CMYK Print Shop.`
+      : "Shop custom DTF transfers, UV DTF stickers, apparel, and print products from CMYK Print Shop.",
+    path: category
+      ? `/products?category=${encodeURIComponent(category)}`
+      : "/products",
+  });
 }
 
 export default async function ProductsPage({ searchParams }) {
