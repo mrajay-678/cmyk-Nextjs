@@ -43,3 +43,39 @@ WC_CONSUMER_SECRET=cs_4ab300c5dd8b18d4a0bbedae6ff6a0ce4029ab97
 WP_MEDIA_USERNAME=your-wordpress-user
 WP_MEDIA_APPLICATION_PASSWORD=your-wordpress-application-password
 CMYK_ARTWORK_UPLOAD_SECRET=use-the-same-long-random-secret-in-next-and-wordpress -->
+
+c55d642ed9fcdca8f5bcad73de1c1d290fd8bc7873c1cbee54350bdfbd545adf
+
+
+Here’s what’s still pending outside the code I changed:
+1. Install/activate the WordPress artwork plugin
+   - wordpress/cmyk-checkout-artwork.php
+   - This is needed so uploaded artwork gets attached to WooCommerce cart/order line items during hosted checkout.
+2. Set the same artwork secret in both places
+   - In Next .env: CMYK_ARTWORK_UPLOAD_SECRET=...
+   - In WordPress: define the same CMYK_ARTWORK_UPLOAD_SECRET
+   - Right now .env has media credentials, but I did not see CMYK_ARTWORK_UPLOAD_SECRET.
+3. Confirm WooCommerce /checkout-link/ works
+   - The Next app redirects artwork orders to:
+   - https://cmykprint.shop/checkout-link/?products=...&cmyk_artwork=...
+   - WordPress must have that checkout-link behavior/plugin/page active.
+4. Configure WooCommerce payment gateways
+   - WooPayments / Stripe / PayPal must be active and tested in WooCommerce.
+   - Since we chose hosted payment, card details are handled there.
+5. Configure shipping methods
+   - Make sure WooCommerce has exactly the rates you want:
+   - Delivery
+   - Pickup
+   - The Next UI renames them visually, but WooCommerce still controls the real rate selection.
+6. Verify tax settings
+   - State sales tax must be configured in WooCommerce tax settings.
+   - The Next checkout only displays what WooCommerce returns.
+7. Run a real test order
+   - Add product with artwork.
+   - Open checkout.
+   - Preview artwork.
+   - Choose delivery/pickup.
+   - Continue to secure payment.
+   - Complete payment in WooCommerce sandbox/test mode.
+   - Confirm order includes artwork link/file name in Woo admin.
+Most important pending item: WordPress must be ready to receive artwork and attach it to the Woo order. Without that, payment can work, but artwork may not appear correctly on the final order.

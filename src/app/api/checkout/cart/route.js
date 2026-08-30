@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 
 const storeUrl = process.env.NEXT_PUBLIC_WC_URL;
-const wpMediaUsername = process.env.WP_MEDIA_USERNAME;
-const wpMediaApplicationPassword = process.env.WP_MEDIA_APPLICATION_PASSWORD;
 const cmykArtworkUploadSecret = process.env.CMYK_ARTWORK_UPLOAD_SECRET;
 
 function parseItems(value) {
@@ -30,12 +28,10 @@ function getCheckoutQuantity(item) {
   );
 }
 
-function hasMediaCredentials() {
-  return Boolean(wpMediaUsername && wpMediaApplicationPassword);
-}
-
-function hasCustomArtworkUploader() {
-  return Boolean(cmykArtworkUploadSecret);
+function getLineId(item, index) {
+  const raw = String(item?.id || `checkout-line-${index}`);
+  const safe = raw.replace(/[^a-zA-Z0-9._:-]+/g, "-").slice(0, 120);
+  return safe || `checkout-line-${index}`;
 }
 
 function getSafeFileName(file) {
@@ -44,95 +40,103 @@ function getSafeFileName(file) {
   return rawName.replace(/[^a-zA-Z0-9._-]+/g, "-") || fallbackName;
 }
 
-async function uploadArtworkToWordPress(file) {
-  if (hasCustomArtworkUploader()) {
-    return uploadArtworkToCustomEndpoint(file);
+function parseObject(value) {
+  if (!value) {
+    return {};
   }
 
-  if (!hasMediaCredentials()) {
-    throw new Error(
-      "Artwork upload is not configured. Set CMYK_ARTWORK_UPLOAD_SECRET on the Next.js server and WordPress plugin.",
-    );
+  try {
+    const parsed = JSON.parse(String(value));
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed
+      : {};
+  } catch {
+    return {};
   }
-
-  const base = new URL(storeUrl);
-  const uploadUrl = new URL("/wp-json/wp/v2/media", base);
-  const auth = Buffer.from(
-    `${wpMediaUsername}:${wpMediaApplicationPassword}`,
-  ).toString("base64");
-
-  const response = await fetch(uploadUrl, {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${auth}`,
-      "Content-Disposition": `attachment; filename="${getSafeFileName(file)}"`,
-      "Content-Type": file.type || "application/octet-stream",
-    },
-    body: Buffer.from(await file.arrayBuffer()),
-  });
-
-  if (!response.ok) {
-    const message = await response.text().catch(() => "");
-    throw new Error(
-      `WordPress artwork upload failed with status ${response.status}. ${message}`,
-    );
-  }
-
-  const media = await response.json();
-  return {
-    id: media.id,
-    url: media.source_url,
-    name: file.name,
-    type: file.type,
-    size: file.size,
-  };
 }
 
-async function uploadArtworkToCustomEndpoint(file) {
-  const base = new URL(storeUrl);
-  const uploadUrl = new URL("/wp-json/cmyk/v1/artwork", base);
-  const formData = new FormData();
+function assertServerConfig() {
+  if (!storeUrl) {
+    throw new Error("WooCommerce store URL is not configured.");
+  }
 
-  formData.append("artwork", file, getSafeFileName(file));
+  if (!cmykArtworkUploadSecret) {
+    throw new Error(
+      "Artwork handoff is not configured. Set CMYK_ARTWORK_UPLOAD_SECRET on the Next.js server and WordPress server.",
+    );
+  }
+}
 
-  const response = await fetch(uploadUrl, {
+function getWordPressApiUrl(path) {
+  return new URL(path, new URL(storeUrl)).toString();
+}
+
+async function postToCmykEndpoint(path, body, headers = {}) {
+  const response = await fetch(getWordPressApiUrl(path), {
     method: "POST",
     headers: {
       "X-CMYK-Artwork-Secret": cmykArtworkUploadSecret,
+      ...headers,
     },
-    body: formData,
+    body,
   });
 
+  const responseText = await response.text();
+  let payload = {};
+  try {
+    payload = responseText ? JSON.parse(responseText) : {};
+  } catch {
+    payload = { message: responseText };
+  }
+
   if (!response.ok) {
-    const message = await response.text().catch(() => "");
     throw new Error(
-      `WordPress artwork upload failed with status ${response.status}. ${message}`,
+      payload?.message ||
+        payload?.error ||
+        `WordPress checkout handoff failed with status ${response.status}.`,
     );
   }
 
-  const upload = await response.json();
-  return {
-    id: upload.id || 0,
-    url: upload.url,
-    name: upload.name || file.name,
-    type: upload.type || file.type,
-    size: upload.size || file.size,
-  };
+  return payload;
+}
+
+async function uploadArtworkToWordPress(file, checkoutItem) {
+  const formData = new FormData();
+
+  formData.append("artwork", file, getSafeFileName(file));
+  formData.append("line_id", checkoutItem.lineId);
+  formData.append("product_id", String(checkoutItem.productId));
+  formData.append("variation_id", String(checkoutItem.variationId || 0));
+  formData.append("checkout_product_id", String(checkoutItem.id));
+  formData.append("quantity", String(checkoutItem.quantity));
+  formData.append("artwork_name", checkoutItem.artworkName || file.name);
+  formData.append(
+    "artwork_options",
+    JSON.stringify(checkoutItem.artworkOptions || {}),
+  );
+
+  return postToCmykEndpoint("/wp-json/cmyk/v1/artwork", formData);
+}
+
+async function createCheckoutHandoff(payload) {
+  return postToCmykEndpoint(
+    "/wp-json/cmyk/v1/checkout-handoff",
+    JSON.stringify(payload),
+    { "Content-Type": "application/json" },
+  );
 }
 
 export async function POST(request) {
   try {
-    if (!storeUrl) {
-      return NextResponse.json(
-        { error: "WooCommerce store URL is not configured" },
-        { status: 500 },
-      );
-    }
+    assertServerConfig();
 
     const formData = await request.formData();
     const items = parseItems(formData.get("items"));
+    const billingAddress = parseObject(formData.get("billing_address"));
+    const shippingAddress = parseObject(formData.get("shipping_address"));
+    const customerNote = String(formData.get("customer_note") || "");
 
-    if (!Array.isArray(items) || items.length === 0) {
+    if (!items.length) {
       return NextResponse.json(
         { error: "Invalid or empty items array" },
         { status: 400 },
@@ -140,17 +144,18 @@ export async function POST(request) {
     }
 
     const checkoutItems = [];
-    const artworkItems = [];
 
     for (const [index, item] of items.entries()) {
       const checkoutItem = {
+        lineId: getLineId(item, index),
         id: getCheckoutProductId(item),
         quantity: getCheckoutQuantity(item),
         productId: Number(item?.productId || 0),
         variationId: Number(item?.variationId || 0) || null,
-        name: item?.name || "",
-        artworkName: item?.artworkName || "",
-        artworkOptions: item?.artworkOptions || null,
+        name: String(item?.name || ""),
+        artworkName: String(item?.artworkName || ""),
+        artworkOptions: item?.artworkOptions || {},
+        artworkToken: "",
       };
 
       if (!Number.isFinite(checkoutItem.id) || checkoutItem.id <= 0) {
@@ -167,21 +172,25 @@ export async function POST(request) {
       }
 
       if (artworkFile instanceof File) {
-        const uploadedArtwork = await uploadArtworkToWordPress(artworkFile);
-        artworkItems.push({
-          product_id: checkoutItem.productId || checkoutItem.id,
-          variation_id: checkoutItem.variationId,
-          checkout_product_id: checkoutItem.id,
-          quantity: checkoutItem.quantity,
-          product_name: checkoutItem.name,
-          artwork_name: checkoutItem.artworkName || uploadedArtwork.name,
-          artwork_url: uploadedArtwork.url,
-          artwork_options: checkoutItem.artworkOptions,
-          media_id: uploadedArtwork.id,
-        });
+        const uploadedArtwork = await uploadArtworkToWordPress(
+          artworkFile,
+          checkoutItem,
+        );
+        checkoutItem.artworkToken = String(uploadedArtwork.artwork_token || "");
+
+        if (!checkoutItem.artworkToken) {
+          throw new Error("WordPress did not return an artwork token.");
+        }
       }
 
-      checkoutItems.push(checkoutItem);
+      checkoutItems.push({
+        line_id: checkoutItem.lineId,
+        id: checkoutItem.id,
+        quantity: checkoutItem.quantity,
+        product_id: checkoutItem.productId,
+        variation_id: checkoutItem.variationId,
+        artwork_token: checkoutItem.artworkToken,
+      });
     }
 
     if (!checkoutItems.length) {
@@ -191,31 +200,26 @@ export async function POST(request) {
       );
     }
 
-    const base = new URL(storeUrl);
-    const checkoutUrl = new URL("/checkout-link/", base);
-    checkoutUrl.searchParams.set(
-      "products",
-      checkoutItems.map((item) => `${item.id}:${item.quantity}`).join(","),
-    );
+    const handoff = await createCheckoutHandoff({
+      items: checkoutItems,
+      billing_address: billingAddress,
+      shipping_address: shippingAddress,
+      customer_note: customerNote,
+    });
 
-    if (artworkItems.length) {
-      checkoutUrl.searchParams.set("cmyk_artwork", JSON.stringify(artworkItems));
+    if (!handoff.checkout_url) {
+      throw new Error("WordPress did not return a checkout URL.");
     }
 
-    return NextResponse.json({ checkoutUrl: checkoutUrl.toString() });
+    return NextResponse.json({ checkoutUrl: handoff.checkout_url });
   } catch (error) {
     console.error("Error in checkout cart API:", error);
 
-    if (
-      error instanceof Error &&
-      (error.message.startsWith("Artwork upload is not configured") ||
-        error.message.startsWith("WordPress artwork upload failed"))
-    ) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        error:
+          error instanceof Error ? error.message : "Internal server error",
+      },
       { status: 500 },
     );
   }

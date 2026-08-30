@@ -8,6 +8,7 @@ import AddToCartButton from "./AddToCartButton";
 import { useCartActions } from "./CartContext";
 import { formatCurrency } from "./productHelpers";
 import GangSheetBuilder from "@/component/gang-sheet/GangSheetBuilder";
+import { addCartItem } from "@/lib/woocommerce/cart";
 
 export default function ProductPurchasePanel({
   product,
@@ -26,6 +27,8 @@ export default function ProductPurchasePanel({
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
+  const [checkoutError, setCheckoutError] = useState("");
+  const [isBuyingNow, setIsBuyingNow] = useState(false);
   const numericQuantity = Number.parseInt(selectedQuantity, 10);
   const hasSelectedQuantity =
     Number.isFinite(numericQuantity) && numericQuantity > 0;
@@ -88,13 +91,38 @@ export default function ProductPurchasePanel({
     setPreviewUrl("");
   }
 
-  function handleBuyNow() {
-    if (!isCheckoutReady) {
+  function getWooCartPayload() {
+    return {
+      id: Number(cartItem.variationId || cartItem.productId || cartItem.id),
+      quantity: Number(cartItem.checkoutQuantity || cartItem.cartQuantity || 1),
+      variation: (cartItem.variationAttributes || []).map((attribute) => ({
+        attribute: attribute.slug || attribute.name,
+        value: attribute.option,
+      })),
+    };
+  }
+
+  async function handleBuyNow() {
+    if (!isCheckoutReady || isBuyingNow) {
       return;
     }
 
-    addItem(cartItem, selectedFile);
-    router.push("/checkout");
+    setCheckoutError("");
+    setIsBuyingNow(true);
+
+    try {
+      await addCartItem(getWooCartPayload());
+      addItem(cartItem, selectedFile);
+      router.push("/checkout");
+    } catch (error) {
+      setCheckoutError(
+        error instanceof Error
+          ? error.message
+          : "Unable to add this item to the WooCommerce cart.",
+      );
+    } finally {
+      setIsBuyingNow(false);
+    }
   }
 
   if (isDtfBySize) {
@@ -305,12 +333,15 @@ export default function ProductPurchasePanel({
         <button
           type="button"
           onClick={handleBuyNow}
-          disabled={!isCheckoutReady}
+          disabled={!isCheckoutReady || isBuyingNow}
           className="inline-flex h-13 w-full items-center justify-center rounded-full bg-pink-500 px-6 text-base font-semibold text-white transition hover:bg-pink-600 disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-500"
         >
-          Buy Now
+          {isBuyingNow ? "Adding..." : "Buy Now"}
         </button>
       </div>
+      {checkoutError ? (
+        <p className="text-sm font-medium text-red-700">{checkoutError}</p>
+      ) : null}
     </div>
   );
 }

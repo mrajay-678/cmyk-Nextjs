@@ -11,24 +11,128 @@ import {
 } from "react";
 
 const STORAGE_KEY = "cmyk-cart-items";
+const ARTWORK_DB_NAME = "cmyk-cart-artwork";
+const ARTWORK_DB_VERSION = 1;
+const ARTWORK_STORE_NAME = "files";
 
 const CartStateContext = createContext(null);
 const CartActionsContext = createContext(null);
 
+function openArtworkDatabase() {
+  return new Promise((resolve, reject) => {
+    if (!("indexedDB" in window)) {
+      resolve(null);
+      return;
+    }
+
+    const request = window.indexedDB.open(ARTWORK_DB_NAME, ARTWORK_DB_VERSION);
+
+    request.onupgradeneeded = () => {
+      const database = request.result;
+      if (!database.objectStoreNames.contains(ARTWORK_STORE_NAME)) {
+        database.createObjectStore(ARTWORK_STORE_NAME);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function withArtworkStore(mode, callback) {
+  const database = await openArtworkDatabase();
+  if (!database) {
+    return null;
+  }
+
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(ARTWORK_STORE_NAME, mode);
+    const store = transaction.objectStore(ARTWORK_STORE_NAME);
+    const result = callback(store);
+
+    transaction.oncomplete = () => {
+      database.close();
+      resolve(result);
+    };
+    transaction.onerror = () => {
+      database.close();
+      reject(transaction.error);
+    };
+  });
+}
+
+async function loadSavedArtworkFiles(itemIds) {
+  const database = await openArtworkDatabase();
+  if (!database) {
+    return new Map();
+  }
+
+  return new Promise((resolve, reject) => {
+    const files = new Map();
+    const transaction = database.transaction(ARTWORK_STORE_NAME, "readonly");
+    const store = transaction.objectStore(ARTWORK_STORE_NAME);
+
+    itemIds.forEach((id) => {
+      const request = store.get(id);
+      request.onsuccess = () => {
+        if (request.result instanceof File) {
+          files.set(id, request.result);
+        }
+      };
+    });
+
+    transaction.oncomplete = () => {
+      database.close();
+      resolve(files);
+    };
+    transaction.onerror = () => {
+      database.close();
+      reject(transaction.error);
+    };
+  });
+}
+
+function saveArtworkFile(id, artworkFile) {
+  return withArtworkStore("readwrite", (store) => store.put(artworkFile, id));
+}
+
+function deleteArtworkFile(id) {
+  return withArtworkStore("readwrite", (store) => store.delete(id));
+}
+
+function clearArtworkFiles() {
+  return withArtworkStore("readwrite", (store) => store.clear());
+}
+
 export function CartProvider({ children }) {
   const artworkFilesRef = useRef(new Map());
   const hasLoadedSavedCartRef = useRef(false);
+  const [isArtworkReady, setIsArtworkReady] = useState(false);
   const [items, setItems] = useState([]);
 
   useEffect(() => {
-    window.queueMicrotask(() => {
+    window.queueMicrotask(async () => {
+      let parsedItems = [];
+
       try {
         const savedItems = window.localStorage.getItem(STORAGE_KEY);
-        setItems(savedItems ? JSON.parse(savedItems) : []);
+        parsedItems = savedItems ? JSON.parse(savedItems) : [];
+        setItems(Array.isArray(parsedItems) ? parsedItems : []);
       } catch {
+        parsedItems = [];
         setItems([]);
       } finally {
         hasLoadedSavedCartRef.current = true;
+      }
+
+      try {
+        const itemIds = Array.isArray(parsedItems)
+          ? parsedItems.map((item) => item.id).filter(Boolean)
+          : [];
+        artworkFilesRef.current = await loadSavedArtworkFiles(itemIds);
+      } catch {
+        artworkFilesRef.current = new Map();
+      } finally {
+        setIsArtworkReady(true);
       }
     });
   }, []);
@@ -44,6 +148,7 @@ export function CartProvider({ children }) {
   const addItem = useCallback((item, artworkFile = null) => {
     if (artworkFile instanceof File) {
       artworkFilesRef.current.set(item.id, artworkFile);
+      saveArtworkFile(item.id, artworkFile).catch(() => undefined);
     }
 
     setItems((currentItems) => {
@@ -66,7 +171,22 @@ export function CartProvider({ children }) {
 
   const removeItem = useCallback((id) => {
     artworkFilesRef.current.delete(id);
+    deleteArtworkFile(id).catch(() => undefined);
     setItems((currentItems) => currentItems.filter((item) => item.id !== id));
+  }, []);
+
+  const updateItemQuantity = useCallback((id, quantity) => {
+    const nextQuantity = Math.max(1, Number.parseInt(String(quantity), 10) || 1);
+    setItems((currentItems) =>
+      currentItems.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              cartQuantity: nextQuantity,
+            }
+          : item,
+      ),
+    );
   }, []);
 
   const updateArtworkFile = useCallback((id, artworkFile) => {
@@ -75,6 +195,7 @@ export function CartProvider({ children }) {
     }
 
     artworkFilesRef.current.set(id, artworkFile);
+    saveArtworkFile(id, artworkFile).catch(() => undefined);
     setItems((currentItems) =>
       currentItems.map((item) =>
         item.id === id
@@ -89,6 +210,7 @@ export function CartProvider({ children }) {
 
   const clearCart = useCallback(() => {
     artworkFilesRef.current.clear();
+    clearArtworkFiles().catch(() => undefined);
     setItems([]);
   }, []);
 
@@ -110,18 +232,27 @@ export function CartProvider({ children }) {
       items,
       itemCount,
       subtotal,
+      isArtworkReady,
     };
-  }, [items]);
+  }, [isArtworkReady, items]);
 
   const actionsValue = useMemo(
     () => ({
       addItem,
       removeItem,
+      updateItemQuantity,
       updateArtworkFile,
       clearCart,
       getArtworkFile,
     }),
-    [addItem, removeItem, updateArtworkFile, clearCart, getArtworkFile],
+    [
+      addItem,
+      removeItem,
+      updateItemQuantity,
+      updateArtworkFile,
+      clearCart,
+      getArtworkFile,
+    ],
   );
 
   return (
