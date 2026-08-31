@@ -20,7 +20,12 @@ import {
   getRecommendedProducts,
 } from "@/component/product/wooCommerce";
 import { formatCurrency } from "@/component/product/productHelpers";
-import { buildMetadata, cleanSeoText, DEFAULT_DESCRIPTION, titleFromSlug } from "@/lib/seo";
+import {
+  buildMetadata,
+  cleanSeoText,
+  DEFAULT_DESCRIPTION,
+  titleFromSlug,
+} from "@/lib/seo";
 
 function buildQuantityMap(priceRows) {
   return priceRows.reduce((result, row) => {
@@ -77,7 +82,7 @@ async function ProductDetailContent({ slug }) {
     : [];
   return (
     <section className="overflow-hidden bg-neutral-50 px-4 py-8 sm:px-6 sm:py-12 md:px-10 md:py-18 lg:px-16 lg:py-24">
-      <div className="mx-auto w-full max-w-[92rem]">
+      <div className="mx-auto w-full max-w-7xl">
         <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.95fr)] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_minmax(420px,0.95fr)]">
           <div className="min-w-0 lg:sticky lg:top-28">
             <ProductImageZoom images={product.images} title={product.name} />

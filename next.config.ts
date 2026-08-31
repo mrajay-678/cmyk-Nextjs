@@ -1,23 +1,28 @@
-import type { NextConfig } from "next"
+import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-	reactCompiler: true,
-	cacheComponents: true,
+  reactCompiler: true,
+  cacheComponents: true,
 
-	images: {
-		remotePatterns: [
-			{
-				protocol: "https",
-				hostname: "cmykprint.shop",
-				pathname: "/**",
-			},
-			{
-				protocol: "https",
-				hostname: "placehold.co",
-				pathname: "/**",
-			},
-		],
-	},
-}
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "cmykprint.shop",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "placehold.co",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "printy.themerex.net",
+        pathname: "/**",
+      },
+    ],
+  },
+};
 
-export default nextConfig
+export default nextConfig;

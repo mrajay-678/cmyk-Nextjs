@@ -49,6 +49,7 @@ export const menu = [
     children: [
       {
         title: "Apparel",
+        href: categoryLink("apparel"),
         children: [
           { title: "T-shirts", href: categoryLink("t-shirts") },
           { title: "Polos", href: categoryLink("polos") },
@@ -62,6 +63,7 @@ export const menu = [
       },
       {
         title: "Drinkware",
+        href: categoryLink("drinkware"),
         children: [
           { title: "Bottles", href: categoryLink("bottles") },
           { title: "Mugs", href: categoryLink("mugs") },
@@ -71,12 +73,14 @@ export const menu = [
       },
       {
         title: "Labels",
+        href: categoryLink("labels"),
         children: [
           { title: "Stickers / Decals", href: categoryLink("stickers-decals") },
         ],
       },
       {
         title: "Marketing Material",
+        href: categoryLink("marketing-material"),
         children: [
           { title: "Magnets", href: categoryLink("magnets") },
           { title: "Buttons", href: categoryLink("buttons") },
@@ -89,6 +93,7 @@ export const menu = [
       },
       {
         title: "Stationery",
+        href: categoryLink("stationery"),
         children: [
           { title: "Business Cards", href: categoryLink("business-cards") },
           { title: "Letterheads", href: categoryLink("letterheads") },

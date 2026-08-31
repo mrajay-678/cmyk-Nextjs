@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 const marqueeItems = [
   "Good Quality",
@@ -13,21 +14,21 @@ const marqueeItems = [
 export default function Footer() {
   return (
     <footer className="bg-[#282828] text-white overflow-hidden">
-      <div className="overflow-hidden py-10 md:py-[100px]">
+      <div className="overflow-hidden py-10 md:py-25">
         <div className="flex w-screen whitespace-nowrap py-6 gap-6 marquee-animation">
           {[...marqueeItems, ...marqueeItems].map((item, i) => (
             <div
               key={i}
-              className="mx-5 flex items-center gap-4 text-5xl font-medium sm:text-5xl md:mx-24 md:gap-6 md:text-8xl"
+              className="ms-3 flex items-center gap-4 text-5xl font-medium sm:text-5xl md:ms-28 md:text-8xl"
             >
               <span className="whitespace-nowrap font-heading">{item}</span>
 
               <Image
                 src="https://cmykprint.shop/wp-content/uploads/2025/11/Vector.png.webp"
                 alt="CMYK"
-                className="object-contain ms-0 md:ms-12 w-12 h-12 md:w-full md:h-full"
-                width={100}
-                height={100}
+                className="object-contain ms-0 md:ms-9"
+                width={80}
+                height={80}
               />
             </div>
           ))}
@@ -36,8 +37,8 @@ export default function Footer() {
 
       <div className="mx-auto grid max-w-7xl px-5 md:px-0 gap-6 md:gap-20 pb-10 md:pb-24 md:grid-cols-[minmax(0,1.4fr)_minmax(160px,0.6fr)_minmax(160px,0.6fr)]">
         <div>
-          <p className="mb-4 text-4xl font-light leading-tight sm:text-4xl md:text-5xl md:pb-16">
-            Print that makes good impressions.
+          <p className="mb-4 text-4xl font-light leading-none sm:text-4xl md:text-5xl md:pb-16">
+            Print that makes <br /> good impressions.
           </p>
 
           <div className="mt-6 flex flex-wrap gap-4 text-sm md:gap-6">
@@ -74,8 +75,9 @@ export default function Footer() {
             Say Hello
           </h3>
           <p className="text-lg">
-            hello@cmykprint.shop <br />
-            +1 (818) 342-7822
+            <Link href="mailto:hello@cmykprint.shop">hello@cmykprint.shop</Link>{" "}
+            <br />
+            <Link href="tel:+18183427822">+1 (818) 342-7822</Link>
           </p>
         </div>
       </div>

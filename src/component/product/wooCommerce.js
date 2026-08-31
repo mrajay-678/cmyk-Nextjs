@@ -112,7 +112,7 @@ export async function getProductCategories() {
     },
     ["woocommerce-products", "woocommerce-filters"],
   );
-
+  console.log("categories", data);
   return { categories: Array.isArray(data) ? data : [], error };
 }
 
@@ -160,24 +160,24 @@ export async function getProducts(filters = {}) {
     ["woocommerce-products"],
   );
 
-	const products = Array.isArray(data) ? data : [];
-	const productsWithPricing = await Promise.all(
-		products.map(async (product) => {
-			if (!product?.id || product.type !== "variable") {
-				return product;
-			}
+  const products = Array.isArray(data) ? data : [];
+  const productsWithPricing = await Promise.all(
+    products.map(async (product) => {
+      if (!product?.id || product.type !== "variable") {
+        return product;
+      }
 
-			const { variations } = await getProductVariations(product.id);
+      const { variations } = await getProductVariations(product.id);
 
-			return {
-				...product,
-				variationPricingRows: buildQuantityPriceTable(product, variations),
-			};
-		}),
-	);
+      return {
+        ...product,
+        variationPricingRows: buildQuantityPriceTable(product, variations),
+      };
+    }),
+  );
 
-	return {
-		products: productsWithPricing,
+  return {
+    products: productsWithPricing,
     total: meta.total || 0,
     totalPages: meta.totalPages || 0,
     error,
@@ -260,7 +260,7 @@ export async function getRecommendedProducts({
   const productIds = new Set();
 
   results.forEach(({ data }) => {
-    ;(Array.isArray(data) ? data : []).forEach((product) => {
+    (Array.isArray(data) ? data : []).forEach((product) => {
       if (products.length < 4 && product?.id && !productIds.has(product.id)) {
         productIds.add(product.id);
         products.push(product);

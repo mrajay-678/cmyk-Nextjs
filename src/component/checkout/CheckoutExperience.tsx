@@ -3,14 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import {
-  AlertCircle,
-  Eye,
-  Minus,
-  Plus,
-  RefreshCw,
-  X,
-} from "lucide-react";
+import { AlertCircle, Eye, Minus, Plus, RefreshCw, X } from "lucide-react";
 
 import { useCart } from "@/component/product/CartContext";
 import { formatCurrency } from "@/component/product/productHelpers";
@@ -127,7 +120,6 @@ export default function CheckoutExperience() {
     getArtworkFile: (id: string) => File | null;
     isArtworkReady: boolean;
   };
-
   const [cart, setCart] = useState<WooCart | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
@@ -347,12 +339,12 @@ function CartStep(props: {
   return (
     <div className="grid gap-10">
       <section className="overflow-hidden">
-        <div className="grid grid-cols-[minmax(0,1fr)_120px_160px_120px_80px] bg-neutral-100 px-6 py-5 text-sm font-semibold text-neutral-900 max-lg:hidden">
+        <div className="grid items-center gap-5 py-7 lg:grid-cols-[minmax(0,1fr)_120px_160px_120px_80px] bg-neutral-100 px-6 text-sm font-semibold text-neutral-900 max-lg:hidden">
           <span>Product</span>
-          <span>Price</span>
-          <span>Quantity</span>
-          <span>Subtotal</span>
-          <span>Remove</span>
+          <span className="text-center">Quantity</span>
+          <span className="text-center">Per Unit</span>
+          <span className="text-center">Subtotal</span>
+          <span className="text-center">Remove</span>
         </div>
 
         <div className="divide-y divide-neutral-200">
@@ -424,7 +416,7 @@ function LocalCartRow({
   const lineTotal = item.totalPrice * item.cartQuantity;
 
   return (
-    <article className="grid items-center gap-5 py-7 lg:grid-cols-[minmax(0,1fr)_120px_160px_120px_80px]">
+    <article className="grid items-center gap-5 py-7 lg:grid-cols-[minmax(0,1fr)_120px_160px_120px_80px] px-5">
       <ProductCell
         image={item.image}
         title={item.name}
@@ -450,21 +442,19 @@ function LocalCartRow({
           ) : null}
         </div>
       </ProductCell>
-      <span className="text-sm font-medium">
-        {formatCurrency(item.totalPrice, item.currencySymbol || "$")}
+      <span className="text-sm text-center font-semibold">
+        {item.selectedQuantity}
       </span>
-      <QuantityControl
-        value={item.cartQuantity}
-        disabled={isBusy}
-        onChange={(quantity) => onUpdateLocalQuantity(item.id, quantity)}
-      />
-      <span className="text-sm font-semibold">
-        {formatCurrency(lineTotal, item.currencySymbol || "$")}
+      <span className="text-sm text-center font-semibold">
+        ${item.selectedQuantity ? item.totalPrice / item.selectedQuantity : 0}
+      </span>
+      <span className="text-sm text-center font-medium">
+        {formatCurrency(item.totalPrice, item.currencySymbol || "$")}
       </span>
       <button
         type="button"
         onClick={() => onRemoveLocalItem(item)}
-        className="inline-flex h-10 w-10 items-center justify-center rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-900"
+        className="inline-flex h-10 w-10 items-center justify-center rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-900 mx-auto"
         aria-label={`Remove ${item.name}`}
       >
         <X size={18} />
@@ -485,7 +475,7 @@ function WooCartRow({
   onMutateCart: (action: () => Promise<WooCart>) => void;
 }) {
   return (
-    <article className="grid items-center gap-5 py-7 lg:grid-cols-[minmax(0,1fr)_120px_160px_120px_80px]">
+    <article className="grid items-center gap-5 py-7 px-5 lg:grid-cols-[minmax(0,1fr)_120px_160px_120px_80px]">
       <ProductCell
         image={item.images[0]?.thumbnail || item.images[0]?.src}
         title={item.name}
