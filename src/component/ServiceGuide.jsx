@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import "animate.css";
+import Link from "next/link";
 
 const services = [
   {
@@ -118,9 +119,12 @@ export default function ServiceGuide() {
                 </div>
               </div>
               <div className="flex justify-start">
-                <button className="rounded-full bg-pink-500 px-7 py-4 text-base text-white transition hover:bg-pink-600 md:px-9 md:text-lg">
+                <Link
+                  href={"/contact"}
+                  className="rounded-full bg-pink-500 px-7 py-4 text-base text-white transition hover:bg-pink-600 md:px-9 md:text-lg"
+                >
                   Still confused? We got you
-                </button>
+                </Link>
               </div>
             </div>
           </div>

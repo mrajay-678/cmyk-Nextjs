@@ -14,8 +14,8 @@ const marqueeItems = [
 export default function Footer() {
   return (
     <footer className="bg-[#282828] text-white overflow-hidden">
-      <div className="overflow-hidden py-10 md:py-25">
-        <div className="flex w-screen whitespace-nowrap py-6 gap-6 marquee-animation">
+      <div className="overflow-hidden py-10 md:py-20">
+        <div className="flex w-screen whitespace-nowrap py-6 gap-24 md:gap-6 marquee-animation">
           {[...marqueeItems, ...marqueeItems].map((item, i) => (
             <div
               key={i}

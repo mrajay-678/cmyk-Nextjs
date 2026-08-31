@@ -416,7 +416,7 @@ function LocalCartRow({
   const lineTotal = item.totalPrice * item.cartQuantity;
 
   return (
-    <article className="grid items-center gap-5 py-7 lg:grid-cols-[minmax(0,1fr)_120px_160px_120px_80px] px-5">
+    <article className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.06)] lg:grid lg:items-center lg:gap-5 lg:rounded-none lg:border-0 lg:px-5 lg:py-7 lg:shadow-none lg:grid-cols-[minmax(0,1fr)_120px_160px_120px_80px]">
       <ProductCell
         image={item.image}
         title={item.name}
@@ -442,23 +442,43 @@ function LocalCartRow({
           ) : null}
         </div>
       </ProductCell>
-      <span className="text-sm text-center font-semibold">
-        {item.selectedQuantity}
-      </span>
-      <span className="text-sm text-center font-semibold">
-        ${item.selectedQuantity ? item.totalPrice / item.selectedQuantity : 0}
-      </span>
-      <span className="text-sm text-center font-medium">
-        {formatCurrency(item.totalPrice, item.currencySymbol || "$")}
-      </span>
-      <button
-        type="button"
-        onClick={() => onRemoveLocalItem(item)}
-        className="inline-flex h-10 w-10 items-center justify-center rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-900 mx-auto"
-        aria-label={`Remove ${item.name}`}
-      >
-        <X size={18} />
-      </button>
+      <div className="mt-5 grid gap-3 border-t border-neutral-100 pt-4 lg:mt-0 lg:contents lg:border-0 lg:pt-0">
+        <div className="flex items-center justify-between gap-4 lg:block lg:text-center">
+          <span className="text-xs font-semibold uppercase text-neutral-400 lg:hidden">
+            Quantity
+          </span>
+          <span className="text-sm font-semibold">{item.selectedQuantity}</span>
+        </div>
+        <div className="flex items-center justify-between gap-4 lg:block lg:text-center">
+          <span className="text-xs font-semibold uppercase text-neutral-400 lg:hidden">
+            Per Unit
+          </span>
+          <span className="text-sm font-semibold">
+            ${item.selectedQuantity ? item.totalPrice / item.selectedQuantity : 0}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-4 lg:block lg:text-center">
+          <span className="text-xs font-semibold uppercase text-neutral-400 lg:hidden">
+            Subtotal
+          </span>
+          <span className="text-sm font-medium">
+            {formatCurrency(item.totalPrice, item.currencySymbol || "$")}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-4 border-t border-neutral-100 pt-3 lg:block lg:border-0 lg:pt-0 lg:text-center">
+          <span className="text-xs font-semibold uppercase text-neutral-400 lg:hidden">
+            Remove
+          </span>
+          <button
+            type="button"
+            onClick={() => onRemoveLocalItem(item)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-900 lg:mx-auto"
+            aria-label={`Remove ${item.name}`}
+          >
+            <X size={18} />
+          </button>
+        </div>
+      </div>
     </article>
   );
 }
@@ -475,7 +495,7 @@ function WooCartRow({
   onMutateCart: (action: () => Promise<WooCart>) => void;
 }) {
   return (
-    <article className="grid items-center gap-5 py-7 px-5 lg:grid-cols-[minmax(0,1fr)_120px_160px_120px_80px]">
+    <article className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.06)] lg:grid lg:items-center lg:gap-5 lg:rounded-none lg:border-0 lg:px-5 lg:py-7 lg:shadow-none lg:grid-cols-[minmax(0,1fr)_120px_160px_120px_80px]">
       <ProductCell
         image={item.images[0]?.thumbnail || item.images[0]?.src}
         title={item.name}
@@ -485,30 +505,52 @@ function WooCartRow({
           Files Upload: {wooArtworkName(item) || "Not uploaded"}
         </p>
       </ProductCell>
-      <span className="text-sm font-medium">
-        {money(item.prices.price, cart)}
-      </span>
-      <QuantityControl
-        value={item.quantity}
-        disabled={isBusy || !item.quantity_limits.editable}
-        min={item.quantity_limits.minimum}
-        max={item.quantity_limits.maximum}
-        step={item.quantity_limits.multiple_of}
-        onChange={(quantity) =>
-          onMutateCart(() => updateCartItemQuantity(item.key, quantity))
-        }
-      />
-      <span className="text-sm font-semibold">
-        {money(item.totals.line_total, cart)}
-      </span>
-      <button
-        type="button"
-        onClick={() => onMutateCart(() => removeCartItem(item.key))}
-        className="inline-flex h-10 w-10 items-center justify-center rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-900"
-        aria-label={`Remove ${item.name}`}
-      >
-        <X size={18} />
-      </button>
+      <div className="mt-5 grid gap-3 border-t border-neutral-100 pt-4 lg:mt-0 lg:contents lg:border-0 lg:pt-0">
+        <div className="flex items-center justify-between gap-4 lg:block lg:text-center">
+          <span className="text-xs font-semibold uppercase text-neutral-400 lg:hidden">
+            Quantity
+          </span>
+          <QuantityControl
+            value={item.quantity}
+            disabled={isBusy || !item.quantity_limits.editable}
+            min={item.quantity_limits.minimum}
+            max={item.quantity_limits.maximum}
+            step={item.quantity_limits.multiple_of}
+            onChange={(quantity) =>
+              onMutateCart(() => updateCartItemQuantity(item.key, quantity))
+            }
+          />
+        </div>
+        <div className="flex items-center justify-between gap-4 lg:block lg:text-center">
+          <span className="text-xs font-semibold uppercase text-neutral-400 lg:hidden">
+            Per Unit
+          </span>
+          <span className="text-sm font-medium">
+            {money(item.prices.price, cart)}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-4 lg:block lg:text-center">
+          <span className="text-xs font-semibold uppercase text-neutral-400 lg:hidden">
+            Subtotal
+          </span>
+          <span className="text-sm font-semibold">
+            {money(item.totals.line_total, cart)}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-4 border-t border-neutral-100 pt-3 lg:block lg:border-0 lg:pt-0 lg:text-center">
+          <span className="text-xs font-semibold uppercase text-neutral-400 lg:hidden">
+            Remove
+          </span>
+          <button
+            type="button"
+            onClick={() => onMutateCart(() => removeCartItem(item.key))}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-900"
+            aria-label={`Remove ${item.name}`}
+          >
+            <X size={18} />
+          </button>
+        </div>
+      </div>
     </article>
   );
 }
@@ -633,7 +675,7 @@ function CheckoutLoadingOverlay() {
           <RefreshCw className="animate-spin" size={26} />
         </div>
         <h2 className="mt-6 text-2xl font-semibold text-neutral-950">
-          Hang tight, print magic in motion.
+          Just a moment!
         </h2>
         <p className="mt-3 text-sm leading-6 text-neutral-600">
           We are sending your cart and artwork safely to checkout.
