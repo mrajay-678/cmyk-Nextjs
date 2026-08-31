@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import AddToCartButton from "./AddToCartButton";
-import { useCartActions } from "./CartContext";
+import { useCartActions } from "@/component/product/CartContext";
 import { formatCurrency } from "./productHelpers";
 import GangSheetBuilder from "@/component/gang-sheet/GangSheetBuilder";
 import { addCartItem } from "@/lib/woocommerce/cart";

@@ -39,13 +39,28 @@ export default function GangsheetPage() {
   const [selectedSize, setSelectedSize] = useState(sizeOptions[0]);
   const [quantity, setQuantity] = useState(1);
   const [builderReady, setBuilderReady] = useState(false);
-  const [latestDesignId, setLatestDesignId] = useState(null);
   const [error, setError] = useState(null);
   const [isOpening, setIsOpening] = useState(false);
 
   const totalPrice = useMemo(
     () => (selectedSize.price * quantity).toFixed(2),
     [selectedSize.price, quantity],
+  );
+  const variants = useMemo(
+    () =>
+      [
+        selectedSize,
+        ...sizeOptions.filter((option) => option.id !== selectedSize.id),
+      ].map((option) => ({
+        id: option.id,
+        title: option.label,
+        attribute_key: "attribute_size",
+        attribute_value: option.label,
+        attributes: {
+          attribute_size: option.label,
+        },
+      })),
+    [selectedSize],
   );
 
   const handleOpenBuilder = () => {
@@ -168,41 +183,22 @@ export default function GangsheetPage() {
             </div>
 
             {error && <div className={styles.error}>{error}</div>}
-            {latestDesignId && (
-              <div className={styles.success}>
-                Saved design ID: {latestDesignId}
-              </div>
-            )}
             {isOpening && (
               <div className={styles.loader}>Launching builder…</div>
             )}
 
             <div className={styles.actions}>
               <GangSheetBuilder
-                mode="external"
+                mode="woo-product"
                 productId="28471"
+                productType="1"
                 shopUuid={shopId}
-                sizes={sizeOptions}
-                sizeId={selectedSize.id}
-                quantity={quantity}
+                variants={variants}
+                cartUrl="/cart"
                 buttonClassName={styles.primary}
                 disabled={!builderReady || isOpening}
-                externalSettings={{
-                  showStartModal: false,
-                  enableQuantity: false,
-                }}
                 onReady={() => setBuilderReady(true)}
                 onOpen={handleOpenBuilder}
-                onDesignCreated={(event) => {
-                  if (event?.design_id) setLatestDesignId(String(event.design_id));
-                  window.gs_builder?.close();
-                  setIsOpening(false);
-                }}
-                onDesignUpdated={(event) => {
-                  if (event?.design_id) setLatestDesignId(String(event.design_id));
-                  window.gs_builder?.close();
-                  setIsOpening(false);
-                }}
                 onClose={() => setIsOpening(false)}
                 onError={(event) => {
                   setError(event?.reason ?? "Builder error");

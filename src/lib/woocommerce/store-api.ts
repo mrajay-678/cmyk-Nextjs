@@ -1,5 +1,6 @@
 export const STORE_API_BASE = "/api/store";
 export const CART_TOKEN_STORAGE_KEY = "cmyk_cart_token";
+export const CART_NONCE_STORAGE_KEY = "cmyk_cart_nonce";
 
 export type StoreApiError = {
   code?: string;
@@ -24,12 +25,32 @@ export class WooStoreApiError extends Error {
   }
 }
 
+function parseResponseJson(text: string) {
+  if (!text) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
 function getStoredCartToken() {
   if (typeof window === "undefined") {
     return "";
   }
 
   return window.localStorage.getItem(CART_TOKEN_STORAGE_KEY) || "";
+}
+
+function getStoredCartNonce() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  return window.localStorage.getItem(CART_NONCE_STORAGE_KEY) || "";
 }
 
 function persistCartToken(response: Response) {
@@ -40,6 +61,11 @@ function persistCartToken(response: Response) {
   const token = response.headers.get("Cart-Token");
   if (token) {
     window.localStorage.setItem(CART_TOKEN_STORAGE_KEY, token);
+  }
+
+  const nonce = response.headers.get("Nonce");
+  if (nonce) {
+    window.localStorage.setItem(CART_NONCE_STORAGE_KEY, nonce);
   }
 }
 
@@ -83,6 +109,11 @@ export async function storeApiFetch<T>(
     headers.set("Cart-Token", token);
   }
 
+  const nonce = isMutatingRequest(init.method) ? getStoredCartNonce() : "";
+  if (nonce) {
+    headers.set("Nonce", nonce);
+  }
+
   let body = init.body;
   if (init.json !== undefined) {
     headers.set("Content-Type", "application/json");
@@ -95,11 +126,26 @@ export async function storeApiFetch<T>(
     body,
     credentials: "same-origin",
   });
+  const responseText = await response.text();
+  const location = response.headers.get("location");
+  const contentType = response.headers.get("content-type") || "";
+
+  if (process.env.NODE_ENV !== "production") {
+    console.info("[cmyk-store-api-client]", {
+      url: `${STORE_API_BASE}${normalizePath(path)}`,
+      status: response.status,
+      location,
+      contentType,
+      bodyStart: responseText.slice(0, 300),
+    });
+  }
 
   persistCartToken(response);
+  const parsedBody = parseResponseJson(responseText) as StoreApiError | T | null;
 
   if (!response.ok) {
-    const error = (await response.json().catch(() => null)) as StoreApiError | null;
+    const error = parsedBody as StoreApiError | null;
+
     throw new WooStoreApiError(
       error?.message || `WooCommerce Store API request failed with status ${response.status}.`,
       response.status,
@@ -108,11 +154,24 @@ export async function storeApiFetch<T>(
     );
   }
 
-  return response.json() as Promise<T>;
+  if (response.status === 204 || !responseText) {
+    return null as T;
+  }
+
+  if (!contentType.includes("application/json") || parsedBody === null) {
+    throw new WooStoreApiError(
+      `WooCommerce Store API returned a non-JSON response with status ${response.status}.`,
+      response.status,
+      "woocommerce_non_json_response",
+    );
+  }
+
+  return parsedBody as T;
 }
 
 export function clearStoredCartToken() {
   if (typeof window !== "undefined") {
     window.localStorage.removeItem(CART_TOKEN_STORAGE_KEY);
+    window.localStorage.removeItem(CART_NONCE_STORAGE_KEY);
   }
 }

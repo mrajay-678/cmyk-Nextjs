@@ -38,13 +38,11 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 <!--
 NEXT_PUBLIC_WC_URL=https://cmykprint.shop/
 NEXT_PUBLIC_GS_SHOP_ID=e28e4f98-a0b2-4b75-b1fd-e809863d91de
-WC_CONSUMER_KEY=ck_debcfd487f468cfb2066d4c51fb716597cdcd51a
-WC_CONSUMER_SECRET=cs_4ab300c5dd8b18d4a0bbedae6ff6a0ce4029ab97
+WC_CONSUMER_KEY=your-woocommerce-consumer-key
+WC_CONSUMER_SECRET=your-woocommerce-consumer-secret
 WP_MEDIA_USERNAME=your-wordpress-user
 WP_MEDIA_APPLICATION_PASSWORD=your-wordpress-application-password
 CMYK_ARTWORK_UPLOAD_SECRET=use-the-same-long-random-secret-in-next-and-wordpress -->
-
-c55d642ed9fcdca8f5bcad73de1c1d290fd8bc7873c1cbee54350bdfbd545adf
 
 
 Here’s what’s still pending outside the code I changed:

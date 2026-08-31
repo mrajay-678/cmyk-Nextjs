@@ -5,6 +5,7 @@ import { useCallback, useId, useMemo, useState } from "react";
 
 const DEFAULT_APP_HOST = "https://app.buildagangsheet.com";
 const DEFAULT_WOO_HOST = "https://cmykprint.shop";
+const DEFAULT_AJAX_PROXY_PATH = "/api/woocommerce/admin-ajax";
 const DEFAULT_SHOP_UUID = "e28e4f98-a0b2-4b75-b1fd-e809863d91de";
 const DEFAULT_SHOP_SLUG = "cmyk-print";
 
@@ -33,11 +34,11 @@ function normalizeExternalSizes(sizes = []) {
 function ensureWooGlobals({ ajaxUrl, cartUrl }) {
   window.appEnv = window.appEnv || "production";
   window.wc_add_to_cart_params = {
+    ...(window.wc_add_to_cart_params || {}),
     ajax_url: ajaxUrl,
     wc_ajax_url: "/?wc-ajax=%%endpoint%%",
     cart_url: cartUrl,
     cart_redirect_after_add: "no",
-    ...(window.wc_add_to_cart_params || {}),
   };
 }
 
@@ -127,7 +128,7 @@ export default function GangSheetBuilder({
   const [scriptReady, setScriptReady] = useState(
     mode === "external" ? sdkState.externalReady : sdkState.wooReady,
   );
-  const resolvedAjaxUrl = ajaxUrl || `${wooHost}/wp-admin/admin-ajax.php`;
+  const resolvedAjaxUrl = ajaxUrl || DEFAULT_AJAX_PROXY_PATH;
   const resolvedCartUrl = cartUrl || `${wooHost}/cart/`;
 
   const wooOptions = useMemo(
@@ -188,13 +189,17 @@ export default function GangSheetBuilder({
     }
 
     if (typeof window === "undefined" || !window.gs_builder) {
-      onError?.({ reason: "Builder script not loaded. Please wait and try again." });
+      onError?.({
+        reason: "Builder script not loaded. Please wait and try again.",
+      });
       return;
     }
 
     const sdkSizes = normalizeExternalSizes(sizes);
     if (!shopUuid || !sdkSizes.length) {
-      onError?.({ reason: "Gang Sheet Builder requires a shop ID and at least one size." });
+      onError?.({
+        reason: "Gang Sheet Builder requires a shop ID and at least one size.",
+      });
       return;
     }
 
@@ -251,7 +256,9 @@ export default function GangSheetBuilder({
             initializeWooShortcode();
             onReady?.();
           }}
-          onError={() => onError?.({ reason: "Failed to load Build a Gang Sheet Woo SDK." })}
+          onError={() =>
+            onError?.({ reason: "Failed to load Build a Gang Sheet Woo SDK." })
+          }
         />
         <div data-gs-instance-id={instanceId}>
           <button
@@ -283,7 +290,9 @@ export default function GangSheetBuilder({
           setScriptReady(true);
           onReady?.();
         }}
-        onError={() => onError?.({ reason: "Failed to load Gang Sheet Builder SDK." })}
+        onError={() =>
+          onError?.({ reason: "Failed to load Gang Sheet Builder SDK." })
+        }
       />
       <button
         type="button"
