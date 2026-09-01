@@ -5,10 +5,15 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import AddToCartButton from "./AddToCartButton";
-import { useCartActions } from "@/component/product/CartContext";
+import { useCart } from "@/component/product/CartContext";
 import { formatCurrency } from "./productHelpers";
 import GangSheetBuilder from "@/component/gang-sheet/GangSheetBuilder";
 import { addCartItem } from "@/lib/woocommerce/cart";
+import {
+  findMatchingWooCartItem,
+  mergeLocalCartItems,
+  reconcileWooCartToLocalItems,
+} from "@/lib/woocommerce/cart-sync";
 import { Headset } from "lucide-react";
 import Link from "next/link";
 
@@ -24,7 +29,7 @@ export default function ProductPurchasePanel({
     ? product.attributes[0].options
     : [];
   const router = useRouter();
-  const { addItem } = useCartActions();
+  const { items, addItem } = useCart();
   const isBuyingNowRef = useRef(false);
   const [selectedQuantity, setSelectedQuantity] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
@@ -115,9 +120,15 @@ export default function ProductPurchasePanel({
     setIsBuyingNow(true);
 
     try {
-      await addCartItem(getWooCartPayload());
-      addItem(cartItem, selectedFile);
-      router.push("/checkout");
+      const nextLocalItems = mergeLocalCartItems(items, cartItem);
+      const wooCart = await addCartItem(getWooCartPayload());
+      const syncedCart = await reconcileWooCartToLocalItems(
+        wooCart,
+        nextLocalItems,
+      );
+      const wooItem = findMatchingWooCartItem(syncedCart.items, cartItem);
+      addItem({ ...cartItem, wooCartKey: wooItem?.key }, selectedFile);
+      router.push("/cart");
     } catch (error) {
       setCheckoutError(
         error instanceof Error

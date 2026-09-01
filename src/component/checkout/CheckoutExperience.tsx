@@ -13,6 +13,11 @@ import {
   updateCartItemQuantity,
 } from "@/lib/woocommerce/cart";
 import { WooStoreApiError } from "@/lib/woocommerce/store-api";
+import {
+  findMatchingWooCartItem,
+  isGangSheetWooItem,
+  reconcileWooCartToLocalItems,
+} from "@/lib/woocommerce/cart-sync";
 import type { WooCart, WooCartItem } from "@/lib/woocommerce/types";
 
 type LocalCartItem = {
@@ -30,6 +35,7 @@ type LocalCartItem = {
   unitPrice: number;
   currencySymbol?: string;
   artworkName?: string;
+  wooCartKey?: string;
 };
 
 type PreviewArtwork = {
@@ -61,6 +67,12 @@ function money(amount?: string | null, cart?: WooCart | null) {
     style: "currency",
     currency: totals?.currency_code || "USD",
   }).format(Number.isFinite(numeric) ? numeric : 0);
+}
+
+function minorAmount(amount?: string | null, cart?: WooCart | null) {
+  const totals = cart?.totals;
+  const minorUnit = totals?.currency_minor_unit ?? 2;
+  return Number.parseInt(amount || "0", 10) / 10 ** minorUnit;
 }
 
 function normalizeError(error: unknown) {
@@ -129,7 +141,14 @@ export default function CheckoutExperience() {
   );
 
   const hasLocalItems = localItems.length > 0;
-  const hasWooItems = Boolean(cart?.items.length);
+  const visibleWooItems = hasLocalItems
+    ? (cart?.items || []).filter(isGangSheetWooItem)
+    : cart?.items || [];
+  const hasWooItems = visibleWooItems.length > 0;
+  const wooOnlySubtotal = visibleWooItems.reduce(
+    (total, item) => total + minorAmount(item.totals.line_total, cart),
+    0,
+  );
   const isArtworkLoading =
     hasLocalItems &&
     localItems.some((item) => Boolean(item.artworkName)) &&
@@ -139,7 +158,10 @@ export default function CheckoutExperience() {
       isArtworkReady && Boolean(item.artworkName) && !getArtworkFile(item.id),
   );
   const total = hasLocalItems
-    ? formatCurrency(localSubtotal, localItems[0]?.currencySymbol || "$")
+    ? formatCurrency(
+        localSubtotal + wooOnlySubtotal,
+        localItems[0]?.currencySymbol || "$",
+      )
     : money(cart?.totals.total_price, cart);
 
   async function refreshCart() {
@@ -179,6 +201,8 @@ export default function CheckoutExperience() {
 
   async function redirectToHostedCheckout() {
     if (hasLocalItems) {
+      await reconcileWooCartToLocalItems(await getCurrentCart(), localItems);
+
       const formData = new FormData();
       formData.append("items", JSON.stringify(localItems));
       formData.append("billing_address", JSON.stringify(emptyAddress));
@@ -212,8 +236,7 @@ export default function CheckoutExperience() {
   }
 
   function findWooCartItemForLocalItem(localItem: LocalCartItem) {
-    const checkoutId = Number(localItem.variationId || localItem.productId);
-    return cart?.items.find((item) => item.id === checkoutId) || null;
+    return cart ? findMatchingWooCartItem(cart.items, localItem) : null;
   }
 
   function removeCheckoutItem(localItem: LocalCartItem) {
@@ -295,6 +318,7 @@ export default function CheckoutExperience() {
         <CartStep
           cart={cart}
           localItems={localItems}
+          wooItems={visibleWooItems}
           hasLocalItems={hasLocalItems}
           isBusy={isBusy}
           isArtworkLoading={isArtworkLoading}
@@ -320,6 +344,7 @@ export default function CheckoutExperience() {
 function CartStep(props: {
   cart: WooCart | null;
   localItems: LocalCartItem[];
+  wooItems: WooCartItem[];
   hasLocalItems: boolean;
   isBusy: boolean;
   isArtworkLoading: boolean;
@@ -332,7 +357,7 @@ function CartStep(props: {
   getArtworkFile: (id: string) => File | null;
   onMutateCart: (action: () => Promise<WooCart>) => void;
 }) {
-  const wooItems = props.cart?.items || [];
+  const wooItems = props.wooItems;
   const isEmpty = props.hasLocalItems
     ? !props.localItems.length
     : !wooItems.length;
@@ -357,9 +382,20 @@ function CartStep(props: {
               </Link>
             </div>
           ) : props.hasLocalItems ? (
-            props.localItems.map((item) => (
-              <LocalCartRow key={item.id} item={item} {...props} />
-            ))
+            <>
+              {props.localItems.map((item) => (
+                <LocalCartRow key={item.id} item={item} {...props} />
+              ))}
+              {wooItems.map((item) => (
+                <WooCartRow
+                  key={item.key}
+                  item={item}
+                  cart={props.cart}
+                  isBusy={props.isBusy}
+                  onMutateCart={props.onMutateCart}
+                />
+              ))}
+            </>
           ) : (
             wooItems.map((item) => (
               <WooCartRow

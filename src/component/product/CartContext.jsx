@@ -162,6 +162,7 @@ export function CartProvider({ children }) {
         entry.id === item.id
           ? {
               ...entry,
+              ...item,
               cartQuantity: entry.cartQuantity + 1,
             }
           : entry,

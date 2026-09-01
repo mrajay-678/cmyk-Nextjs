@@ -1,9 +1,15 @@
 "use client";
 
 import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
-import { useCartActions } from "./CartContext";
+import { useCart } from "./CartContext";
 import { addCartItem } from "@/lib/woocommerce/cart";
+import {
+  findMatchingWooCartItem,
+  mergeLocalCartItems,
+  reconcileWooCartToLocalItems,
+} from "@/lib/woocommerce/cart-sync";
 
 function AddToCartButton({
   item,
@@ -12,7 +18,8 @@ function AddToCartButton({
   className,
   children,
 }) {
-  const { addItem } = useCartActions();
+  const router = useRouter();
+  const { items, addItem } = useCart();
   const isAddingRef = useRef(false);
   const [wasAdded, setWasAdded] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
@@ -38,7 +45,8 @@ function AddToCartButton({
       setError("");
 
       try {
-        await addCartItem({
+        const nextLocalItems = mergeLocalCartItems(items, item);
+        const wooCart = await addCartItem({
           id: Number(item.variationId || item.productId || item.id),
           quantity: Number(item.checkoutQuantity || item.cartQuantity || 1),
           variation: (item.variationAttributes || []).map((attribute) => ({
@@ -46,8 +54,14 @@ function AddToCartButton({
             value: attribute.option,
           })),
         });
-        addItem(item, artworkFile);
+        const syncedCart = await reconcileWooCartToLocalItems(
+          wooCart,
+          nextLocalItems,
+        );
+        const wooItem = findMatchingWooCartItem(syncedCart.items, item);
+        addItem({ ...item, wooCartKey: wooItem?.key }, artworkFile);
         setWasAdded(true);
+        router.push("/cart");
       } catch (cartError) {
         setError(
           cartError instanceof Error
@@ -61,7 +75,7 @@ function AddToCartButton({
     };
 
     addItemToWooCart();
-  }, [addItem, artworkFile, disabled, item]);
+  }, [addItem, artworkFile, disabled, item, items, router]);
 
   return (
     <div className="w-full">

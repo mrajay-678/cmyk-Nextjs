@@ -68,6 +68,20 @@ function parseJsonBody(body: ArrayBuffer) {
   }
 }
 
+function applyCartTokenCookie(response: NextResponse, cartToken: string | null) {
+  if (!cartToken) {
+    return;
+  }
+
+  response.cookies.set(CART_TOKEN_COOKIE, cartToken, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 14,
+  });
+}
+
 async function proxyStoreApi(
   request: NextRequest,
   context: { params: Promise<{ path: string[] }> },
@@ -102,6 +116,16 @@ async function proxyStoreApi(
     const location = wooResponse.headers.get("location");
     const responseBody = await wooResponse.arrayBuffer();
 
+    if (contentType) {
+      responseHeaders.set("Content-Type", contentType);
+    }
+    if (cartToken) {
+      responseHeaders.set("Cart-Token", cartToken);
+    }
+    if (nonce) {
+      responseHeaders.set("Nonce", nonce);
+    }
+
     if (wooResponse.status >= 300 && wooResponse.status < 400) {
       return NextResponse.json(
         {
@@ -116,10 +140,12 @@ async function proxyStoreApi(
     }
 
     if (wooResponse.status === 204 || responseBody.byteLength === 0) {
-      return new NextResponse(null, {
+      const response = new NextResponse(null, {
         status: wooResponse.status,
         headers: responseHeaders,
       });
+      applyCartTokenCookie(response, cartToken);
+      return response;
     }
 
     if (!contentType?.includes("application/json")) {
@@ -148,30 +174,12 @@ async function proxyStoreApi(
       );
     }
 
-    if (contentType) {
-      responseHeaders.set("Content-Type", contentType);
-    }
-    if (cartToken) {
-      responseHeaders.set("Cart-Token", cartToken);
-    }
-    if (nonce) {
-      responseHeaders.set("Nonce", nonce);
-    }
-
     const response = NextResponse.json(parsedBody, {
       status: wooResponse.status,
       headers: responseHeaders,
     });
 
-    if (cartToken) {
-      response.cookies.set(CART_TOKEN_COOKIE, cartToken, {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-        path: "/",
-        maxAge: 60 * 60 * 24 * 14,
-      });
-    }
+    applyCartTokenCookie(response, cartToken);
 
     return response;
   } catch (error) {

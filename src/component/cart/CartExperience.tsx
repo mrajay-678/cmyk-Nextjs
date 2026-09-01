@@ -12,6 +12,10 @@ import {
 } from "@/lib/woocommerce/cart";
 import { useCart } from "@/component/product/CartContext";
 import { formatCurrency } from "@/component/product/productHelpers";
+import {
+  findMatchingWooCartItem,
+  isGangSheetWooItem,
+} from "@/lib/woocommerce/cart-sync";
 import type { WooCart, WooCartItem } from "@/lib/woocommerce/types";
 
 type LocalCartItem = {
@@ -25,6 +29,7 @@ type LocalCartItem = {
   totalPrice: number;
   currencySymbol?: string;
   artworkName?: string;
+  wooCartKey?: string;
 };
 
 function money(amount?: string | null, cart?: WooCart) {
@@ -40,6 +45,275 @@ function unitMoney(item: WooCart["items"][number], cart: WooCart) {
   const lineTotal = Number.parseInt(item.totals.line_total || "0", 10);
   const quantity = item.quantity || 1;
   return money(String(Math.round(lineTotal / quantity)), cart);
+}
+
+function minorAmount(amount?: string | null, cart?: WooCart | null) {
+  const minorUnit = cart?.totals.currency_minor_unit ?? 2;
+  return Number.parseInt(amount || "0", 10) / 10 ** minorUnit;
+}
+
+function decodeText(value: string) {
+  if (typeof document === "undefined") {
+    return value;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.innerHTML = value;
+  return textarea.value;
+}
+
+function getWooMetaLines(item: WooCartItem) {
+  const hiddenNames = new Set([
+    "gang sheet product type",
+    "image count",
+    "image services",
+    "image service ids",
+    "gang sheet add-on fee",
+    "rush fee",
+    "image services fee",
+  ]);
+
+  return item.item_data
+    .map((entry) => ({
+      name: decodeText(entry.name || "").trim(),
+      value: decodeText(entry.display || entry.value || "").trim(),
+    }))
+    .filter((entry) => entry.value)
+    .filter((entry) => !hiddenNames.has(entry.name.toLowerCase()))
+    .slice(0, 4);
+}
+
+function LocalCartRow({
+  item,
+  isBusy,
+  onUpdate,
+  onRemove,
+}: {
+  item: LocalCartItem;
+  isBusy: boolean;
+  onUpdate: (item: LocalCartItem, quantity: number) => void;
+  onRemove: (item: LocalCartItem) => void;
+}) {
+  return (
+    <article className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.06)] md:grid md:grid-cols-[minmax(260px,1fr)_130px_130px_130px_80px] md:items-center md:gap-4 md:rounded-none md:border-0 md:px-5 md:py-7 md:shadow-none">
+      <div className="grid min-w-0 grid-cols-[76px_minmax(0,1fr)] gap-4">
+        <div className="relative h-[76px] w-[76px] overflow-hidden rounded-md bg-neutral-100">
+          {item.image ? (
+            <Image
+              src={item.image}
+              alt={item.name}
+              fill
+              sizes="76px"
+              className="object-cover"
+            />
+          ) : null}
+        </div>
+        <div className="min-w-0 self-center">
+          <h2 className="break-words font-heading text-base font-bold leading-tight text-neutral-950">
+            {item.name}
+          </h2>
+          {item.selectedQuantity ? (
+            <p className="mt-1 text-sm text-neutral-500">
+              {item.selectedQuantity} units
+            </p>
+          ) : null}
+          <p className="mt-1 text-xs text-neutral-500">
+            Files Upload: {item.artworkName || "Not uploaded"}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 flex items-center justify-between gap-3 border-t border-neutral-100 pt-4 md:mt-0 md:border-0 md:pt-0 md:justify-center">
+        <span className="text-xs font-semibold uppercase text-neutral-400 md:hidden">
+          Quantity
+        </span>
+        <QuantityControl
+          value={item.cartQuantity}
+          disabled={isBusy}
+          min={1}
+          onChange={(quantity) => onUpdate(item, quantity)}
+        />
+      </div>
+
+      <CartAmount label="Per Unit">
+        {formatCurrency(item.totalPrice, item.currencySymbol || "$")}
+      </CartAmount>
+      <CartAmount label="Subtotal">
+        {formatCurrency(
+          item.totalPrice * item.cartQuantity,
+          item.currencySymbol || "$",
+        )}
+      </CartAmount>
+      <RemoveButton
+        disabled={isBusy}
+        label={`Remove ${item.name}`}
+        onClick={() => onRemove(item)}
+      />
+    </article>
+  );
+}
+
+function WooCartRow({
+  item,
+  cart,
+  isBusy,
+  onMutate,
+}: {
+  item: WooCartItem;
+  cart: WooCart;
+  isBusy: boolean;
+  onMutate: (action: () => Promise<WooCart>) => void;
+}) {
+  const metaLines = getWooMetaLines(item);
+
+  return (
+    <article className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.06)] md:grid md:grid-cols-[minmax(260px,1fr)_130px_130px_130px_80px] md:items-center md:gap-4 md:rounded-none md:border-0 md:px-5 md:py-7 md:shadow-none">
+      <div className="grid min-w-0 grid-cols-[76px_minmax(0,1fr)] gap-4">
+        <div className="relative h-[76px] w-[76px] overflow-hidden rounded-md bg-neutral-100">
+          {item.images[0]?.thumbnail || item.images[0]?.src ? (
+            <Image
+              src={item.images[0].thumbnail || item.images[0].src}
+              alt={item.images[0].alt || item.name}
+              fill
+              sizes="76px"
+              className="object-cover"
+            />
+          ) : null}
+        </div>
+        <div className="min-w-0 self-center">
+          <h2 className="break-words font-heading text-base font-bold leading-tight text-neutral-950">
+            {item.name}
+          </h2>
+          {item.variation.length ? (
+            <p className="mt-1 text-sm text-neutral-500">
+              {item.variation.map((entry) => decodeText(entry.value)).join(", ")}
+            </p>
+          ) : null}
+          {metaLines.length ? (
+            <div className="mt-2 grid gap-1 text-xs text-neutral-500">
+              {metaLines.map((entry, index) => (
+                <p
+                  key={`${item.key}-${entry.name}-${index}`}
+                  className="break-words"
+                >
+                  <span className="font-medium text-neutral-700">
+                    {entry.name}:
+                  </span>{" "}
+                  {entry.value}
+                </p>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="mt-5 flex items-center justify-between gap-3 border-t border-neutral-100 pt-4 md:mt-0 md:border-0 md:pt-0 md:justify-center">
+        <span className="text-xs font-semibold uppercase text-neutral-400 md:hidden">
+          Quantity
+        </span>
+        <QuantityControl
+          value={item.quantity}
+          disabled={isBusy}
+          min={item.quantity_limits.minimum}
+          max={item.quantity_limits.maximum}
+          onChange={(quantity) =>
+            onMutate(() => updateCartItemQuantity(item.key, quantity))
+          }
+        />
+      </div>
+
+      <CartAmount label="Per Unit">{unitMoney(item, cart)}</CartAmount>
+      <CartAmount label="Subtotal">{money(item.totals.line_total, cart)}</CartAmount>
+      <RemoveButton
+        disabled={isBusy}
+        label={`Remove ${item.name}`}
+        onClick={() => onMutate(() => removeCartItem(item.key))}
+      />
+    </article>
+  );
+}
+
+function QuantityControl({
+  value,
+  disabled,
+  min = 1,
+  max = 999,
+  onChange,
+}: {
+  value: number;
+  disabled: boolean;
+  min?: number;
+  max?: number;
+  onChange: (quantity: number) => void;
+}) {
+  return (
+    <div className="inline-flex h-10 w-28 items-center justify-between rounded-full border border-neutral-200 bg-white px-3">
+      <button
+        type="button"
+        disabled={disabled || value <= min}
+        onClick={() => onChange(Math.max(min, value - 1))}
+        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-neutral-600 disabled:text-neutral-300"
+        aria-label="Decrease quantity"
+      >
+        <Minus size={16} />
+      </button>
+      <span className="w-7 text-center text-sm font-semibold">{value}</span>
+      <button
+        type="button"
+        disabled={disabled || value >= max}
+        onClick={() => onChange(Math.min(max, value + 1))}
+        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-neutral-600 disabled:text-neutral-300"
+        aria-label="Increase quantity"
+      >
+        <Plus size={16} />
+      </button>
+    </div>
+  );
+}
+
+function CartAmount({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <p className="mt-3 flex items-center justify-between text-sm font-semibold text-neutral-950 md:mt-0 md:block md:text-center">
+      <span className="text-xs font-semibold uppercase text-neutral-400 md:hidden">
+        {label}
+      </span>
+      {children}
+    </p>
+  );
+}
+
+function RemoveButton({
+  disabled,
+  label,
+  onClick,
+}: {
+  disabled: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <div className="mt-4 flex items-center justify-between border-t border-neutral-100 pt-3 md:mt-0 md:border-0 md:pt-0 md:justify-center">
+      <span className="text-xs font-semibold uppercase text-neutral-400 md:hidden">
+        Remove
+      </span>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onClick}
+        className="inline-flex h-10 w-10 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-950 disabled:text-neutral-200"
+        aria-label={label}
+      >
+        <X className="hidden md:block" size={18} />
+        <Trash2 className="md:hidden" size={17} />
+      </button>
+    </div>
+  );
 }
 
 export default function CartExperience() {
@@ -60,9 +334,19 @@ export default function CartExperience() {
   const [error, setError] = useState("");
   const [isBusy, setIsBusy] = useState(false);
   const hasLocalItems = localItems.length > 0;
-  const visibleItems = hasLocalItems ? localItems : cart?.items || [];
+  const visibleWooItems = hasLocalItems
+    ? (cart?.items || []).filter(isGangSheetWooItem)
+    : cart?.items || [];
+  const hasVisibleItems = hasLocalItems || visibleWooItems.length > 0;
+  const wooOnlySubtotal = visibleWooItems.reduce(
+    (total, item) => total + minorAmount(item.totals.line_total, cart),
+    0,
+  );
   const displayTotal = hasLocalItems
-    ? formatCurrency(localSubtotal, localItems[0]?.currencySymbol || "$")
+    ? formatCurrency(
+        localSubtotal + wooOnlySubtotal,
+        localItems[0]?.currencySymbol || "$",
+      )
     : money(cart?.totals.total_price, cart || undefined);
 
   async function refreshCart() {
@@ -122,8 +406,7 @@ export default function CartExperience() {
   }
 
   function findWooCartItemForLocalItem(localItem: LocalCartItem) {
-    const checkoutId = Number(localItem.variationId || localItem.productId);
-    return cart?.items.find((item) => item.id === checkoutId) || null;
+    return cart ? findMatchingWooCartItem(cart.items, localItem) : null;
   }
 
   function updateLocalCartItem(localItem: LocalCartItem, quantity: number) {
@@ -150,7 +433,10 @@ export default function CartExperience() {
         .map((item) => findWooCartItemForLocalItem(item)?.key)
         .filter((key): key is WooCartItem["key"] => Boolean(key));
       clearLocalCart();
-      void removeWooCartKeys(wooKeys);
+      void removeWooCartKeys([
+        ...wooKeys,
+        ...visibleWooItems.map((item) => item.key),
+      ]);
       return;
     }
 
@@ -178,7 +464,7 @@ export default function CartExperience() {
         <div>
           {!cart ? (
             <p className="text-sm text-neutral-500">Loading cart...</p>
-          ) : visibleItems.length ? (
+          ) : hasVisibleItems ? (
             <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_440px] lg:items-start">
               <section className="min-w-0">
                 <div className="hidden bg-neutral-100 px-6 py-6 text-sm font-medium text-neutral-950 md:grid md:grid-cols-[minmax(320px,1fr)_130px_130px_130px_80px] md:items-center">
@@ -192,222 +478,28 @@ export default function CartExperience() {
                 <div className="space-y-4 md:space-y-0 md:divide-y md:divide-neutral-100">
                   {hasLocalItems
                     ? localItems.map((item) => (
-                    <article
-                      key={item.id}
-                      className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.06)] md:grid md:gap-4 md:rounded-none md:border-0 md:p-0 md:py-7 md:shadow-none md:grid-cols-[minmax(320px,1fr)_130px_130px_130px_80px] md:items-center md:px-6"
-                    >
-                      <div className="grid min-w-0 grid-cols-[76px_minmax(0,1fr)] gap-4 md:grid-cols-[78px_minmax(0,1fr)] md:gap-5">
-                        <div className="relative h-[76px] w-[76px] overflow-hidden rounded-md bg-neutral-100 md:h-[78px] md:w-[78px]">
-                          {item.image ? (
-                            <Image
-                              src={item.image}
-                              alt={item.name}
-                              fill
-                              sizes="78px"
-                              className="object-cover"
-                            />
-                          ) : null}
-                        </div>
-                        <div className="min-w-0 self-center">
-                          <h2 className="break-words font-heading text-base font-bold leading-tight text-neutral-950">
-                            {item.name}
-                          </h2>
-                          {item.selectedQuantity ? (
-                            <p className="mt-1 text-sm text-neutral-500">
-                              {item.selectedQuantity} units
-                            </p>
-                          ) : null}
-                          <p className="mt-1 text-xs text-neutral-500">
-                            Files Upload: {item.artworkName || "Not uploaded"}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="mt-5 flex items-center justify-between gap-3 border-t border-neutral-100 pt-4 md:mt-0 md:border-0 md:pt-0 md:justify-center">
-                        <span className="text-xs font-semibold uppercase text-neutral-400 md:hidden">
-                          Quantity
-                        </span>
-                        <div className="inline-flex items-center rounded-full border border-neutral-200 bg-white">
-                          <button
-                            type="button"
-                            disabled={isBusy || item.cartQuantity <= 1}
-                            onClick={() =>
-                              updateLocalCartItem(item, item.cartQuantity - 1)
-                            }
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-600 disabled:text-neutral-300"
-                          >
-                            <Minus size={16} />
-                          </button>
-                          <span className="w-10 text-center text-sm font-semibold">
-                            {item.cartQuantity}
-                          </span>
-                          <button
-                            type="button"
-                            disabled={isBusy}
-                            onClick={() =>
-                              updateLocalCartItem(item, item.cartQuantity + 1)
-                            }
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-600 disabled:text-neutral-300"
-                          >
-                            <Plus size={16} />
-                          </button>
-                        </div>
-                      </div>
-
-                      <p className="mt-3 flex items-center justify-between text-sm font-semibold text-neutral-950 md:mt-0 md:block md:text-center">
-                        <span className="text-xs font-semibold uppercase text-neutral-400 md:hidden">
-                          Per Unit
-                        </span>
-                        {formatCurrency(item.totalPrice, item.currencySymbol || "$")}
-                      </p>
-
-                      <p className="mt-3 flex items-center justify-between text-sm font-semibold text-neutral-950 md:mt-0 md:block md:text-center">
-                        <span className="text-xs font-semibold uppercase text-neutral-400 md:hidden">
-                          Subtotal
-                        </span>
-                        {formatCurrency(
-                          item.totalPrice * item.cartQuantity,
-                          item.currencySymbol || "$",
-                        )}
-                      </p>
-
-                      <div className="mt-4 flex justify-end border-t border-neutral-100 pt-3 md:mt-0 md:border-0 md:pt-0 md:justify-center">
-                        <button
-                          type="button"
-                          disabled={isBusy}
-                          onClick={() => removeLocalCartItem(item)}
-                          className="inline-flex h-10 w-10 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-950 disabled:text-neutral-200"
-                          aria-label={`Remove ${item.name}`}
-                        >
-                          <X className="hidden md:block" size={18} />
-                          <Trash2 className="md:hidden" size={17} />
-                        </button>
-                      </div>
-                    </article>
-                  ))
-                    : cart.items.map((item) => (
-                    <article
+                        <LocalCartRow
+                          key={item.id}
+                          item={item}
+                          isBusy={isBusy}
+                          onUpdate={updateLocalCartItem}
+                          onRemove={removeLocalCartItem}
+                        />
+                      ))
+                    : null}
+                  {visibleWooItems.map((item) => (
+                    <WooCartRow
                       key={item.key}
-                      className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.06)] md:grid md:gap-4 md:rounded-none md:border-0 md:p-0 md:py-7 md:shadow-none md:grid-cols-[minmax(320px,1fr)_130px_130px_130px_80px] md:items-center md:px-6"
-                    >
-                      <div className="grid min-w-0 grid-cols-[76px_minmax(0,1fr)] gap-4 md:grid-cols-[78px_minmax(0,1fr)] md:gap-5">
-                        <div className="relative h-[76px] w-[76px] overflow-hidden rounded-md bg-neutral-100 md:h-[78px] md:w-[78px]">
-                          {item.images[0]?.thumbnail || item.images[0]?.src ? (
-                            <Image
-                              src={
-                                item.images[0].thumbnail || item.images[0].src
-                              }
-                              alt={item.images[0].alt || item.name}
-                              fill
-                              sizes="78px"
-                              className="object-cover"
-                            />
-                          ) : null}
-                        </div>
-                        <div className="min-w-0 self-center">
-                          <h2 className="break-words font-heading text-base font-bold leading-tight text-neutral-950">
-                            {item.name}
-                          </h2>
-                          {item.variation.length ? (
-                            <p className="mt-1 text-sm text-neutral-500">
-                              {item.variation
-                                .map((entry) => entry.value)
-                                .join(", ")}
-                            </p>
-                          ) : null}
-                          {item.item_data.length ? (
-                            <div className="mt-1 space-y-1 text-xs text-neutral-500">
-                              {item.item_data.map((entry, index) => (
-                                <p key={`${item.key}-${entry.name}-${index}`}>
-                                  {entry.name}: {entry.display || entry.value}
-                                </p>
-                              ))}
-                            </div>
-                          ) : null}
-                        </div>
-                      </div>
-
-                      <div className="mt-5 flex items-center justify-between gap-3 border-t border-neutral-100 pt-4 md:mt-0 md:border-0 md:pt-0 md:justify-center">
-                        <span className="text-xs font-semibold uppercase text-neutral-400 md:hidden">
-                          Quantity
-                        </span>
-                        <div className="inline-flex items-center rounded-full border border-neutral-200 bg-white">
-                          <button
-                            type="button"
-                            disabled={
-                              isBusy ||
-                              item.quantity <= item.quantity_limits.minimum
-                            }
-                            onClick={() =>
-                              mutateCart(() =>
-                                updateCartItemQuantity(
-                                  item.key,
-                                  item.quantity - 1,
-                                ),
-                              )
-                            }
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-600 disabled:text-neutral-300"
-                          >
-                            <Minus size={16} />
-                          </button>
-                          <span className="w-10 text-center text-sm font-semibold">
-                            {item.quantity}
-                          </span>
-                          <button
-                            type="button"
-                            disabled={
-                              isBusy ||
-                              item.quantity >= item.quantity_limits.maximum
-                            }
-                            onClick={() =>
-                              mutateCart(() =>
-                                updateCartItemQuantity(
-                                  item.key,
-                                  item.quantity + 1,
-                                ),
-                              )
-                            }
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-600 disabled:text-neutral-300"
-                          >
-                            <Plus size={16} />
-                          </button>
-                        </div>
-                      </div>
-
-                      <p className="mt-3 flex items-center justify-between text-sm font-semibold text-neutral-950 md:mt-0 md:block md:text-center">
-                        <span className="text-xs font-semibold uppercase text-neutral-400 md:hidden">
-                          Per Unit
-                        </span>
-                        {unitMoney(item, cart)}
-                      </p>
-
-                      <p className="mt-3 flex items-center justify-between text-sm font-semibold text-neutral-950 md:mt-0 md:block md:text-center">
-                        <span className="text-xs font-semibold uppercase text-neutral-400 md:hidden">
-                          Subtotal
-                        </span>
-                        {money(item.totals.line_total, cart)}
-                      </p>
-
-                      <div className="mt-4 flex justify-end border-t border-neutral-100 pt-3 md:mt-0 md:border-0 md:pt-0 md:justify-center">
-                        <button
-                          type="button"
-                          disabled={isBusy}
-                          onClick={() =>
-                            mutateCart(() => removeCartItem(item.key))
-                          }
-                          className="inline-flex h-10 w-10 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-950 disabled:text-neutral-200"
-                          aria-label={`Remove ${item.name}`}
-                        >
-                          <X className="hidden md:block" size={18} />
-                          <Trash2 className="md:hidden" size={17} />
-                        </button>
-                      </div>
-                    </article>
+                      item={item}
+                      cart={cart}
+                      isBusy={isBusy}
+                      onMutate={mutateCart}
+                    />
                   ))}
                 </div>
               </section>
 
-              <aside className="ms-auto rounded-2xl border w-1/4 border-neutral-200 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.08)] lg:mt-10">
+              <aside className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.08)] lg:sticky lg:top-28">
                 <h2 className="font-heading text-2xl font-bold text-neutral-950">
                   Checkout total
                 </h2>
@@ -442,7 +534,7 @@ export default function CartExperience() {
               </Link>
             </div>
           )}
-          {visibleItems.length ? (
+          {hasVisibleItems ? (
             <button
               type="button"
               onClick={clearVisibleCart}

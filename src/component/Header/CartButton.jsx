@@ -7,6 +7,8 @@ import { ShoppingCart, Trash2, X, Search } from "lucide-react"
 import { extractCurrencySymbol, formatCurrency, getLowestUnitPrice, toSlug } from "../product/productHelpers"
 import { useCart } from "../product/CartContext"
 import { useEffect, useState } from "react"
+import { getCurrentCart, removeCartItem } from "@/lib/woocommerce/cart"
+import { findMatchingWooCartItem } from "@/lib/woocommerce/cart-sync"
 
 export default function CartButton() {
 	const { items, itemCount, subtotal, removeItem, clearCart } = useCart()
@@ -82,6 +84,37 @@ export default function CartButton() {
 		}
 	}
 
+	async function handleRemoveItem(item) {
+		removeItem(item.id)
+
+		try {
+			const wooCart = await getCurrentCart()
+			const wooItem = findMatchingWooCartItem(wooCart.items, item)
+			if (wooItem) {
+				await removeCartItem(wooItem.key)
+			}
+		} catch {
+			// Keep the local cart responsive; the cart page can reconcile stale Woo rows.
+		}
+	}
+
+	async function handleClearCart() {
+		const currentItems = items
+		clearCart()
+
+		try {
+			const wooCart = await getCurrentCart()
+			for (const item of currentItems) {
+				const wooItem = findMatchingWooCartItem(wooCart.items, item)
+				if (wooItem) {
+					await removeCartItem(wooItem.key)
+				}
+			}
+		} catch {
+			// Keep the local cart responsive; the cart page can reconcile stale Woo rows.
+		}
+	}
+
 	return (
 		<div className="relative">
 			<button
@@ -139,7 +172,7 @@ export default function CartButton() {
 													{item.artworkName ? <p className="text-sm text-neutral-500">Artwork: {item.artworkName}</p> : null}
 												</div>
 											</div>
-											<button type="button" onClick={() => removeItem(item.id)} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition hover:border-neutral-300 hover:bg-white hover:text-neutral-800">
+											<button type="button" onClick={() => handleRemoveItem(item)} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition hover:border-neutral-300 hover:bg-white hover:text-neutral-800">
 												<Trash2 size={16} />
 											</button>
 										</div>
@@ -162,7 +195,7 @@ export default function CartButton() {
 									<Link href="/products" onClick={() => setIsOpen(false)} className="inline-flex h-11 flex-1 items-center justify-center rounded-full bg-white text-sm font-semibold text-neutral-950 transition hover:bg-neutral-100">
 										Keep shopping
 									</Link>
-									<button type="button" onClick={clearCart} className="inline-flex h-11 items-center justify-center rounded-full border border-white/20 px-4 text-sm font-medium text-white transition hover:bg-white/10">
+									<button type="button" onClick={handleClearCart} className="inline-flex h-11 items-center justify-center rounded-full border border-white/20 px-4 text-sm font-medium text-white transition hover:bg-white/10">
 										Clear
 									</button>
 								</div>
