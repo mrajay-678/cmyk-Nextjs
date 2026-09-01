@@ -1,3 +1,5 @@
+import type { WooCart } from "./types";
+
 export const STORE_API_BASE = "/api/store";
 export const CART_TOKEN_STORAGE_KEY = "cmyk_cart_token";
 export const CART_NONCE_STORAGE_KEY = "cmyk_cart_nonce";
@@ -8,6 +10,7 @@ export type StoreApiError = {
   data?: {
     status?: number;
     params?: Record<string, string>;
+    cart?: WooCart;
   };
 };
 
@@ -16,7 +19,12 @@ export class WooStoreApiError extends Error {
   code?: string;
   data?: StoreApiError["data"];
 
-  constructor(message: string, status: number, code?: string, data?: StoreApiError["data"]) {
+  constructor(
+    message: string,
+    status: number,
+    code?: string,
+    data?: StoreApiError["data"],
+  ) {
     super(message);
     this.name = "WooStoreApiError";
     this.status = status;
@@ -127,27 +135,24 @@ export async function storeApiFetch<T>(
     credentials: "same-origin",
   });
   const responseText = await response.text();
-  const location = response.headers.get("location");
   const contentType = response.headers.get("content-type") || "";
 
-  if (process.env.NODE_ENV !== "production") {
-    console.info("[cmyk-store-api-client]", {
-      url: `${STORE_API_BASE}${normalizePath(path)}`,
-      status: response.status,
-      location,
-      contentType,
-      bodyStart: responseText.slice(0, 300),
-    });
-  }
-
   persistCartToken(response);
-  const parsedBody = parseResponseJson(responseText) as StoreApiError | T | null;
+  const parsedBody = parseResponseJson(responseText) as
+    | StoreApiError
+    | T
+    | null;
 
   if (!response.ok) {
     const error = parsedBody as StoreApiError | null;
 
+    if (response.status === 409 && error?.data?.cart) {
+      return error.data.cart as T;
+    }
+
     throw new WooStoreApiError(
-      error?.message || `WooCommerce Store API request failed with status ${response.status}.`,
+      error?.message ||
+        `WooCommerce Store API request failed with status ${response.status}.`,
       response.status,
       error?.code,
       error?.data,

@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 const CART_TOKEN_COOKIE = "cmyk_cart_token";
 const STORE_API_PREFIX = "/wp-json/wc/store/v1";
 const ALLOWED_METHODS = new Set(["GET", "POST", "PUT", "PATCH", "DELETE"]);
-const IS_DEVELOPMENT = process.env.NODE_ENV !== "production";
 
 function getStoreUrl() {
   const storeUrl = process.env.NEXT_PUBLIC_WC_URL;
@@ -20,6 +19,11 @@ function copyRequestHeaders(request: NextRequest) {
   const nonce = request.headers.get("nonce");
   const cookie = request.headers.get("cookie");
   const cookieCartToken = request.cookies.get(CART_TOKEN_COOKIE)?.value;
+  const hasWooCartCookie = Boolean(
+    cookie?.includes("wp_woocommerce_session_") ||
+      cookie?.includes("woocommerce_items_in_cart") ||
+      cookie?.includes("woocommerce_cart_hash"),
+  );
 
   if (contentType) {
     headers.set("Content-Type", contentType);
@@ -29,7 +33,7 @@ function copyRequestHeaders(request: NextRequest) {
     headers.set("Cookie", cookie);
   }
 
-  const cartToken = requestCartToken || cookieCartToken;
+  const cartToken = hasWooCartCookie ? "" : requestCartToken || cookieCartToken;
   if (cartToken) {
     headers.set("Cart-Token", cartToken);
   }
@@ -48,13 +52,6 @@ function toStoreApiUrl(path: string[], search: string) {
   const url = new URL(`${STORE_API_PREFIX}/${cleanPath}`, base);
   url.search = search;
   return url;
-}
-
-function getBodyPreview(body: ArrayBuffer) {
-  return new TextDecoder()
-    .decode(body.slice(0, 300))
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 function parseJsonBody(body: ArrayBuffer) {
@@ -104,17 +101,6 @@ async function proxyStoreApi(
     const nonce = wooResponse.headers.get("nonce");
     const location = wooResponse.headers.get("location");
     const responseBody = await wooResponse.arrayBuffer();
-
-    if (IS_DEVELOPMENT) {
-      console.info("[cmyk-store-api-proxy]", {
-        requestUrl: request.nextUrl.pathname,
-        woocommerceUrl: url.toString(),
-        status: wooResponse.status,
-        location,
-        contentType,
-        bodyStart: getBodyPreview(responseBody),
-      });
-    }
 
     if (wooResponse.status >= 300 && wooResponse.status < 400) {
       return NextResponse.json(

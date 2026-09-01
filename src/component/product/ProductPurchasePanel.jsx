@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import AddToCartButton from "./AddToCartButton";
 import { useCartActions } from "@/component/product/CartContext";
@@ -25,6 +25,7 @@ export default function ProductPurchasePanel({
     : [];
   const router = useRouter();
   const { addItem } = useCartActions();
+  const isBuyingNowRef = useRef(false);
   const [selectedQuantity, setSelectedQuantity] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
@@ -105,10 +106,11 @@ export default function ProductPurchasePanel({
   }
 
   async function handleBuyNow() {
-    if (!isCheckoutReady || isBuyingNow) {
+    if (!isCheckoutReady || isBuyingNowRef.current) {
       return;
     }
 
+    isBuyingNowRef.current = true;
     setCheckoutError("");
     setIsBuyingNow(true);
 
@@ -123,6 +125,7 @@ export default function ProductPurchasePanel({
           : "Unable to add this item to the WooCommerce cart.",
       );
     } finally {
+      isBuyingNowRef.current = false;
       setIsBuyingNow(false);
     }
   }

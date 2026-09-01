@@ -20,16 +20,15 @@ export function addCartItem(input: AddCartItemInput) {
 }
 
 export function updateCartItemQuantity(key: string, quantity: number) {
-  return storeApiFetch<WooCart>("/cart/update-item", {
+  return storeApiFetch<WooCart>(`/cart/items/${encodeURIComponent(key)}`, {
     method: "POST",
-    json: { key, quantity },
+    json: { quantity },
   });
 }
 
 export function removeCartItem(key: string) {
-  return storeApiFetch<WooCart>("/cart/remove-item", {
-    method: "POST",
-    json: { key },
+  return storeApiFetch<WooCart>(`/cart/items/${encodeURIComponent(key)}`, {
+    method: "DELETE",
   });
 }
 

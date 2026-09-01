@@ -162,6 +162,7 @@ export default function CheckoutExperience() {
     window.queueMicrotask(() => {
       refreshCart();
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function mutateCart(action: () => Promise<WooCart>) {
@@ -399,21 +400,16 @@ function CartStep(props: {
 
 function LocalCartRow({
   item,
-  isBusy,
   onRemoveLocalItem,
-  onUpdateLocalQuantity,
   onPreviewArtwork,
   getArtworkFile,
 }: {
   item: LocalCartItem;
-  isBusy: boolean;
   onRemoveLocalItem: (item: LocalCartItem) => void;
-  onUpdateLocalQuantity: (id: string, quantity: number) => void;
   onPreviewArtwork: (item: LocalCartItem) => void;
   getArtworkFile: (id: string) => File | null;
 }) {
   const artworkFile = getArtworkFile(item.id);
-  const lineTotal = item.totalPrice * item.cartQuantity;
 
   return (
     <article className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.06)] lg:grid lg:items-center lg:gap-5 lg:rounded-none lg:border-0 lg:px-5 lg:py-7 lg:shadow-none lg:grid-cols-[minmax(0,1fr)_120px_160px_120px_80px]">

@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 
 import { useCartActions } from "./CartContext";
 import { addCartItem } from "@/lib/woocommerce/cart";
@@ -13,6 +13,7 @@ function AddToCartButton({
   children,
 }) {
   const { addItem } = useCartActions();
+  const isAddingRef = useRef(false);
   const [wasAdded, setWasAdded] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState("");
@@ -27,11 +28,12 @@ function AddToCartButton({
   }, [wasAdded]);
 
   const handleAddToCart = useCallback(() => {
-    if (disabled || isAdding) {
+    if (disabled || isAddingRef.current) {
       return;
     }
 
     const addItemToWooCart = async () => {
+      isAddingRef.current = true;
       setIsAdding(true);
       setError("");
 
@@ -53,12 +55,13 @@ function AddToCartButton({
             : "Unable to add this item to the WooCommerce cart.",
         );
       } finally {
+        isAddingRef.current = false;
         setIsAdding(false);
       }
     };
 
     addItemToWooCart();
-  }, [addItem, artworkFile, disabled, isAdding, item]);
+  }, [addItem, artworkFile, disabled, item]);
 
   return (
     <div className="w-full">
