@@ -210,14 +210,21 @@ export default function ProductPurchasePanel({
   }
   const shortDescription = product.short_description;
 
-  const match = shortDescription.match(/\((R\d+)\)/);
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(shortDescription, "text/html");
 
-  const code = match ? match[1] : null;
+  const text = doc
+    .querySelector("table tbody tr td:first-child")
+    ?.textContent.trim();
+
+  const rate = text?.match(/\(([^)]+)\)/)?.[1] ?? "";
+
+  const code = rate ? rate : null;
 
   let actualOptions = product["attributes"][0].options.map((item) =>
     item.replace(/[^0-9]/g, ""),
   );
-  console.log(code, variation); // R3
+  console.log(product); // R3
 
   return (
     <section>
@@ -266,7 +273,7 @@ export default function ProductPurchasePanel({
             <tbody>
               <tr className="text-sm text-neutral-700">
                 <td className="py-3 font-medium rounded-l-2xl text-neutral-950">
-                  Per unit price {code && `(${code})`}
+                  {text ? `${text}` : "Per unit price"}
                 </td>
                 {sizeOptions?.length === 0 &&
                   quantityOptions.map((quantity) => (

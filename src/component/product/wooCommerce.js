@@ -1,9 +1,14 @@
 import { cacheLife, cacheTag } from "next/cache";
+import { categoryTagLink } from "@/data/menu";
 import { buildQuantityPriceTable } from "./productHelpers";
 
 const WC_BASE_URL = process.env.NEXT_PUBLIC_WC_URL;
 const WC_CONSUMER_KEY = process.env.WC_CONSUMER_KEY;
 const WC_CONSUMER_SECRET = process.env.WC_CONSUMER_SECRET;
+const EXCLUDED_PRODUCT_MENU_CATEGORY_SLUGS = new Set([
+  "dtf-transfer",
+  "uv-dtf-transfer",
+]);
 
 function buildApiUrl(path, query = {}) {
   if (!WC_BASE_URL || !WC_CONSUMER_KEY || !WC_CONSUMER_SECRET) {
@@ -112,7 +117,6 @@ export async function getProductCategories() {
     },
     ["woocommerce-products", "woocommerce-filters"],
   );
-  console.log("categories", data);
   return { categories: Array.isArray(data) ? data : [], error };
 }
 
@@ -182,6 +186,122 @@ export async function getProducts(filters = {}) {
     totalPages: meta.totalPages || 0,
     error,
   };
+}
+
+function taxonomyMap(items = []) {
+  return new Map(
+    items
+      .filter((item) => item?.id && item?.slug && item?.name)
+      .map((item) => [item.id, item]),
+  );
+}
+
+function categoryMenuItem(term, children = []) {
+  const item = {
+    title: term.name,
+    href: `/products?category=${term.slug}&sort=date-desc`,
+  };
+
+  if (children.length) {
+    item.children = children;
+  }
+
+  return item;
+}
+
+async function getAllPublishedProductTaxonomies() {
+  const firstPage = await fetchWooCommerceCached(
+    "/products",
+    {
+      status: "publish",
+      per_page: 100,
+      page: 1,
+      _fields: "id,categories,tags",
+    },
+    ["woocommerce-products", "woocommerce-menu"],
+  );
+  const totalPages = Math.min(firstPage.meta.totalPages || 1, 10);
+  const pageResults =
+    totalPages > 1
+      ? await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, index) =>
+            fetchWooCommerceCached(
+              "/products",
+              {
+                status: "publish",
+                per_page: 100,
+                page: index + 2,
+                _fields: "id,categories,tags",
+              },
+              ["woocommerce-products", "woocommerce-menu"],
+            ),
+          ),
+        )
+      : [];
+
+  return [firstPage, ...pageResults].flatMap((result) =>
+    Array.isArray(result.data) ? result.data : [],
+  );
+}
+
+export async function getProductMenuItems() {
+  "use cache";
+
+  cacheLife("hours");
+  cacheTag("woocommerce");
+  cacheTag("woocommerce-products");
+  cacheTag("woocommerce-menu");
+
+  const [{ categories }, products] = await Promise.all([
+    getProductCategories(),
+    getAllPublishedProductTaxonomies(),
+  ]);
+
+  const categoryById = taxonomyMap(categories);
+  const tagsByCategoryId = new Map();
+
+  products.forEach((product) => {
+    const productCategories = Array.isArray(product?.categories)
+      ? product.categories
+      : [];
+    const productTags = Array.isArray(product?.tags) ? product.tags : [];
+
+    productCategories.forEach((category) => {
+      if (!categoryById.has(category?.id)) {
+        return;
+      }
+
+      const categoryTags = tagsByCategoryId.get(category.id) || new Map();
+
+      productTags.forEach((tag) => {
+        if (tag?.id && tag?.slug && tag?.name) {
+          categoryTags.set(tag.id, tag);
+        }
+      });
+
+      tagsByCategoryId.set(category.id, categoryTags);
+    });
+  });
+
+  return categories
+    .filter(
+      (category) =>
+        category?.id &&
+        category?.slug &&
+        category?.name &&
+        category.slug !== "uncategorized" &&
+        !EXCLUDED_PRODUCT_MENU_CATEGORY_SLUGS.has(category.slug),
+    )
+    .map((category) => {
+      const tags = Array.from(tagsByCategoryId.get(category.id)?.values() || [])
+        .sort((first, second) => first.name.localeCompare(second.name))
+        .map((tag) => ({
+          title: tag.name,
+          href: categoryTagLink(category.slug, tag.slug),
+        }));
+
+      return categoryMenuItem(category, tags);
+    });
 }
 
 export async function getProductBySlug(slug) {

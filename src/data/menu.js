@@ -1,12 +1,75 @@
 function categoryLink(slug) {
-  return `/products?category=${slug}`;
+  return `/products?category=${slug}&sort=date-desc`;
 }
 
 function tagLink(slug) {
-  return `/products?tag=${slug}`;
+  return `/products?tag=${slug}&sort=date-desc`;
 }
 
-export const menu = [
+export function categoryTagLink(categorySlug, tagSlug) {
+  return `/products?category=${categorySlug}&tag=${tagSlug}&sort=date-desc`;
+}
+
+export const fallbackProductMenu = [
+  {
+    title: "Apparel",
+    href: categoryLink("apparel"),
+    children: [
+      { title: "T-shirts", href: tagLink("t-shirts") },
+      { title: "Polos", href: tagLink("polos") },
+      { title: "Shirts", href: tagLink("shirts") },
+      { title: "Hoodies", href: tagLink("hoodies") },
+      { title: "Sweatpants", href: tagLink("sweatpants") },
+      { title: "Shorts", href: tagLink("shorts") },
+      { title: "Caps", href: tagLink("caps") },
+      { title: "Safety Vests", href: tagLink("safety-vests") },
+    ],
+  },
+  {
+    title: "Drinkware",
+    href: categoryLink("drinkware"),
+    children: [
+      { title: "Bottles", href: tagLink("bottles") },
+      { title: "Mugs", href: tagLink("mugs") },
+      { title: "Glasses", href: tagLink("glasses") },
+      { title: "Coasters", href: tagLink("coasters") },
+    ],
+  },
+  {
+    title: "Labels",
+    href: categoryLink("labels"),
+    children: [
+      { title: "Stickers / Decals", href: tagLink("stickers-decals") },
+    ],
+  },
+  {
+    title: "Marketing Material",
+    href: categoryLink("marketing-material"),
+    children: [
+      { title: "Magnets", href: tagLink("magnets") },
+      { title: "Buttons", href: tagLink("buttons") },
+      { title: "Lanyards", href: tagLink("lanyards") },
+      { title: "Booklets", href: tagLink("booklets") },
+      { title: "Brochures", href: tagLink("brochures") },
+      { title: "Flyers", href: tagLink("flyers") },
+      { title: "Mylar Bags", href: tagLink("mylar-bags") },
+    ],
+  },
+  {
+    title: "Stationery",
+    href: categoryLink("stationery"),
+    children: [
+      { title: "Business Cards", href: tagLink("business-cards") },
+      { title: "Letterheads", href: tagLink("letterheads") },
+      { title: "Envelopes", href: tagLink("envelopes") },
+      { title: "Pens", href: tagLink("pens") },
+      { title: "Writing Pads", href: tagLink("writing-pads") },
+    ],
+  },
+];
+
+export function getMenu(productMenu = fallbackProductMenu) {
+  return [
   {
     title: "Home",
     href: "/",
@@ -50,63 +113,7 @@ export const menu = [
   {
     title: "Products",
     href: "/products",
-    children: [
-      {
-        title: "Apparel",
-        href: categoryLink("apparel"),
-        children: [
-          { title: "T-shirts", href: tagLink("t-shirts") },
-          { title: "Polos", href: tagLink("polos") },
-          { title: "Shirts", href: tagLink("shirts") },
-          { title: "Hoodies", href: tagLink("hoodies") },
-          { title: "Sweatpants", href: tagLink("sweatpants") },
-          { title: "Shorts", href: tagLink("shorts") },
-          { title: "Caps", href: tagLink("caps") },
-          { title: "Safety Vests", href: tagLink("safety-vests") },
-        ],
-      },
-      {
-        title: "Drinkware",
-        href: categoryLink("drinkware"),
-        children: [
-          { title: "Bottles", href: tagLink("bottles") },
-          { title: "Mugs", href: tagLink("mugs") },
-          { title: "Glasses", href: tagLink("glasses") },
-          { title: "Coasters", href: tagLink("coasters") },
-        ],
-      },
-      {
-        title: "Labels",
-        href: categoryLink("labels"),
-        children: [
-          { title: "Stickers / Decals", href: tagLink("stickers-decals") },
-        ],
-      },
-      {
-        title: "Marketing Material",
-        href: categoryLink("marketing-material"),
-        children: [
-          { title: "Magnets", href: tagLink("magnets") },
-          { title: "Buttons", href: tagLink("buttons") },
-          { title: "Lanyards", href: tagLink("lanyards") },
-          { title: "Booklets", href: tagLink("booklets") },
-          { title: "Brochures", href: tagLink("brochures") },
-          { title: "Flyers", href: tagLink("flyers") },
-          { title: "Mylar Bags", href: tagLink("mylar-bags") },
-        ],
-      },
-      {
-        title: "Stationery",
-        href: categoryLink("stationery"),
-        children: [
-          { title: "Business Cards", href: tagLink("business-cards") },
-          { title: "Letterheads", href: tagLink("letterheads") },
-          { title: "Envelopes", href: tagLink("envelopes") },
-          { title: "Pens", href: tagLink("pens") },
-          { title: "Writing Pads", href: tagLink("writing-pads") },
-        ],
-      },
-    ],
+    children: productMenu,
   },
   {
     title: "Support",
@@ -126,4 +133,7 @@ export const menu = [
       },
     ],
   },
-];
+  ];
+}
+
+export const menu = getMenu();
