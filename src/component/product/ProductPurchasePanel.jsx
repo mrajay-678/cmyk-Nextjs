@@ -224,7 +224,7 @@ export default function ProductPurchasePanel({
       <div className="space-y-6 rounded-[1.5rem] border border-neutral-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:rounded-[2rem] sm:p-6">
         <div className="grid grid-cols-2 gap-2 md:hidden">
           {quantityOptions.map((quantity) => (
-            <div key={quantity} className="rounded-2xl bg-neutral-50 p-3">
+            <div key={quantity} className="p-3 rounded-2xl bg-neutral-50">
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400">
                 {quantity} units
               </p>
@@ -239,15 +239,15 @@ export default function ProductPurchasePanel({
         </div>
 
         <div className="hidden overflow-x-auto md:block">
-          <table className="min-w-full rounded-2xl border-separate border-spacing-y-2 bg-neutral-50 px-4">
+          <table className="min-w-full px-4 border-separate rounded-2xl border-spacing-y-2 bg-neutral-50">
             <thead>
               <tr className="text-left text-xs uppercase tracking-[0.18em] text-neutral-400">
-                <th className="pb-2 pr-6">Quantity</th>
+                <th className="pb-2">Quantity</th>
                 {sizeOptions?.length === 0 &&
                   actualOptions.map((quantity) => (
                     <th
                       key={quantity}
-                      className="px-4 py-3 text-center font-medium"
+                      className="px-4 py-3 font-medium text-center"
                     >
                       {quantity}
                     </th>
@@ -256,7 +256,7 @@ export default function ProductPurchasePanel({
                   variation.map((variation) => (
                     <th
                       key={variation.id}
-                      className="px-4 min-w-32 py-3 text-center font-medium"
+                      className="px-4 py-3 font-medium text-center min-w-32"
                     >
                       {variation.attributes[0].option}
                     </th>
@@ -264,13 +264,13 @@ export default function ProductPurchasePanel({
               </tr>
             </thead>
             <tbody>
-              <tr className=" text-sm text-neutral-700">
-                <td className="rounded-l-2xl py-3 font-medium text-neutral-950">
+              <tr className="text-sm text-neutral-700">
+                <td className="py-3 font-medium rounded-l-2xl text-neutral-950">
                   Per unit price {code && `(${code})`}
                 </td>
                 {sizeOptions?.length === 0 &&
                   quantityOptions.map((quantity) => (
-                    <td key={quantity} className="px-4 py-3">
+                    <td key={quantity} className="px-4 py-3 text-center">
                       {formatCurrency(lowestPrice[quantity] / quantity, "$")}
                     </td>
                   ))}
@@ -293,7 +293,7 @@ export default function ProductPurchasePanel({
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
               Selected pricing
             </p>
-            <div className="mt-3 grid gap-4 sm:flex sm:flex-wrap sm:items-end sm:gap-6">
+            <div className="grid gap-4 mt-3 sm:flex sm:flex-wrap sm:items-end sm:gap-6">
               <div>
                 <p className="text-sm text-neutral-500">Total Price</p>
                 <p className="text-2xl font-semibold text-neutral-950 sm:text-3xl">
@@ -314,7 +314,7 @@ export default function ProductPurchasePanel({
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
               Selected pricing
             </p>
-            <div className="mt-3 grid gap-4 sm:flex sm:flex-wrap sm:items-end sm:gap-6">
+            <div className="grid gap-4 mt-3 sm:flex sm:flex-wrap sm:items-end sm:gap-6">
               <div>
                 <p className="text-sm text-neutral-500">Size</p>
                 <p className="text-2xl font-semibold text-neutral-950 sm:text-3xl">
@@ -345,7 +345,7 @@ export default function ProductPurchasePanel({
               setSelectedQuantity(event.target.value);
               setSelectedSize(event.target.value);
             }}
-            className="h-12 rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-pink-400"
+            className="h-12 px-4 text-sm transition bg-white border outline-none rounded-xl border-neutral-200 text-neutral-900 focus:border-pink-400"
             required
           >
             <option value="" disabled>
@@ -375,7 +375,7 @@ export default function ProductPurchasePanel({
             type="file"
             accept=".pdf,.png,.jpg,.jpeg,.psd,.ai,.svg"
             onChange={handleFileChange}
-            className="block w-full rounded-xl border border-neutral-200 bg-white px-3 py-3 text-sm text-neutral-700 file:mb-2 file:mr-4 file:rounded-full file:border-0 file:bg-neutral-950 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-pink-500 sm:px-4 sm:file:mb-0"
+            className="block w-full px-3 py-3 text-sm bg-white border rounded-xl border-neutral-200 text-neutral-700 file:mb-2 file:mr-4 file:rounded-full file:border-0 file:bg-neutral-950 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-pink-500 sm:px-4 sm:file:mb-0"
           />
           <p className="text-sm leading-6 text-neutral-500">
             Use artwork at 300 DPI for best print quality. CMYK color mode,
@@ -410,7 +410,7 @@ export default function ProductPurchasePanel({
             item={cartItem}
             artworkFile={selectedFile}
             disabled={!isCheckoutReady}
-            className="inline-flex w-full h-13 items-center justify-center rounded-full border border-neutral-200 px-6 text-base font-semibold text-neutral-800 transition hover:border-neutral-300 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:border-neutral-100 disabled:bg-neutral-100 disabled:text-neutral-400"
+            className="inline-flex items-center justify-center w-full px-6 text-base font-semibold transition border rounded-full h-13 border-neutral-200 text-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:border-neutral-100 disabled:bg-neutral-100 disabled:text-neutral-400"
           >
             Add to cart
           </AddToCartButton>
@@ -418,7 +418,7 @@ export default function ProductPurchasePanel({
             type="button"
             onClick={handleBuyNow}
             disabled={!isCheckoutReady || isBuyingNow}
-            className="inline-flex w-full h-13 items-center justify-center rounded-full bg-pink-500 px-6 text-base font-semibold text-white transition hover:bg-pink-600 disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-500"
+            className="inline-flex items-center justify-center w-full px-6 text-base font-semibold text-white transition bg-pink-500 rounded-full h-13 hover:bg-pink-600 disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-500"
           >
             {isBuyingNow ? "Adding..." : "Buy Now"}
           </button>
@@ -459,13 +459,13 @@ export default function ProductPurchasePanel({
               height={60}
             />
           </div>
-          <div className="bg-neutral-100 p-2 text-neutral-500 rounded-lg flex gap-3 mt-5 tex">
+          <div className="flex gap-3 p-2 mt-5 rounded-lg bg-neutral-100 text-neutral-500 tex">
             <Headset strokeWidth={1} size={50} />
             <div>
               Need Help? Call Us{" "}
               <Link
                 href="tel:+18183427822"
-                className="hover:text-pink-500 transition-colors"
+                className="transition-colors hover:text-pink-500"
               >
                 +1 (818) 342-7822
               </Link>{" "}
