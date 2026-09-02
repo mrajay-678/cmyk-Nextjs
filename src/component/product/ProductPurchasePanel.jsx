@@ -28,6 +28,7 @@ export default function ProductPurchasePanel({
   currencySymbol,
   variation,
 }) {
+  console.log("product -- ", product);
   const productSlug = product.slug || "";
   const productAttributeOptions = product.attributes?.[0]?.options || [];
   const sizeOptions = productAttributeOptions.includes('22" x 12"')
@@ -84,10 +85,9 @@ export default function ProductPurchasePanel({
     };
   }, [previewUrl]);
 
-  const isBySizeBuilderProduct = new Set([
-    "dtf-by-size",
-    "uv-dtf-by-size",
-  ]).has(productSlug);
+  const isBySizeBuilderProduct = new Set(["dtf-by-size", "uv-dtf-by-size"]).has(
+    productSlug,
+  );
   const isGangSheetProduct = new Set([
     "dtf-gang-sheet",
     "uv-dtf-gang-sheet",
@@ -164,9 +164,7 @@ export default function ProductPurchasePanel({
       const wooCart = await addCartItem(getWooCartPayload());
       const wooItem = findNewWooCartItem(wooCart.items, cartItem, items);
       const keyedLocalItems = nextLocalItems.map((item) =>
-        item.id === cartItem.id
-          ? { ...item, wooCartKey: wooItem?.key }
-          : item,
+        item.id === cartItem.id ? { ...item, wooCartKey: wooItem?.key } : item,
       );
       await reconcileWooCartToLocalItems(wooCart, keyedLocalItems);
       if (wooItem) {
@@ -211,7 +209,13 @@ export default function ProductPurchasePanel({
       </div>
     );
   }
+  const shortDescription = product.short_description;
 
+  const match = shortDescription.match(/\((R\d+)\)/);
+
+  const code = match ? match[1] : null;
+
+  console.log(code); // R3
   return (
     <section>
       <div className="space-y-6 rounded-[1.5rem] border border-neutral-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:rounded-[2rem] sm:p-6">
@@ -249,7 +253,7 @@ export default function ProductPurchasePanel({
                   variation.map((variation) => (
                     <th
                       key={variation.id}
-                      className="px-4 min-w-[8rem] py-3 text-center font-medium"
+                      className="px-4 min-w-32 py-3 text-center font-medium"
                     >
                       {variation.attributes[0].option}
                     </th>
@@ -259,7 +263,7 @@ export default function ProductPurchasePanel({
             <tbody>
               <tr className=" text-sm text-neutral-700">
                 <td className="rounded-l-2xl py-3 font-medium text-neutral-950">
-                  Per unit price
+                  Per unit price {code && `(${code})`}
                 </td>
                 {sizeOptions?.length === 0 &&
                   quantityOptions.map((quantity) => (
