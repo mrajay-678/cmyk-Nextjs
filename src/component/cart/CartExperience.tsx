@@ -19,6 +19,7 @@ import { useCart } from "@/component/product/CartContext";
 import { formatCurrency } from "@/component/product/productHelpers";
 import {
   findMatchingWooCartItem,
+  removeDuplicateGangSheetItems,
 } from "@/lib/woocommerce/cart-sync";
 import type { WooCart, WooCartItem } from "@/lib/woocommerce/types";
 
@@ -61,6 +62,28 @@ function decodeText(value: string) {
   return textarea.value;
 }
 
+function getMetaName(entry: WooCartItem["item_data"][number]) {
+  return decodeText(entry.name || ("key" in entry ? String(entry.key) : "")).trim();
+}
+
+function getMetaValue(entry: WooCartItem["item_data"][number]) {
+  return decodeText(entry.display || entry.value || "").trim();
+}
+
+function getFileLabel(value: string) {
+  if (!value) {
+    return "";
+  }
+
+  try {
+    const url = new URL(value);
+    const fileName = decodeURIComponent(url.pathname.split("/").pop() || "");
+    return fileName || "Uploaded file";
+  } catch {
+    return value;
+  }
+}
+
 function getWooMetaLines(item: WooCartItem) {
   const hiddenNames = new Set([
     "gang sheet product type",
@@ -74,12 +97,22 @@ function getWooMetaLines(item: WooCartItem) {
 
   return item.item_data
     .map((entry) => ({
-      name: decodeText(entry.name || "").trim(),
-      value: decodeText(entry.display || entry.value || "").trim(),
+      name: getMetaName(entry),
+      value: getMetaValue(entry),
     }))
     .filter((entry) => entry.value)
     .filter((entry) => !hiddenNames.has(entry.name.toLowerCase()))
-    .slice(0, 4);
+    .map((entry) => {
+      const normalizedName = entry.name.toLowerCase();
+      if (normalizedName.includes("uploaded file")) {
+        return { name: "Uploaded file", value: getFileLabel(entry.value) };
+      }
+      if (normalizedName.includes("print ready")) {
+        return { name: "Print ready file", value: "Ready" };
+      }
+      return entry;
+    })
+    .slice(0, 3);
 }
 
 function LocalCartRow({
@@ -388,7 +421,10 @@ export default function CartExperience() {
     setIsBusy(true);
     setError("");
     try {
-      hydrateCart(await getCurrentCart(), sequenceId);
+      hydrateCart(
+        await removeDuplicateGangSheetItems(await getCurrentCart()),
+        sequenceId,
+      );
     } catch (cartError) {
       setError(
         cartError instanceof Error ? cartError.message : "Unable to load cart.",
@@ -405,7 +441,7 @@ export default function CartExperience() {
     setIsBusy(true);
     setError("");
     try {
-      hydrateCart(await action(), sequenceId);
+      hydrateCart(await removeDuplicateGangSheetItems(await action()), sequenceId);
     } catch (cartError) {
       setError(
         cartError instanceof Error

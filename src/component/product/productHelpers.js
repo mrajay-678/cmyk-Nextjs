@@ -85,9 +85,12 @@ export function buildQuantityPriceTable(product, variations = []) {
       if (!quantity || totalPrice === null) {
         return null;
       }
-
+      let newQuantity = variation.attributes[0]["option"].replace(
+        /[^0-9]/g,
+        "",
+      );
       return {
-        quantity,
+        quantity: newQuantity,
         unitPrice: totalPrice,
         variationId: variation.id,
         variationAttributes: variation.attributes || [],
@@ -121,6 +124,7 @@ export function buildQuantityPriceTable(product, variations = []) {
       { quantity: 250, unitPrice: 0 },
     ];
   }
+  console.log("basePrice", basePrice);
 
   return [
     { quantity: 25, unitPrice: basePrice },

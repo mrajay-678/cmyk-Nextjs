@@ -91,7 +91,34 @@ function WooStyles({ appHost, version, productType }) {
     </>
   );
 }
+const handleDesignCreated = async (design) => {
+  try {
+    setLoading(true);
 
+    const result = await fetch("/api/gang-sheet/add-to-cart", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        productId: GANG_SHEET_PRODUCT_ID,
+        design,
+        quantity: 1,
+      }),
+    });
+
+    if (!result.ok) {
+      throw new Error("Unable to add Gang Sheet to cart");
+    }
+
+    // Do NOT go to WooCommerce /cart/
+    router.replace("/checkout");
+  } catch (error) {
+    console.error("Gang Sheet checkout error:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 export default function GangSheetBuilder({
   mode = "external",
   productId,
@@ -117,7 +144,7 @@ export default function GangSheetBuilder({
   onOpen,
   onClose,
   onError,
-  onDesignCreated,
+  onDesignCreated = { handleDesignCreated },
   onDesignUpdated,
   children,
 }) {
@@ -246,6 +273,21 @@ export default function GangSheetBuilder({
       .on("design:updated", (event) => onDesignUpdated?.(event))
       .on("closed", (event) => onClose?.(event))
       .on("error", (event) => onError?.(event));
+
+    const redirectToCheckout = async () => {
+      try {
+        const cart = await getCurrentCart();
+
+        if (!cart.items?.length) {
+          console.error("[BAGS] Cart is empty after design creation");
+          return;
+        }
+
+        window.location.href = "/checkout/";
+      } catch (error) {
+        console.error("[BAGS] Failed to verify cart:", error);
+      }
+    };
   }, [
     disabled,
     externalSettings,

@@ -28,7 +28,6 @@ export default function ProductPurchasePanel({
   currencySymbol,
   variation,
 }) {
-  console.log("product -- ", product);
   const productSlug = product.slug || "";
   const productAttributeOptions = product.attributes?.[0]?.options || [];
   const sizeOptions = productAttributeOptions.includes('22" x 12"')
@@ -215,7 +214,11 @@ export default function ProductPurchasePanel({
 
   const code = match ? match[1] : null;
 
-  console.log(code); // R3
+  let actualOptions = product["attributes"][0].options.map((item) =>
+    item.replace(/[^0-9]/g, ""),
+  );
+  console.log(code, variation); // R3
+
   return (
     <section>
       <div className="space-y-6 rounded-[1.5rem] border border-neutral-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:rounded-[2rem] sm:p-6">
@@ -241,7 +244,7 @@ export default function ProductPurchasePanel({
               <tr className="text-left text-xs uppercase tracking-[0.18em] text-neutral-400">
                 <th className="pb-2 pr-6">Quantity</th>
                 {sizeOptions?.length === 0 &&
-                  quantityOptions.map((quantity) => (
+                  actualOptions.map((quantity) => (
                     <th
                       key={quantity}
                       className="px-4 py-3 text-center font-medium"
@@ -356,7 +359,7 @@ export default function ProductPurchasePanel({
                 </option>
               ))}
             {sizeOptions?.length === 0 &&
-              quantityOptions.map((quantity) => (
+              actualOptions.map((quantity) => (
                 <option key={quantity} value={quantity}>
                   {quantity} units
                 </option>

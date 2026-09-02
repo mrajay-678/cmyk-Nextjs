@@ -209,6 +209,38 @@ export function isGangSheetWooItem(item: WooCartItem) {
   );
 }
 
+function getGangSheetCartIdentity(item: WooCartItem) {
+  const variationKey = item.variation
+    .map((entry) => `${entry.raw_attribute}:${entry.value}`)
+    .join("|");
+
+  return `${item.id}:${variationKey}`;
+}
+
+export async function removeDuplicateGangSheetItems(cart: WooCart) {
+  const newestKeyByIdentity = new Map<string, string>();
+
+  for (const item of cart.items) {
+    if (isGangSheetWooItem(item)) {
+      newestKeyByIdentity.set(getGangSheetCartIdentity(item), item.key);
+    }
+  }
+
+  const duplicateKeys = cart.items
+    .filter((item) => isGangSheetWooItem(item))
+    .filter(
+      (item) => newestKeyByIdentity.get(getGangSheetCartIdentity(item)) !== item.key,
+    )
+    .map((item) => item.key);
+
+  let nextCart = cart;
+  for (const key of duplicateKeys) {
+    nextCart = await removeCartItem(key);
+  }
+
+  return nextCart;
+}
+
 export async function reconcileWooCartToLocalItems(
   cart: WooCart,
   localItems: SyncLocalCartItem[],

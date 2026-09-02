@@ -39,7 +39,7 @@ async function ProductPurchaseSection({ product, variationsPromise }) {
   const currencySymbol = extractCurrencySymbol(product);
   const pricingRows = buildQuantityPriceTable(product, variations);
   const quantityOptions = pricingRows.map((row) => row.quantity);
-
+  console.log("pricingRows-", pricingRows);
   return (
     <ProductPurchasePanel
       product={product}
@@ -73,6 +73,7 @@ export default async function ProductDetailPage({ params }) {
     variations: variationsPromise,
   });
   const { variations } = await variationsPromise;
+  const currencySymbol = extractCurrencySymbol(product);
   const pricingRows = buildQuantityPriceTable(product, variations);
   const price = Math.min(
     ...pricingRows.map((row) => row.unitPrice / row.quantity),
@@ -122,14 +123,14 @@ export default async function ProductDetailPage({ params }) {
                   ? formatCurrency(price, "$")
                   : "$" + variations[0].regular_price}
               </div>
-              <div
+              <p
                 className="max-w-2xl break-words text-sm leading-7 text-neutral-600 sm:text-base sm:leading-8 product-dis"
                 dangerouslySetInnerHTML={{
                   __html:
                     product.short_description ||
                     "Product details will appear here once the WooCommerce description is available.",
                 }}
-              />
+              ></p>
             </div>
 
             <Suspense fallback={<ProductPurchaseSkeleton />}>

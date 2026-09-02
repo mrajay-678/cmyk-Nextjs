@@ -15,6 +15,7 @@ import {
 import { WooStoreApiError } from "@/lib/woocommerce/store-api";
 import {
   findMatchingWooCartItem,
+  removeDuplicateGangSheetItems,
   reconcileWooCartToLocalItems,
 } from "@/lib/woocommerce/cart-sync";
 import type { WooCart, WooCartItem } from "@/lib/woocommerce/types";
@@ -99,12 +100,21 @@ function wooArtworkName(item: WooCartItem) {
         .includes(needle),
     ),
   );
-  return artworkEntry?.display || artworkEntry?.value || "";
+  return getFileLabel(artworkEntry?.display || artworkEntry?.value || "");
 }
 
-function getHostedCheckoutUrl() {
-  const storeUrl = process.env.NEXT_PUBLIC_WC_URL || "https://cmykprint.shop/";
-  return new URL("/checkout/", storeUrl).toString();
+function getFileLabel(value: string) {
+  if (!value) {
+    return "";
+  }
+
+  try {
+    const url = new URL(value);
+    const fileName = decodeURIComponent(url.pathname.split("/").pop() || "");
+    return fileName || "Uploaded file";
+  } catch {
+    return value;
+  }
 }
 
 export default function CheckoutExperience() {
@@ -196,7 +206,10 @@ export default function CheckoutExperience() {
     setIsBusy(true);
     setError("");
     try {
-      hydrateCart(await getCurrentCart(), sequenceId);
+      hydrateCart(
+        await removeDuplicateGangSheetItems(await getCurrentCart()),
+        sequenceId,
+      );
     } catch (cartError) {
       setError(normalizeError(cartError));
     } finally {
@@ -218,7 +231,7 @@ export default function CheckoutExperience() {
     setIsBusy(true);
     setError("");
     try {
-      hydrateCart(await action(), sequenceId);
+      hydrateCart(await removeDuplicateGangSheetItems(await action()), sequenceId);
     } catch (cartError) {
       setError(normalizeError(cartError));
     } finally {
@@ -229,39 +242,72 @@ export default function CheckoutExperience() {
   }
 
   async function redirectToHostedCheckout() {
-    if (hasLocalItems) {
-      await reconcileWooCartToLocalItems(await getCurrentCart(), visibleLocalItems);
+    let latestCart = await removeDuplicateGangSheetItems(await getCurrentCart());
+    const latestLocalItems = visibleLocalItems.filter((localItem) =>
+      Boolean(findMatchingWooCartItem(latestCart.items, localItem)),
+    );
 
-      const formData = new FormData();
-      formData.append("items", JSON.stringify(visibleLocalItems));
-      formData.append("billing_address", JSON.stringify(emptyAddress));
-      formData.append("shipping_address", JSON.stringify(emptyAddress));
-      formData.append("customer_note", "");
-
-      visibleLocalItems.forEach((item, index) => {
-        const artworkFile = getArtworkFile(item.id);
-        if (artworkFile) {
-          formData.append(`artwork-${index}`, artworkFile, artworkFile.name);
-        }
-      });
-
-      const response = await fetch("/api/checkout/cart", {
-        method: "POST",
-        body: formData,
-      });
-      const result = await response.json().catch(() => ({}));
-
-      if (!response.ok || !result.checkoutUrl) {
-        throw new Error(
-          result.error || "Unable to open secure WooCommerce payment.",
-        );
-      }
-
-      window.location.href = result.checkoutUrl;
-      return;
+    if (latestLocalItems.length) {
+      latestCart = await reconcileWooCartToLocalItems(
+        latestCart,
+        latestLocalItems,
+      );
     }
 
-    window.location.href = getHostedCheckoutUrl();
+    const latestLocalWooKeys = new Set(
+      latestLocalItems
+        .map((item) => findMatchingWooCartItem(latestCart.items, item)?.key)
+        .filter(Boolean),
+    );
+    const latestWooItems = latestCart.items.filter(
+      (item) => !latestLocalWooKeys.has(item.key),
+    );
+
+    const checkoutItems = [
+      ...latestLocalItems,
+      ...latestWooItems.map((item) => ({
+        id: item.id,
+        type: item.type,
+        quantity: item.quantity,
+        key: item.key,
+        name: item.name,
+        permalink: item.permalink,
+        variation: item.variation,
+        item_data: item.item_data,
+        extensions: item.extensions,
+      })),
+    ];
+
+    if (!checkoutItems.length) {
+      throw new Error("Your cart is empty.");
+    }
+
+    const formData = new FormData();
+    formData.append("items", JSON.stringify(checkoutItems));
+    formData.append("billing_address", JSON.stringify(emptyAddress));
+    formData.append("shipping_address", JSON.stringify(emptyAddress));
+    formData.append("customer_note", "");
+
+    latestLocalItems.forEach((item, index) => {
+      const artworkFile = getArtworkFile(item.id);
+      if (artworkFile) {
+        formData.append(`artwork-${index}`, artworkFile, artworkFile.name);
+      }
+    });
+
+    const response = await fetch("/api/checkout/cart", {
+      method: "POST",
+      body: formData,
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok || !result.checkoutUrl) {
+      throw new Error(
+        result.error || "Unable to open secure WooCommerce payment.",
+      );
+    }
+
+    window.location.href = result.checkoutUrl;
   }
 
   function findWooCartItemForLocalItem(localItem: LocalCartItem) {
