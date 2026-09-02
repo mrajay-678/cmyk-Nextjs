@@ -1,5 +1,6 @@
 "use client"
 
+import { Loader2 } from "lucide-react"
 import { memo } from "react"
 
 import { sortOptions } from "./catalogConfig"
@@ -78,12 +79,18 @@ function ProductFilters({ categories, tags, search, category, tag, sort, onSubmi
 			</label>
 
 			<div className="flex flex-wrap gap-3">
-				<button type="submit" className="h-12 rounded-full bg-pink-500 px-6 text-sm font-semibold text-white transition hover:bg-pink-600">
-					Apply
+				<button
+					type="submit"
+					disabled={isLoading || isFetching}
+					className="inline-flex h-12 min-w-24 items-center justify-center gap-2 rounded-full bg-pink-500 px-6 text-sm font-semibold text-white transition hover:bg-pink-600 disabled:pointer-events-none disabled:bg-pink-300"
+				>
+					{isFetching ? <Loader2 className="animate-spin" size={16} /> : null}
+					{isFetching ? "Applying..." : "Apply"}
 				</button>
 				<button
 					type="button"
 					onClick={onReset}
+					disabled={isLoading || isFetching}
 					className="inline-flex h-12 items-center justify-center rounded-full border border-neutral-200 px-5 text-sm font-medium text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50"
 				>
 					Reset

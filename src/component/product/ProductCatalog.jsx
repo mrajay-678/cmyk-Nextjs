@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 import { defaultSort } from "./catalogConfig";
 import ProductFilters from "./ProductFilters";
@@ -24,9 +24,10 @@ export default function ProductCatalog({
   initialFiltersData = null,
   initialParams = null,
 }) {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isApplyingFilters, setIsApplyingFilters] = useState(false);
+  const pendingFilterUrlRef = useRef("");
 
   const activeSearch = searchParams.get("q") || "";
   const activeCategory = searchParams.get("category") || "";
@@ -59,6 +60,7 @@ export default function ProductCatalog({
     gcTime: 1000 * 60 * 60,
     refetchOnWindowFocus: false,
   });
+  console.log("Tags-", filtersQuery);
 
   const productsQuery = useInfiniteQuery({
     queryKey: productQueryKey,
@@ -107,7 +109,6 @@ export default function ProductCatalog({
   const categories = filtersQuery.data?.categories || [];
   const tags = filtersQuery.data?.tags || [];
 
-
   useEffect(() => {
     const node = loadMoreRef.current;
 
@@ -129,6 +130,21 @@ export default function ProductCatalog({
     return () => observer.disconnect();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
+  useEffect(() => {
+    if (!isApplyingFilters || productsQuery.isFetching) {
+      return;
+    }
+
+    const currentUrl = searchParams.toString()
+      ? `${pathname}?${searchParams.toString()}`
+      : pathname;
+
+    if (currentUrl === pendingFilterUrlRef.current) {
+      pendingFilterUrlRef.current = "";
+      setIsApplyingFilters(false);
+    }
+  }, [isApplyingFilters, pathname, productsQuery.isFetching, searchParams]);
+
   const updateParams = useCallback(
     (nextValues) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -144,12 +160,24 @@ export default function ProductCatalog({
       params.delete("page");
 
       const nextQueryString = params.toString();
-      router.replace(
-        nextQueryString ? `${pathname}?${nextQueryString}` : pathname,
-        { scroll: false },
-      );
+      const nextUrl = nextQueryString
+        ? `${pathname}?${nextQueryString}`
+        : pathname;
+
+      if (
+        typeof window !== "undefined" &&
+        nextUrl !==
+          `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`
+      ) {
+        pendingFilterUrlRef.current = nextUrl;
+        setIsApplyingFilters(true);
+        window.history.replaceState(null, "", nextUrl);
+        return;
+      }
+
+      setIsApplyingFilters(false);
     },
-    [pathname, router, searchParams],
+    [pathname, searchParams],
   );
 
   const handleApply = useCallback(
@@ -168,8 +196,25 @@ export default function ProductCatalog({
   );
 
   const handleReset = useCallback(() => {
-    router.replace(pathname, { scroll: false });
-  }, [pathname, router]);
+    if (
+      typeof window !== "undefined" &&
+      window.location.pathname !== pathname
+    ) {
+      pendingFilterUrlRef.current = pathname;
+      setIsApplyingFilters(true);
+      window.history.replaceState(null, "", pathname);
+      return;
+    }
+
+    if (searchParams.toString()) {
+      pendingFilterUrlRef.current = pathname;
+      setIsApplyingFilters(true);
+      window.history.replaceState(null, "", pathname);
+      return;
+    }
+
+    setIsApplyingFilters(false);
+  }, [pathname, searchParams]);
 
   return (
     <div className="mx-auto grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
@@ -184,7 +229,10 @@ export default function ProductCatalog({
           onSubmit={handleApply}
           onReset={handleReset}
           isLoading={filtersQuery.isLoading}
-          isFetching={productsQuery.isFetching && !isFetchingNextPage}
+          isFetching={
+            isApplyingFilters ||
+            (productsQuery.isFetching && !isFetchingNextPage)
+          }
           error={filtersError}
         />
       </aside>
@@ -210,7 +258,7 @@ export default function ProductCatalog({
               type="button"
               onClick={() => fetchNextPage()}
               disabled={isFetchingNextPage}
-              className="inline-flex h-12 items-center justify-center rounded-full border border-neutral-200 bg-white px-6 text-sm font-medium text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50 disabled:pointer-events-none disabled:opacity-60"
+              className="inline-flex items-center justify-center h-12 px-6 text-sm font-medium transition bg-white border rounded-full border-neutral-200 text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50 disabled:pointer-events-none disabled:opacity-60"
             >
               {isFetchingNextPage
                 ? "Loading more products..."
