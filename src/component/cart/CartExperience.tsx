@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Minus, Plus, Trash2, X } from "lucide-react";
 
 import {
@@ -10,11 +10,15 @@ import {
   removeCartItem,
   updateCartItemQuantity,
 } from "@/lib/woocommerce/cart";
+import {
+  CART_NONCE_STORAGE_KEY,
+  CART_TOKEN_STORAGE_KEY,
+  clearStoredCartToken,
+} from "@/lib/woocommerce/store-api";
 import { useCart } from "@/component/product/CartContext";
 import { formatCurrency } from "@/component/product/productHelpers";
 import {
   findMatchingWooCartItem,
-  isGangSheetWooItem,
 } from "@/lib/woocommerce/cart-sync";
 import type { WooCart, WooCartItem } from "@/lib/woocommerce/types";
 
@@ -45,11 +49,6 @@ function unitMoney(item: WooCart["items"][number], cart: WooCart) {
   const lineTotal = Number.parseInt(item.totals.line_total || "0", 10);
   const quantity = item.quantity || 1;
   return money(String(Math.round(lineTotal / quantity)), cart);
-}
-
-function minorAmount(amount?: string | null, cart?: WooCart | null) {
-  const minorUnit = cart?.totals.currency_minor_unit ?? 2;
-  return Number.parseInt(amount || "0", 10) / 10 ** minorUnit;
 }
 
 function decodeText(value: string) {
@@ -319,13 +318,11 @@ function RemoveButton({
 export default function CartExperience() {
   const {
     items: localItems,
-    subtotal: localSubtotal,
     removeItem: removeLocalItem,
     updateItemQuantity: updateLocalQuantity,
     clearCart: clearLocalCart,
   } = useCart() as {
     items: LocalCartItem[];
-    subtotal: number;
     removeItem: (id: string) => void;
     updateItemQuantity: (id: string, quantity: number) => void;
     clearCart: () => void;
@@ -333,41 +330,82 @@ export default function CartExperience() {
   const [cart, setCart] = useState<WooCart | null>(null);
   const [error, setError] = useState("");
   const [isBusy, setIsBusy] = useState(false);
-  const hasLocalItems = localItems.length > 0;
-  const visibleWooItems = hasLocalItems
-    ? (cart?.items || []).filter(isGangSheetWooItem)
-    : cart?.items || [];
-  const hasVisibleItems = hasLocalItems || visibleWooItems.length > 0;
-  const wooOnlySubtotal = visibleWooItems.reduce(
-    (total, item) => total + minorAmount(item.totals.line_total, cart),
-    0,
+  const cartRequestSequenceRef = useRef(0);
+  const visibleLocalItems = useMemo(
+    () =>
+      cart
+        ? localItems.filter((item) =>
+            Boolean(findMatchingWooCartItem(cart.items, item)),
+          )
+        : [],
+    [cart, localItems],
   );
-  const displayTotal = hasLocalItems
-    ? formatCurrency(
-        localSubtotal + wooOnlySubtotal,
-        localItems[0]?.currencySymbol || "$",
-      )
-    : money(cart?.totals.total_price, cart || undefined);
+  const visibleLocalWooKeys = useMemo(
+    () =>
+      new Set(
+        visibleLocalItems
+          .map((item) => findMatchingWooCartItem(cart?.items || [], item)?.key)
+          .filter(Boolean),
+      ),
+    [cart, visibleLocalItems],
+  );
+  const visibleWooItems = (cart?.items || []).filter(
+    (item) => !visibleLocalWooKeys.has(item.key),
+  );
+  const isDevelopment = process.env.NODE_ENV === "development";
+  const hasLocalItems = visibleLocalItems.length > 0;
+  const hasVisibleItems = hasLocalItems || visibleWooItems.length > 0;
+  const displayTotal = money(cart?.totals.total_price, cart || undefined);
 
-  async function refreshCart() {
+  const hydrateCart = useCallback(
+    (nextCart: WooCart, sequenceId?: number) => {
+      if (
+        typeof sequenceId === "number" &&
+        sequenceId !== cartRequestSequenceRef.current
+      ) {
+        return;
+      }
+
+      setCart(nextCart);
+
+      if (nextCart.items_count === 0 && localItems.length > 0) {
+        clearLocalCart();
+      }
+
+      if (process.env.NODE_ENV === "development") {
+        console.info("[cart page] state", {
+          sequenceId,
+          wooItemsCount: nextCart.items_count,
+          localItemsCount: nextCart.items_count === 0 ? 0 : localItems.length,
+        });
+      }
+    },
+    [clearLocalCart, localItems.length],
+  );
+
+  const refreshCart = useCallback(async () => {
+    const sequenceId = ++cartRequestSequenceRef.current;
     setIsBusy(true);
     setError("");
     try {
-      setCart(await getCurrentCart());
+      hydrateCart(await getCurrentCart(), sequenceId);
     } catch (cartError) {
       setError(
         cartError instanceof Error ? cartError.message : "Unable to load cart.",
       );
     } finally {
-      setIsBusy(false);
+      if (sequenceId === cartRequestSequenceRef.current) {
+        setIsBusy(false);
+      }
     }
-  }
+  }, [hydrateCart]);
 
   async function mutateCart(action: () => Promise<WooCart>) {
+    const sequenceId = ++cartRequestSequenceRef.current;
     setIsBusy(true);
     setError("");
     try {
-      setCart(await action());
+      hydrateCart(await action(), sequenceId);
     } catch (cartError) {
       setError(
         cartError instanceof Error
@@ -375,13 +413,15 @@ export default function CartExperience() {
           : "Unable to update cart.",
       );
     } finally {
-      setIsBusy(false);
+      if (sequenceId === cartRequestSequenceRef.current) {
+        setIsBusy(false);
+      }
     }
   }
 
   useEffect(() => {
     window.queueMicrotask(refreshCart);
-  }, []);
+  }, [refreshCart]);
 
   async function removeWooCartKeys(keys: string[]) {
     setIsBusy(true);
@@ -392,7 +432,7 @@ export default function CartExperience() {
         nextCart = await removeCartItem(key);
       }
       if (nextCart) {
-        setCart(nextCart);
+        hydrateCart(nextCart);
       }
     } catch (cartError) {
       setError(
@@ -429,7 +469,7 @@ export default function CartExperience() {
 
   function clearVisibleCart() {
     if (hasLocalItems) {
-      const wooKeys = localItems
+      const wooKeys = visibleLocalItems
         .map((item) => findWooCartItemForLocalItem(item)?.key)
         .filter((key): key is WooCartItem["key"] => Boolean(key));
       clearLocalCart();
@@ -441,6 +481,47 @@ export default function CartExperience() {
     }
 
     void removeWooCartKeys((cart?.items || []).map((item) => item.key));
+  }
+
+  async function clearWooCartSession() {
+    setIsBusy(true);
+    setError("");
+
+    try {
+      const headers = new Headers();
+      const cartToken = window.localStorage.getItem(CART_TOKEN_STORAGE_KEY);
+      const nonce = window.localStorage.getItem(CART_NONCE_STORAGE_KEY);
+
+      if (cartToken) {
+        headers.set("Cart-Token", cartToken);
+      }
+
+      if (nonce) {
+        headers.set("Nonce", nonce);
+      }
+
+      const response = await fetch("/api/dev/clear-woo-cart", {
+        method: "POST",
+        headers,
+        credentials: "same-origin",
+      });
+      const nextCart = await response.json();
+
+      if (!response.ok) {
+        throw new Error(nextCart?.message || "Unable to clear Woo cart.");
+      }
+
+      hydrateCart(nextCart);
+      clearStoredCartToken();
+    } catch (cartError) {
+      setError(
+        cartError instanceof Error
+          ? cartError.message
+          : "Unable to clear Woo cart.",
+      );
+    } finally {
+      setIsBusy(false);
+    }
   }
 
   return (
@@ -477,7 +558,7 @@ export default function CartExperience() {
 
                 <div className="space-y-4 md:space-y-0 md:divide-y md:divide-neutral-100">
                   {hasLocalItems
-                    ? localItems.map((item) => (
+                    ? visibleLocalItems.map((item) => (
                         <LocalCartRow
                           key={item.id}
                           item={item}
@@ -535,12 +616,34 @@ export default function CartExperience() {
             </div>
           )}
           {hasVisibleItems ? (
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={clearVisibleCart}
+                className="inline-flex h-11 items-center justify-center rounded-full border border-neutral-300 px-6 text-sm font-semibold"
+              >
+                Clear
+              </button>
+              {isDevelopment ? (
+                <button
+                  type="button"
+                  onClick={clearWooCartSession}
+                  disabled={isBusy}
+                  className="inline-flex h-11 items-center justify-center rounded-full border border-red-200 px-6 text-sm font-semibold text-red-700 disabled:opacity-50"
+                >
+                  Clear Woo Cart
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+          {!hasVisibleItems && isDevelopment ? (
             <button
               type="button"
-              onClick={clearVisibleCart}
-              className="mt-6 inline-flex h-11 items-center justify-center rounded-full border border-neutral-300 px-6 text-sm font-semibold"
+              onClick={clearWooCartSession}
+              disabled={isBusy}
+              className="mt-6 inline-flex h-11 items-center justify-center rounded-full border border-red-200 px-6 text-sm font-semibold text-red-700 disabled:opacity-50"
             >
-              Clear
+              Clear Woo Cart
             </button>
           ) : null}
         </div>

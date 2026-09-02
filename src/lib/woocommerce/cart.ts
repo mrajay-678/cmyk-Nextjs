@@ -8,15 +8,51 @@ export type AddCartItemInput = {
   extensions?: Record<string, unknown>;
 };
 
+const inFlightAdds = new Map<string, Promise<WooCart>>();
+
+function debugCartMutation(message: string, data: Record<string, unknown>) {
+  if (process.env.NODE_ENV !== "development") {
+    return;
+  }
+
+  console.info(`[cart] ${message}`, data);
+}
+
+function stableAddKey(input: AddCartItemInput) {
+  return JSON.stringify({
+    id: input.id,
+    quantity: input.quantity || 1,
+    variation: input.variation || [],
+    extensions: input.extensions || {},
+  });
+}
+
 export function getCurrentCart() {
   return storeApiFetch<WooCart>("/cart", { method: "GET" });
 }
 
 export function addCartItem(input: AddCartItemInput) {
-  return storeApiFetch<WooCart>("/cart/add-item", {
+  const key = stableAddKey(input);
+  const existingRequest = inFlightAdds.get(key);
+
+  if (existingRequest) {
+    debugCartMutation("add:deduped", { productId: input.id });
+    return existingRequest;
+  }
+
+  debugCartMutation("add:start", { productId: input.id });
+  const request = storeApiFetch<WooCart>("/cart/add-item", {
     method: "POST",
     json: input,
   });
+
+  inFlightAdds.set(key, request);
+  request.finally(() => {
+    inFlightAdds.delete(key);
+    debugCartMutation("add:end", { productId: input.id });
+  });
+
+  return request;
 }
 
 export function updateCartItemQuantity(key: string, quantity: number) {
@@ -27,6 +63,7 @@ export function updateCartItemQuantity(key: string, quantity: number) {
 }
 
 export function removeCartItem(key: string) {
+  debugCartMutation("remove:start", { key });
   return storeApiFetch<WooCart>(`/cart/items/${encodeURIComponent(key)}`, {
     method: "DELETE",
   });

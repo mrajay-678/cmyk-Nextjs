@@ -4,6 +4,9 @@ export const STORE_API_BASE = "/api/store";
 export const CART_TOKEN_STORAGE_KEY = "cmyk_cart_token";
 export const CART_NONCE_STORAGE_KEY = "cmyk_cart_nonce";
 
+let requestSequence = 0;
+let mutationQueue = Promise.resolve();
+
 export type StoreApiError = {
   code?: string;
   message: string;
@@ -77,6 +80,22 @@ function persistCartToken(response: Response) {
   }
 }
 
+function maskToken(token: string) {
+  if (!token) {
+    return "none";
+  }
+
+  return `${token.slice(0, 6)}...${token.slice(-4)}`;
+}
+
+function debugCartRequest(message: string, data: Record<string, unknown>) {
+  if (process.env.NODE_ENV !== "development") {
+    return;
+  }
+
+  console.info(`[cart] ${message}`, data);
+}
+
 function isMutatingRequest(method?: string) {
   const normalizedMethod = (method || "GET").toUpperCase();
   return normalizedMethod !== "GET" && normalizedMethod !== "HEAD";
@@ -108,7 +127,26 @@ export async function storeApiFetch<T>(
   path: string,
   init: RequestInit & { json?: unknown } = {},
 ): Promise<T> {
+  if (isMutatingRequest(init.method)) {
+    const runMutation = mutationQueue.then(() =>
+      runStoreApiFetch<T>(path, init),
+    );
+    mutationQueue = runMutation.then(
+      () => undefined,
+      () => undefined,
+    );
+    return runMutation;
+  }
+
+  return runStoreApiFetch<T>(path, init);
+}
+
+async function runStoreApiFetch<T>(
+  path: string,
+  init: RequestInit & { json?: unknown } = {},
+): Promise<T> {
   const headers = new Headers(init.headers);
+  const sequenceId = ++requestSequence;
   const token = isMutatingRequest(init.method)
     ? await ensureCartToken()
     : getStoredCartToken();
@@ -128,7 +166,17 @@ export async function storeApiFetch<T>(
     body = JSON.stringify(init.json);
   }
 
-  const response = await fetch(`${STORE_API_BASE}${normalizePath(path)}`, {
+  const url = `${STORE_API_BASE}${normalizePath(path)}`;
+  const method = (init.method || "GET").toUpperCase();
+
+  debugCartRequest("request:start", {
+    sequenceId,
+    method,
+    url,
+    cartToken: maskToken(token),
+  });
+
+  const response = await fetch(url, {
     ...init,
     headers,
     body,
@@ -142,6 +190,18 @@ export async function storeApiFetch<T>(
     | StoreApiError
     | T
     | null;
+
+  debugCartRequest("request:end", {
+    sequenceId,
+    method,
+    url,
+    status: response.status,
+    cartToken: maskToken(response.headers.get("Cart-Token") || token),
+    itemsCount:
+      parsedBody && "items_count" in (parsedBody as Record<string, unknown>)
+        ? (parsedBody as Record<string, unknown>).items_count
+        : undefined,
+  });
 
   if (!response.ok) {
     const error = parsedBody as StoreApiError | null;

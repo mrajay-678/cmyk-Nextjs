@@ -19,21 +19,19 @@ function copyRequestHeaders(request: NextRequest) {
   const nonce = request.headers.get("nonce");
   const cookie = request.headers.get("cookie");
   const cookieCartToken = request.cookies.get(CART_TOKEN_COOKIE)?.value;
-  const hasWooCartCookie = Boolean(
-    cookie?.includes("wp_woocommerce_session_") ||
-      cookie?.includes("woocommerce_items_in_cart") ||
-      cookie?.includes("woocommerce_cart_hash"),
-  );
 
   if (contentType) {
     headers.set("Content-Type", contentType);
   }
 
-  if (cookie) {
+  headers.set("Cache-Control", "no-cache");
+  headers.set("Pragma", "no-cache");
+
+  const cartToken = requestCartToken || cookieCartToken;
+  if (cookie && !cartToken) {
     headers.set("Cookie", cookie);
   }
 
-  const cartToken = hasWooCartCookie ? "" : requestCartToken || cookieCartToken;
   if (cartToken) {
     headers.set("Cart-Token", cartToken);
   }
@@ -51,6 +49,9 @@ function toStoreApiUrl(path: string[], search: string) {
     .join("/");
   const url = new URL(`${STORE_API_PREFIX}/${cleanPath}`, base);
   url.search = search;
+  if (path[0] === "cart") {
+    url.searchParams.set("_cmyk_cart_ts", String(Date.now()));
+  }
   return url;
 }
 
@@ -110,6 +111,7 @@ async function proxyStoreApi(
     });
 
     const responseHeaders = new Headers();
+    responseHeaders.set("Cache-Control", "no-store, max-age=0");
     const contentType = wooResponse.headers.get("content-type");
     const cartToken = wooResponse.headers.get("cart-token");
     const nonce = wooResponse.headers.get("nonce");

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, Eye, Minus, Plus, RefreshCw, X } from "lucide-react";
 
 import { useCart } from "@/component/product/CartContext";
@@ -15,7 +15,6 @@ import {
 import { WooStoreApiError } from "@/lib/woocommerce/store-api";
 import {
   findMatchingWooCartItem,
-  isGangSheetWooItem,
   reconcileWooCartToLocalItems,
 } from "@/lib/woocommerce/cart-sync";
 import type { WooCart, WooCartItem } from "@/lib/woocommerce/types";
@@ -69,12 +68,6 @@ function money(amount?: string | null, cart?: WooCart | null) {
   }).format(Number.isFinite(numeric) ? numeric : 0);
 }
 
-function minorAmount(amount?: string | null, cart?: WooCart | null) {
-  const totals = cart?.totals;
-  const minorUnit = totals?.currency_minor_unit ?? 2;
-  return Number.parseInt(amount || "0", 10) / 10 ** minorUnit;
-}
-
 function normalizeError(error: unknown) {
   if (error instanceof WooStoreApiError) {
     const code = error.code || "";
@@ -117,7 +110,6 @@ function getHostedCheckoutUrl() {
 export default function CheckoutExperience() {
   const {
     items: localItems,
-    subtotal: localSubtotal,
     removeItem: removeLocalItem,
     updateItemQuantity: updateLocalQuantity,
     clearCart: clearLocalCart,
@@ -125,7 +117,6 @@ export default function CheckoutExperience() {
     isArtworkReady,
   } = useCart() as {
     items: LocalCartItem[];
-    subtotal: number;
     removeItem: (id: string) => void;
     updateItemQuantity: (id: string, quantity: number) => void;
     clearCart: () => void;
@@ -139,45 +130,80 @@ export default function CheckoutExperience() {
   const [previewArtwork, setPreviewArtwork] = useState<PreviewArtwork | null>(
     null,
   );
+  const cartRequestSequenceRef = useRef(0);
 
-  const hasLocalItems = localItems.length > 0;
-  const visibleWooItems = hasLocalItems
-    ? (cart?.items || []).filter(isGangSheetWooItem)
-    : cart?.items || [];
-  const hasWooItems = visibleWooItems.length > 0;
-  const wooOnlySubtotal = visibleWooItems.reduce(
-    (total, item) => total + minorAmount(item.totals.line_total, cart),
-    0,
+  const visibleLocalItems = useMemo(
+    () =>
+      cart
+        ? localItems.filter((item) =>
+            Boolean(findMatchingWooCartItem(cart.items, item)),
+          )
+        : [],
+    [cart, localItems],
   );
+  const visibleLocalWooKeys = useMemo(
+    () =>
+      new Set(
+        visibleLocalItems
+          .map((item) => findMatchingWooCartItem(cart?.items || [], item)?.key)
+          .filter(Boolean),
+      ),
+    [cart, visibleLocalItems],
+  );
+  const visibleWooItems = (cart?.items || []).filter(
+    (item) => !visibleLocalWooKeys.has(item.key),
+  );
+  const hasLocalItems = visibleLocalItems.length > 0;
+  const hasWooItems = visibleWooItems.length > 0;
   const isArtworkLoading =
     hasLocalItems &&
-    localItems.some((item) => Boolean(item.artworkName)) &&
+    visibleLocalItems.some((item) => Boolean(item.artworkName)) &&
     !isArtworkReady;
-  const localCartNeedsArtwork = localItems.some(
+  const localCartNeedsArtwork = visibleLocalItems.some(
     (item) =>
       isArtworkReady && Boolean(item.artworkName) && !getArtworkFile(item.id),
   );
-  const total = hasLocalItems
-    ? formatCurrency(
-        localSubtotal + wooOnlySubtotal,
-        localItems[0]?.currencySymbol || "$",
-      )
-    : money(cart?.totals.total_price, cart);
+  const total = money(cart?.totals.total_price, cart);
+
+  const hydrateCart = useCallback(
+    (nextCart: WooCart, sequenceId?: number) => {
+      if (
+        typeof sequenceId === "number" &&
+        sequenceId !== cartRequestSequenceRef.current
+      ) {
+        return;
+      }
+
+      setCart(nextCart);
+
+      if (nextCart.items_count === 0 && localItems.length > 0) {
+        clearLocalCart();
+      }
+
+      if (process.env.NODE_ENV === "development") {
+        console.info("[checkout cart] state", {
+          sequenceId,
+          wooItemsCount: nextCart.items_count,
+          localItemsCount: nextCart.items_count === 0 ? 0 : localItems.length,
+        });
+      }
+    },
+    [clearLocalCart, localItems.length],
+  );
 
   async function refreshCart() {
+    const sequenceId = ++cartRequestSequenceRef.current;
     setIsBusy(true);
     setError("");
     try {
-      hydrateCart(await getCurrentCart());
+      hydrateCart(await getCurrentCart(), sequenceId);
     } catch (cartError) {
       setError(normalizeError(cartError));
     } finally {
-      setIsBusy(false);
+      if (sequenceId === cartRequestSequenceRef.current) {
+        setIsBusy(false);
+      }
     }
-  }
-
-  function hydrateCart(nextCart: WooCart) {
-    setCart(nextCart);
   }
 
   useEffect(() => {
@@ -188,28 +214,31 @@ export default function CheckoutExperience() {
   }, []);
 
   async function mutateCart(action: () => Promise<WooCart>) {
+    const sequenceId = ++cartRequestSequenceRef.current;
     setIsBusy(true);
     setError("");
     try {
-      hydrateCart(await action());
+      hydrateCart(await action(), sequenceId);
     } catch (cartError) {
       setError(normalizeError(cartError));
     } finally {
-      setIsBusy(false);
+      if (sequenceId === cartRequestSequenceRef.current) {
+        setIsBusy(false);
+      }
     }
   }
 
   async function redirectToHostedCheckout() {
     if (hasLocalItems) {
-      await reconcileWooCartToLocalItems(await getCurrentCart(), localItems);
+      await reconcileWooCartToLocalItems(await getCurrentCart(), visibleLocalItems);
 
       const formData = new FormData();
-      formData.append("items", JSON.stringify(localItems));
+      formData.append("items", JSON.stringify(visibleLocalItems));
       formData.append("billing_address", JSON.stringify(emptyAddress));
       formData.append("shipping_address", JSON.stringify(emptyAddress));
       formData.append("customer_note", "");
 
-      localItems.forEach((item, index) => {
+      visibleLocalItems.forEach((item, index) => {
         const artworkFile = getArtworkFile(item.id);
         if (artworkFile) {
           formData.append(`artwork-${index}`, artworkFile, artworkFile.name);
@@ -317,7 +346,7 @@ export default function CheckoutExperience() {
 
         <CartStep
           cart={cart}
-          localItems={localItems}
+          localItems={visibleLocalItems}
           wooItems={visibleWooItems}
           hasLocalItems={hasLocalItems}
           isBusy={isBusy}

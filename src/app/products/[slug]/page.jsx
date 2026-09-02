@@ -57,7 +57,8 @@ async function ProductRecommendationsSection({ relatedProductsPromise }) {
   return <ProductRecommendations products={products} />;
 }
 
-async function ProductDetailContent({ slug }) {
+export default async function ProductDetailPage({ params }) {
+  const { slug } = await params;
   const { product, error } = await getProductBySlug(slug);
 
   if (error || !product || toSlug(product.slug || product.name) !== slug) {
@@ -72,13 +73,13 @@ async function ProductDetailContent({ slug }) {
     variations: variationsPromise,
   });
   const { variations } = await variationsPromise;
-  const currencySymbol = extractCurrencySymbol(product);
   const pricingRows = buildQuantityPriceTable(product, variations);
   const price = Math.min(
     ...pricingRows.map((row) => row.unitPrice / row.quantity),
   );
-  const sizeOptions = product.attributes[0].options.includes('22" x 12"')
-    ? product.attributes[0].options
+  const attributeOptions = product.attributes?.[0]?.options || [];
+  const sizeOptions = attributeOptions.includes('22" x 12"')
+    ? attributeOptions
     : [];
   return (
     <section className="overflow-hidden bg-neutral-50 px-4 py-8 sm:px-6 sm:py-12 md:px-10 md:py-18 lg:px-16 lg:py-24">
@@ -173,9 +174,4 @@ export async function generateMetadata({ params }) {
     path: `/products/${product.slug || slug}`,
     image,
   });
-}
-
-export default async function ProductDetailPage({ params }) {
-  const { slug } = await params;
-  return <ProductDetailContent slug={slug} />;
 }

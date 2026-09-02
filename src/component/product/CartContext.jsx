@@ -18,6 +18,19 @@ const ARTWORK_STORE_NAME = "files";
 const CartStateContext = createContext(null);
 const CartActionsContext = createContext(null);
 
+function persistCartItems(items) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (!items.length) {
+    window.localStorage.removeItem(STORAGE_KEY);
+    return;
+  }
+
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+}
+
 function openArtworkDatabase() {
   return new Promise((resolve, reject) => {
     if (!("indexedDB" in window)) {
@@ -142,7 +155,7 @@ export function CartProvider({ children }) {
       return;
     }
 
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    persistCartItems(items);
   }, [items]);
 
   const addItem = useCallback((item, artworkFile = null) => {
@@ -153,12 +166,15 @@ export function CartProvider({ children }) {
 
     setItems((currentItems) => {
       const existingItem = currentItems.find((entry) => entry.id === item.id);
+      let nextItems;
 
       if (!existingItem) {
-        return [...currentItems, { ...item, cartQuantity: 1 }];
+        nextItems = [...currentItems, { ...item, cartQuantity: 1 }];
+        persistCartItems(nextItems);
+        return nextItems;
       }
 
-      return currentItems.map((entry) =>
+      nextItems = currentItems.map((entry) =>
         entry.id === item.id
           ? {
               ...entry,
@@ -167,27 +183,35 @@ export function CartProvider({ children }) {
             }
           : entry,
       );
+      persistCartItems(nextItems);
+      return nextItems;
     });
   }, []);
 
   const removeItem = useCallback((id) => {
     artworkFilesRef.current.delete(id);
     deleteArtworkFile(id).catch(() => undefined);
-    setItems((currentItems) => currentItems.filter((item) => item.id !== id));
+    setItems((currentItems) => {
+      const nextItems = currentItems.filter((item) => item.id !== id);
+      persistCartItems(nextItems);
+      return nextItems;
+    });
   }, []);
 
   const updateItemQuantity = useCallback((id, quantity) => {
     const nextQuantity = Math.max(1, Number.parseInt(String(quantity), 10) || 1);
-    setItems((currentItems) =>
-      currentItems.map((item) =>
+    setItems((currentItems) => {
+      const nextItems = currentItems.map((item) =>
         item.id === id
           ? {
               ...item,
               cartQuantity: nextQuantity,
             }
           : item,
-      ),
-    );
+      );
+      persistCartItems(nextItems);
+      return nextItems;
+    });
   }, []);
 
   const updateArtworkFile = useCallback((id, artworkFile) => {
@@ -212,6 +236,7 @@ export function CartProvider({ children }) {
   const clearCart = useCallback(() => {
     artworkFilesRef.current.clear();
     clearArtworkFiles().catch(() => undefined);
+    persistCartItems([]);
     setItems([]);
   }, []);
 

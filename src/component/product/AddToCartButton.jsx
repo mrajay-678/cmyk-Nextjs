@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import { useCart } from "./CartContext";
 import { addCartItem } from "@/lib/woocommerce/cart";
 import {
-  findMatchingWooCartItem,
+  findNewWooCartItem,
   mergeLocalCartItems,
+  rememberWooCartItems,
   reconcileWooCartToLocalItems,
 } from "@/lib/woocommerce/cart-sync";
 
@@ -54,11 +55,14 @@ function AddToCartButton({
             value: attribute.option,
           })),
         });
-        const syncedCart = await reconcileWooCartToLocalItems(
-          wooCart,
-          nextLocalItems,
+        const wooItem = findNewWooCartItem(wooCart.items, item, items);
+        const keyedLocalItems = nextLocalItems.map((entry) =>
+          entry.id === item.id ? { ...entry, wooCartKey: wooItem?.key } : entry,
         );
-        const wooItem = findMatchingWooCartItem(syncedCart.items, item);
+        await reconcileWooCartToLocalItems(wooCart, keyedLocalItems);
+        if (wooItem) {
+          rememberWooCartItems([wooItem]);
+        }
         addItem({ ...item, wooCartKey: wooItem?.key }, artworkFile);
         setWasAdded(true);
         router.push("/cart");
