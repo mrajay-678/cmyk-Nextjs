@@ -4,6 +4,7 @@ import Header from "../component/Header/Header";
 import Footer from "../component/Footer/Footer";
 import AppProviders from "../component/AppProviders";
 import "animate.css";
+import ScrollToTopOnRouteChange from "../component/scroll-to-top-on-route-change";
 import {
   DEFAULT_DESCRIPTION,
   DEFAULT_IMAGE,
@@ -64,6 +65,7 @@ export default function RootLayout({
     <html lang="en" className={`bg-gray`}>
       <body>
         <AppProviders>
+          <ScrollToTopOnRouteChange />
           <Header />
           {children}
           <Footer />
