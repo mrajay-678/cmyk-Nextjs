@@ -25,7 +25,7 @@ export const menu = [
       },
       {
         title: "DTF Gang Sheet Builder",
-        href: "/dtf-gang-sheet-builder",
+        href: "/products/dtf-gang-sheet-builder",
       },
     ],
   },

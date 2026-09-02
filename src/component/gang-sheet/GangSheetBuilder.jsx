@@ -1,7 +1,7 @@
 "use client";
 
 import Script from "next/script";
-import { useCallback, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 
 const DEFAULT_APP_HOST = "https://app.buildagangsheet.com";
 const DEFAULT_WOO_HOST = "https://cmykprint.shop";
@@ -13,6 +13,7 @@ const sdkState = {
   externalReady: false,
   wooReady: false,
 };
+const initializedWooInstances = new Map();
 
 function normalizeInstanceId(value) {
   return String(value).replace(/[^a-zA-Z0-9_-]/g, "-");
@@ -128,6 +129,7 @@ export default function GangSheetBuilder({
   const [scriptReady, setScriptReady] = useState(
     mode === "external" ? sdkState.externalReady : sdkState.wooReady,
   );
+  const [wooClickLocked, setWooClickLocked] = useState(false);
   const resolvedAjaxUrl = ajaxUrl || DEFAULT_AJAX_PROXY_PATH;
   const resolvedCartUrl = cartUrl || `${wooHost}/cart/`;
 
@@ -138,6 +140,7 @@ export default function GangSheetBuilder({
       gs_version: sdkVersion,
       product_id: String(productId || ""),
       product_type: String(productType),
+      quantity,
       variants,
       cart_url: resolvedCartUrl,
       customer,
@@ -152,6 +155,7 @@ export default function GangSheetBuilder({
       label,
       productId,
       productType,
+      quantity,
       resolvedCartUrl,
       sdkVersion,
       shopSlug,
@@ -165,10 +169,25 @@ export default function GangSheetBuilder({
       return;
     }
 
+    const optionsSignature = JSON.stringify(wooOptions);
+    if (initializedWooInstances.get(instanceId) === optionsSignature) {
+      return;
+    }
+
     ensureWooGlobals({ ajaxUrl: resolvedAjaxUrl, cartUrl: resolvedCartUrl });
     ensureWooStyles(sdkVersion, appHost, productType);
     window.GangSheetShortcodeOptions = window.GangSheetShortcodeOptions || {};
     window.GangSheetShortcodeOptions[instanceId] = wooOptions;
+    initializedWooInstances.set(instanceId, optionsSignature);
+    console.info("[BAGS cart] shortcode initialized", {
+      instanceId,
+      productId: wooOptions.product_id,
+      productType: wooOptions.product_type,
+      quantity: wooOptions.quantity,
+      ajaxUrl: resolvedAjaxUrl,
+      cartUrl: resolvedCartUrl,
+      variants: wooOptions.variants?.map((variant) => variant.id),
+    });
 
     if (typeof window.initializeGangSheetShortcodes === "function") {
       window.initializeGangSheetShortcodes();
@@ -182,6 +201,15 @@ export default function GangSheetBuilder({
     sdkVersion,
     wooOptions,
   ]);
+
+  useEffect(() => {
+    return () => {
+      initializedWooInstances.delete(instanceId);
+      if (typeof window !== "undefined" && window.GangSheetShortcodeOptions) {
+        delete window.GangSheetShortcodeOptions[instanceId];
+      }
+    };
+  }, [instanceId]);
 
   const openExternalBuilder = useCallback(() => {
     if (disabled) {
@@ -265,7 +293,27 @@ export default function GangSheetBuilder({
             type="button"
             className={`gang-sheet-shortcode-button ${buttonClassName}`}
             style={buttonStyle}
-            disabled={disabled || !scriptReady}
+            onClick={(event) => {
+              if (wooClickLocked) {
+                event.preventDefault();
+                event.stopPropagation();
+                console.info("[BAGS cart] duplicate builder click blocked", {
+                  instanceId,
+                });
+                return;
+              }
+
+              setWooClickLocked(true);
+              window.setTimeout(() => setWooClickLocked(false), 1500);
+              console.info("[BAGS cart] builder button clicked", {
+                instanceId,
+                productId: wooOptions.product_id,
+                productType: wooOptions.product_type,
+                quantity: wooOptions.quantity,
+              });
+              onOpen?.();
+            }}
+            disabled={disabled || !scriptReady || wooClickLocked}
           >
             {children || label}
           </button>

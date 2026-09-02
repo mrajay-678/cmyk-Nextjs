@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import { useMemo, useState } from "react";
+import { markWooCartIntentPending } from "@/lib/woocommerce/cart-sync";
+import { getCurrentCart } from "@/lib/woocommerce/cart";
 import GangSheetBuilder from "@/component/gang-sheet/GangSheetBuilder";
 import styles from "./Gangsheet.module.css";
 
@@ -63,9 +65,13 @@ export default function GangsheetPage() {
     [selectedSize],
   );
 
-  const handleOpenBuilder = () => {
+  const handleOpenBuilder = async () => {
+    try {
+      markWooCartIntentPending(await getCurrentCart());
+    } catch {
+      markWooCartIntentPending();
+    }
     setError(null);
-    setIsOpening(true);
   };
 
   return (

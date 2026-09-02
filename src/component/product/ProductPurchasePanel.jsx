@@ -8,12 +8,15 @@ import AddToCartButton from "./AddToCartButton";
 import { useCart } from "@/component/product/CartContext";
 import { formatCurrency } from "./productHelpers";
 import GangSheetBuilder from "@/component/gang-sheet/GangSheetBuilder";
-import { addCartItem } from "@/lib/woocommerce/cart";
+import { addCartItem, getCurrentCart } from "@/lib/woocommerce/cart";
 import {
-  findMatchingWooCartItem,
+  findNewWooCartItem,
+  markWooCartIntentPending,
   mergeLocalCartItems,
+  rememberWooCartItems,
   reconcileWooCartToLocalItems,
 } from "@/lib/woocommerce/cart-sync";
+import { clearStoredCartToken } from "@/lib/woocommerce/store-api";
 import { Headset } from "lucide-react";
 import Link from "next/link";
 
@@ -25,8 +28,10 @@ export default function ProductPurchasePanel({
   currencySymbol,
   variation,
 }) {
-  const sizeOptions = product.attributes[0].options.includes('22" x 12"')
-    ? product.attributes[0].options
+  const productSlug = product.slug || "";
+  const productAttributeOptions = product.attributes?.[0]?.options || [];
+  const sizeOptions = productAttributeOptions.includes('22" x 12"')
+    ? productAttributeOptions
     : [];
   const router = useRouter();
   const { items, addItem } = useCart();
@@ -79,8 +84,38 @@ export default function ProductPurchasePanel({
     };
   }, [previewUrl]);
 
-  const isDtfBySize =
-    Number(product.id) === 28426 || product.slug === "dtf-by-size";
+  const isBySizeBuilderProduct = new Set([
+    "dtf-by-size",
+    "uv-dtf-by-size",
+  ]).has(productSlug);
+  const isGangSheetProduct = new Set([
+    "dtf-gang-sheet",
+    "uv-dtf-gang-sheet",
+  ]).has(productSlug);
+  const gangSheetVariants = (variation || []).map((variationItem) => {
+    const attribute = variationItem.attributes?.[0];
+    const attributeKey = attribute?.slug || attribute?.name || "attribute_size";
+    const attributeValue =
+      attribute?.option || variationItem.name || String(variationItem.id);
+
+    return {
+      id: variationItem.id,
+      title: attributeValue,
+      attribute_key: attributeKey,
+      attribute_value: attributeValue,
+      attributes: {
+        [attributeKey]: attributeValue,
+      },
+    };
+  });
+  async function markGangSheetIntent() {
+    try {
+      markWooCartIntentPending(await getCurrentCart());
+    } catch {
+      markWooCartIntentPending();
+    }
+    clearStoredCartToken();
+  }
 
   function handleFileChange(event) {
     const file = event.target.files?.[0];
@@ -120,15 +155,25 @@ export default function ProductPurchasePanel({
     setIsBuyingNow(true);
 
     try {
+      if (items.some((item) => item.id === cartItem.id)) {
+        router.push("/checkout");
+        return;
+      }
+
       const nextLocalItems = mergeLocalCartItems(items, cartItem);
       const wooCart = await addCartItem(getWooCartPayload());
-      const syncedCart = await reconcileWooCartToLocalItems(
-        wooCart,
-        nextLocalItems,
+      const wooItem = findNewWooCartItem(wooCart.items, cartItem, items);
+      const keyedLocalItems = nextLocalItems.map((item) =>
+        item.id === cartItem.id
+          ? { ...item, wooCartKey: wooItem?.key }
+          : item,
       );
-      const wooItem = findMatchingWooCartItem(syncedCart.items, cartItem);
+      await reconcileWooCartToLocalItems(wooCart, keyedLocalItems);
+      if (wooItem) {
+        rememberWooCartItems([wooItem]);
+      }
       addItem({ ...cartItem, wooCartKey: wooItem?.key }, selectedFile);
-      router.push("/cart");
+      router.push("/checkout");
     } catch (error) {
       setCheckoutError(
         error instanceof Error
@@ -141,18 +186,27 @@ export default function ProductPurchasePanel({
     }
   }
 
-  if (isDtfBySize) {
+  if (isBySizeBuilderProduct || isGangSheetProduct) {
     return (
       <div className="space-y-5 rounded-[1.5rem] border border-neutral-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:rounded-[2rem] sm:p-6">
         <GangSheetBuilder
           mode="woo-product"
-          productId="28426"
-          productType="7"
+          productId={String(product.id)}
+          productType={isBySizeBuilderProduct ? "7" : "1"}
+          variants={gangSheetVariants}
           sdkVersion="1.7.7"
-          label="Upload Image By Size"
+          cartUrl="/cart"
+          label={
+            isBySizeBuilderProduct
+              ? "Upload Image By Size"
+              : "Build Your Own Gang Sheet"
+          }
+          onOpen={markGangSheetIntent}
           buttonClassName="inline-flex h-13 w-full items-center justify-center rounded-full bg-pink-500 px-6 text-base font-semibold text-white transition hover:bg-pink-600 disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-500"
         >
-          Upload Image By Size
+          {isBySizeBuilderProduct
+            ? "Upload Image By Size"
+            : "Build Your Own Gang Sheet"}
         </GangSheetBuilder>
       </div>
     );
@@ -344,7 +398,7 @@ export default function ProductPurchasePanel({
           ) : null}
         </label>
 
-        <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="grid gap-3 sm:grid-cols-2">
           <AddToCartButton
             item={cartItem}
             artworkFile={selectedFile}
@@ -353,16 +407,14 @@ export default function ProductPurchasePanel({
           >
             Add to cart
           </AddToCartButton>
-          <div className="w-full">
-            <button
-              type="button"
-              onClick={handleBuyNow}
-              disabled={!isCheckoutReady || isBuyingNow}
-              className="inline-flex w-full h-13 items-center justify-center rounded-full bg-pink-500 px-6 text-base font-semibold text-white transition hover:bg-pink-600 disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-500"
-            >
-              {isBuyingNow ? "Adding..." : "Buy Now"}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleBuyNow}
+            disabled={!isCheckoutReady || isBuyingNow}
+            className="inline-flex w-full h-13 items-center justify-center rounded-full bg-pink-500 px-6 text-base font-semibold text-white transition hover:bg-pink-600 disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-500"
+          >
+            {isBuyingNow ? "Adding..." : "Buy Now"}
+          </button>
         </div>
         {checkoutError ? (
           <p className="text-sm font-medium text-red-700">{checkoutError}</p>
