@@ -28,6 +28,14 @@ div {
   display: none;
 }
 
+.product-dis p {
+  margin-top: 0.75rem;
+}
+
+.product-dis p:first-child {
+  margin-top: 0;
+}
+
 @import "tailwindcss";
 .marquee-animation {
   animation: marquee 20s 0ms linear infinite forwards;
