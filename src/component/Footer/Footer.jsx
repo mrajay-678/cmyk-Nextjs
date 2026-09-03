@@ -42,16 +42,18 @@ export default function Footer() {
           </p>
 
           <div className="mt-6 flex flex-wrap gap-4 text-sm md:gap-6">
-            <img
-              width="154"
-              height="77"
+            <Image
+              width={154}
+              height={77}
               src="https://cmykprint.shop/wp-content/uploads/2023/11/UnionBug_Final-white.png.webp"
               alt="Union Bug"
               className="object-contain"
             />
-            <img
+            <Image
               src="https://cmykprint.shop/wp-content/uploads/2023/11/Distributor_Member_Grayscale-white.png.webp"
               alt="Sage Member"
+              width={154}
+              height={77}
               className="object-contain"
             />
           </div>

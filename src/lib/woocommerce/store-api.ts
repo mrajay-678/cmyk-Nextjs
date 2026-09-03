@@ -69,6 +69,11 @@ function persistCartToken(response: Response) {
     return;
   }
 
+  if (response.headers.get("X-CMYK-Clear-Cart-Token") === "1") {
+    window.localStorage.removeItem(CART_TOKEN_STORAGE_KEY);
+    window.localStorage.removeItem(CART_NONCE_STORAGE_KEY);
+  }
+
   const token = response.headers.get("Cart-Token");
   if (token) {
     window.localStorage.setItem(CART_TOKEN_STORAGE_KEY, token);

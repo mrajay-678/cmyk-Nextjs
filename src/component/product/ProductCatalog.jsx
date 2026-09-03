@@ -60,7 +60,6 @@ export default function ProductCatalog({
     gcTime: 1000 * 60 * 60,
     refetchOnWindowFocus: false,
   });
-  console.log("Tags-", filtersQuery);
 
   const productsQuery = useInfiniteQuery({
     queryKey: productQueryKey,

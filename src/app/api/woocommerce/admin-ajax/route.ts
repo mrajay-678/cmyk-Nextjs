@@ -83,6 +83,8 @@ async function proxyAdminAjax(request: NextRequest) {
     );
   }
 
+  response.cookies.delete("cmyk_cart_token");
+
   return response;
 }
 

@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-export default function TypeWriter({ appendClass }) {
-  const words = ["occasions.", "impact.", "life."];
+const words = ["occasions.", "impact.", "life."];
 
+export default function TypeWriter({ appendClass }) {
   const [wordIndex, setWordIndex] = useState(0);
   const [text, setText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -46,7 +46,7 @@ export default function TypeWriter({ appendClass }) {
   }
 
   return (
-    <section className="max-w-screen overflow-hidden">
+    <section className={`max-w-screen overflow-hidden ${className}`}>
       <div className="h-8 max-w-screen bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')]" />
 
       <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Group-13-scaled.png.webp')] bg-center px-6 py-20 sm:py-32 md:py-40">

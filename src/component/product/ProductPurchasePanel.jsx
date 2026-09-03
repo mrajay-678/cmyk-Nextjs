@@ -24,6 +24,36 @@ import { clearStoredCartToken } from "@/lib/woocommerce/store-api";
 import { Headset } from "lucide-react";
 import Link from "next/link";
 
+function getWooAttributeKey(attribute) {
+  const slug = attribute?.slug || "";
+
+  if (slug.startsWith("pa_") || slug.startsWith("attribute_")) {
+    return slug;
+  }
+
+  if (attribute?.id && slug) {
+    return `pa_${slug}`;
+  }
+
+  if (attribute?.id && attribute?.name) {
+    return `pa_${attribute.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")}`;
+  }
+
+  return attribute?.name || "attribute_size";
+}
+
+function getGangSheetCheckoutUrl(productId, productType) {
+  const params = new URLSearchParams({
+    product_id: String(productId || ""),
+    product_type: String(productType || ""),
+  });
+
+  return `/api/gang-sheet/checkout?${params.toString()}`;
+}
+
 export default function ProductPurchasePanel({
   product,
   quantityOptions,
@@ -97,7 +127,7 @@ export default function ProductPurchasePanel({
   ]).has(productSlug);
   const gangSheetVariants = (variation || []).map((variationItem) => {
     const attribute = variationItem.attributes?.[0];
-    const attributeKey = attribute?.slug || attribute?.name || "attribute_size";
+    const attributeKey = getWooAttributeKey(attribute);
     const attributeValue =
       attribute?.option || variationItem.name || String(variationItem.id);
 
@@ -185,7 +215,10 @@ export default function ProductPurchasePanel({
           productType={isBySizeBuilderProduct ? "7" : "1"}
           variants={gangSheetVariants}
           sdkVersion="1.7.7"
-          cartUrl="/cart"
+          cartUrl={getGangSheetCheckoutUrl(
+            product.id,
+            isBySizeBuilderProduct ? "7" : "1",
+          )}
           label={
             isBySizeBuilderProduct
               ? "Upload Image By Size"
@@ -210,14 +243,9 @@ export default function ProductPurchasePanel({
     .querySelector("table tbody tr td:first-child")
     ?.textContent.trim();
 
-  const rate = text?.match(/\(([^)]+)\)/)?.[1] ?? "";
-
-  const code = rate ? rate : null;
-
-  let actualOptions = product["attributes"][0].options.map((item) =>
+  const actualOptions = product["attributes"][0].options.map((item) =>
     item.replace(/[^0-9]/g, ""),
   );
-  console.log(product); // R3
 
   return (
     <section>

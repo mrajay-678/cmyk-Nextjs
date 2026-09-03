@@ -18,17 +18,12 @@ const ARTWORK_STORE_NAME = "files";
 const CartStateContext = createContext(null);
 const CartActionsContext = createContext(null);
 
-function persistCartItems(items) {
+function clearPersistedCartItems() {
   if (typeof window === "undefined") {
     return;
   }
 
-  if (!items.length) {
-    window.localStorage.removeItem(STORAGE_KEY);
-    return;
-  }
-
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  window.localStorage.removeItem(STORAGE_KEY);
 }
 
 function openArtworkDatabase() {
@@ -124,24 +119,12 @@ export function CartProvider({ children }) {
 
   useEffect(() => {
     window.queueMicrotask(async () => {
-      let parsedItems = [];
+      window.localStorage.removeItem(STORAGE_KEY);
+      setItems([]);
+      hasLoadedSavedCartRef.current = true;
 
       try {
-        const savedItems = window.localStorage.getItem(STORAGE_KEY);
-        parsedItems = savedItems ? JSON.parse(savedItems) : [];
-        setItems(Array.isArray(parsedItems) ? parsedItems : []);
-      } catch {
-        parsedItems = [];
-        setItems([]);
-      } finally {
-        hasLoadedSavedCartRef.current = true;
-      }
-
-      try {
-        const itemIds = Array.isArray(parsedItems)
-          ? parsedItems.map((item) => item.id).filter(Boolean)
-          : [];
-        artworkFilesRef.current = await loadSavedArtworkFiles(itemIds);
+        artworkFilesRef.current = await loadSavedArtworkFiles([]);
       } catch {
         artworkFilesRef.current = new Map();
       } finally {
@@ -155,7 +138,7 @@ export function CartProvider({ children }) {
       return;
     }
 
-    persistCartItems(items);
+    clearPersistedCartItems();
   }, [items]);
 
   const addItem = useCallback((item, artworkFile = null) => {
@@ -170,7 +153,7 @@ export function CartProvider({ children }) {
 
       if (!existingItem) {
         nextItems = [...currentItems, { ...item, cartQuantity: 1 }];
-        persistCartItems(nextItems);
+        clearPersistedCartItems();
         return nextItems;
       }
 
@@ -183,7 +166,7 @@ export function CartProvider({ children }) {
             }
           : entry,
       );
-      persistCartItems(nextItems);
+      clearPersistedCartItems();
       return nextItems;
     });
   }, []);
@@ -193,7 +176,7 @@ export function CartProvider({ children }) {
     deleteArtworkFile(id).catch(() => undefined);
     setItems((currentItems) => {
       const nextItems = currentItems.filter((item) => item.id !== id);
-      persistCartItems(nextItems);
+      clearPersistedCartItems();
       return nextItems;
     });
   }, []);
@@ -209,7 +192,7 @@ export function CartProvider({ children }) {
             }
           : item,
       );
-      persistCartItems(nextItems);
+      clearPersistedCartItems();
       return nextItems;
     });
   }, []);
@@ -236,7 +219,7 @@ export function CartProvider({ children }) {
   const clearCart = useCallback(() => {
     artworkFilesRef.current.clear();
     clearArtworkFiles().catch(() => undefined);
-    persistCartItems([]);
+    clearPersistedCartItems();
     setItems([]);
   }, []);
 

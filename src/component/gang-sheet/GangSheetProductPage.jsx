@@ -36,6 +36,36 @@ function mapVariationsToSizeOptions(variations) {
     .filter((option) => option.id && option.label);
 }
 
+function getWooAttributeKey(attribute) {
+  const slug = attribute?.slug || "";
+
+  if (slug.startsWith("pa_") || slug.startsWith("attribute_")) {
+    return slug;
+  }
+
+  if (attribute?.id && slug) {
+    return `pa_${slug}`;
+  }
+
+  if (attribute?.id && attribute?.name) {
+    return `pa_${attribute.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")}`;
+  }
+
+  return attribute?.name || "attribute_size";
+}
+
+function getGangSheetCheckoutUrl(productId, productType) {
+  const params = new URLSearchParams({
+    product_id: String(productId || ""),
+    product_type: String(productType || ""),
+  });
+
+  return `/api/gang-sheet/checkout?${params.toString()}`;
+}
+
 export default function GangSheetProductPage({ product, variations, config }) {
   const shopId =
     process.env.NEXT_PUBLIC_GS_SHOP_ID ||
@@ -68,8 +98,7 @@ export default function GangSheetProductPage({ product, variations, config }) {
       ...sizeOptions.filter((option) => option.id !== selectedSize.id),
     ].map((option) => {
       const attribute = option.attributes[0];
-      const attributeKey =
-        attribute?.slug || attribute?.name || "attribute_size";
+      const attributeKey = getWooAttributeKey(attribute);
       return {
         id: option.id,
         title: option.label,
@@ -224,7 +253,7 @@ export default function GangSheetProductPage({ product, variations, config }) {
                   shopUuid={shopId}
                   variants={variants}
                   quantity={quantity}
-                  cartUrl="/cart"
+                  cartUrl={getGangSheetCheckoutUrl(product.id, config.productType)}
                   buttonClassName={styles.primary}
                   disabled={!builderReady || isOpening || !selectedSize}
                   onReady={() => setBuilderReady(true)}

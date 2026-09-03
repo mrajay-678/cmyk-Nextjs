@@ -3,12 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Minus, Plus, Trash2, X } from "lucide-react";
+import { Eye, RefreshCw, X } from "lucide-react";
 
 import {
   getCurrentCart,
   removeCartItem,
-  updateCartItemQuantity,
 } from "@/lib/woocommerce/cart";
 import {
   CART_NONCE_STORAGE_KEY,
@@ -18,9 +17,15 @@ import {
 import { useCart } from "@/component/product/CartContext";
 import { formatCurrency } from "@/component/product/productHelpers";
 import {
+  acceptPendingWooCartIntent,
   findMatchingWooCartItem,
   removeDuplicateGangSheetItems,
 } from "@/lib/woocommerce/cart-sync";
+import {
+  createHostedCheckoutUrl,
+  hasMissingLocalArtwork,
+  isLocalArtworkLoading,
+} from "@/lib/woocommerce/checkout-handoff";
 import type { WooCart, WooCartItem } from "@/lib/woocommerce/types";
 
 type LocalCartItem = {
@@ -35,6 +40,12 @@ type LocalCartItem = {
   currencySymbol?: string;
   artworkName?: string;
   wooCartKey?: string;
+};
+
+type PreviewArtwork = {
+  title: string;
+  fileName: string;
+  src: string;
 };
 
 function money(amount?: string | null, cart?: WooCart) {
@@ -120,24 +131,28 @@ function getWooMetaLines(item: WooCartItem) {
 function LocalCartRow({
   item,
   isBusy,
-  onUpdate,
   onRemove,
+  onPreviewArtwork,
+  getArtworkFile,
 }: {
   item: LocalCartItem;
   isBusy: boolean;
-  onUpdate: (item: LocalCartItem, quantity: number) => void;
   onRemove: (item: LocalCartItem) => void;
+  onPreviewArtwork: (item: LocalCartItem) => void;
+  getArtworkFile: (id: string) => File | null;
 }) {
+  const artworkFile = getArtworkFile(item.id);
+
   return (
-    <article className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.06)] md:grid md:grid-cols-[minmax(260px,1fr)_130px_130px_130px_80px] md:items-center md:gap-4 md:rounded-none md:border-0 md:px-5 md:py-7 md:shadow-none">
-      <div className="grid min-w-0 grid-cols-[76px_minmax(0,1fr)] gap-4">
-        <div className="relative h-[76px] w-[76px] overflow-hidden rounded-md bg-neutral-100">
+    <article className="rounded-xl border border-neutral-100 bg-white p-4 md:grid md:grid-cols-[minmax(420px,1fr)_120px_140px_140px_80px] md:items-center md:gap-5 md:rounded-none md:border-0 md:px-6 md:py-8">
+      <div className="grid min-w-0 grid-cols-[72px_minmax(0,1fr)] items-center gap-5">
+        <div className="relative h-14 w-12 overflow-hidden rounded-sm bg-neutral-100">
           {item.image ? (
             <Image
               src={item.image}
               alt={item.name}
               fill
-              sizes="76px"
+              sizes="48px"
               className="object-cover"
             />
           ) : null}
@@ -151,9 +166,19 @@ function LocalCartRow({
               {item.selectedQuantity} units
             </p>
           ) : null}
-          <p className="mt-1 text-xs text-neutral-500">
-            Files Upload: {item.artworkName || "Not uploaded"}
-          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-neutral-500">
+            <span>Files Upload: {item.artworkName || "Not uploaded"}</span>
+            {artworkFile ? (
+              <button
+                type="button"
+                onClick={() => onPreviewArtwork(item)}
+                className="inline-flex items-center gap-1 font-semibold text-pink-500"
+              >
+                <Eye size={14} />
+                View
+              </button>
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -161,16 +186,16 @@ function LocalCartRow({
         <span className="text-xs font-semibold uppercase text-neutral-400 md:hidden">
           Quantity
         </span>
-        <QuantityControl
-          value={item.cartQuantity}
-          disabled={isBusy}
-          min={1}
-          onChange={(quantity) => onUpdate(item, quantity)}
-        />
+        <span className="text-sm font-medium text-neutral-950">
+          {item.selectedQuantity || item.cartQuantity}
+        </span>
       </div>
 
       <CartAmount label="Per Unit">
-        {formatCurrency(item.totalPrice, item.currencySymbol || "$")}
+        {formatCurrency(
+          item.selectedQuantity ? item.totalPrice / item.selectedQuantity : 0,
+          item.currencySymbol || "$",
+        )}
       </CartAmount>
       <CartAmount label="Subtotal">
         {formatCurrency(
@@ -201,15 +226,15 @@ function WooCartRow({
   const metaLines = getWooMetaLines(item);
 
   return (
-    <article className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.06)] md:grid md:grid-cols-[minmax(260px,1fr)_130px_130px_130px_80px] md:items-center md:gap-4 md:rounded-none md:border-0 md:px-5 md:py-7 md:shadow-none">
-      <div className="grid min-w-0 grid-cols-[76px_minmax(0,1fr)] gap-4">
-        <div className="relative h-[76px] w-[76px] overflow-hidden rounded-md bg-neutral-100">
+    <article className="rounded-xl border border-neutral-100 bg-white p-4 md:grid md:grid-cols-[minmax(420px,1fr)_120px_140px_140px_80px] md:items-center md:gap-5 md:rounded-none md:border-0 md:px-6 md:py-8">
+      <div className="grid min-w-0 grid-cols-[72px_minmax(0,1fr)] items-center gap-5">
+        <div className="relative h-14 w-12 overflow-hidden rounded-sm bg-neutral-100">
           {item.images[0]?.thumbnail || item.images[0]?.src ? (
             <Image
               src={item.images[0].thumbnail || item.images[0].src}
               alt={item.images[0].alt || item.name}
               fill
-              sizes="76px"
+              sizes="48px"
               className="object-cover"
             />
           ) : null}
@@ -247,15 +272,9 @@ function WooCartRow({
         <span className="text-xs font-semibold uppercase text-neutral-400 md:hidden">
           Quantity
         </span>
-        <QuantityControl
-          value={item.quantity}
-          disabled={isBusy}
-          min={item.quantity_limits.minimum}
-          max={item.quantity_limits.maximum}
-          onChange={(quantity) =>
-            onMutate(() => updateCartItemQuantity(item.key, quantity))
-          }
-        />
+        <span className="text-sm font-medium text-neutral-950">
+          {item.quantity}
+        </span>
       </div>
 
       <CartAmount label="Per Unit">{unitMoney(item, cart)}</CartAmount>
@@ -271,44 +290,6 @@ function WooCartRow({
   );
 }
 
-function QuantityControl({
-  value,
-  disabled,
-  min = 1,
-  max = 999,
-  onChange,
-}: {
-  value: number;
-  disabled: boolean;
-  min?: number;
-  max?: number;
-  onChange: (quantity: number) => void;
-}) {
-  return (
-    <div className="inline-flex h-10 w-28 items-center justify-between rounded-full border border-neutral-200 bg-white px-3">
-      <button
-        type="button"
-        disabled={disabled || value <= min}
-        onClick={() => onChange(Math.max(min, value - 1))}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-neutral-600 disabled:text-neutral-300"
-        aria-label="Decrease quantity"
-      >
-        <Minus size={16} />
-      </button>
-      <span className="w-7 text-center text-sm font-semibold">{value}</span>
-      <button
-        type="button"
-        disabled={disabled || value >= max}
-        onClick={() => onChange(Math.min(max, value + 1))}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-neutral-600 disabled:text-neutral-300"
-        aria-label="Increase quantity"
-      >
-        <Plus size={16} />
-      </button>
-    </div>
-  );
-}
-
 function CartAmount({
   label,
   children,
@@ -317,7 +298,7 @@ function CartAmount({
   children: React.ReactNode;
 }) {
   return (
-    <p className="mt-3 flex items-center justify-between text-sm font-semibold text-neutral-950 md:mt-0 md:block md:text-center">
+    <p className="mt-3 flex items-center justify-between text-sm font-medium text-neutral-950 md:mt-0 md:block md:text-center">
       <span className="text-xs font-semibold uppercase text-neutral-400 md:hidden">
         {label}
       </span>
@@ -347,9 +328,107 @@ function RemoveButton({
         className="inline-flex h-10 w-10 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-950 disabled:text-neutral-200"
         aria-label={label}
       >
-        <X className="hidden md:block" size={18} />
-        <Trash2 className="md:hidden" size={17} />
+        <X size={18} />
       </button>
+    </div>
+  );
+}
+
+function CartTotals({
+  total,
+  isBusy,
+  isArtworkLoading,
+  onProceed,
+}: {
+  total: string;
+  isBusy: boolean;
+  isArtworkLoading: boolean;
+  onProceed: () => void;
+}) {
+  return (
+    <aside className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.12)] sm:p-7">
+      <div className="text-2xl font-semibold text-neutral-950">
+        Checkout total
+      </div>
+      <div className="mt-7 border-t border-neutral-200 pt-7">
+        <div className="flex items-center justify-between gap-6">
+          <span className="text-sm text-neutral-600">Product total</span>
+          <span className="text-2xl font-medium text-neutral-950">{total}</span>
+        </div>
+      </div>
+      <div className="mt-7 border-t border-neutral-200 pt-6">
+        <button
+          type="button"
+          onClick={onProceed}
+          disabled={isBusy || isArtworkLoading}
+          className="inline-flex h-14 w-full items-center justify-center rounded-full bg-pink-500 px-6 text-sm font-bold text-white transition hover:bg-pink-600 disabled:bg-pink-200"
+        >
+          {isArtworkLoading ? "Preparing artwork..." : "Proceed to payment"}
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+function CheckoutLoadingOverlay() {
+  return (
+    <div
+      className="fixed inset-0 z-[60] grid place-items-center bg-white/90 px-6 backdrop-blur-sm"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="w-full max-w-sm text-center">
+        <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-pink-500 text-white shadow-lg shadow-pink-200">
+          <RefreshCw className="animate-spin" size={26} />
+        </div>
+        <h2 className="mt-6 text-2xl font-semibold text-neutral-950">
+          Just a moment!
+        </h2>
+        <p className="mt-3 text-sm leading-6 text-neutral-600">
+          We are sending your cart and artwork safely to payment.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ArtworkModal({
+  artwork,
+  onClose,
+}: {
+  artwork: PreviewArtwork;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-white/75 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="relative max-h-[92vh] w-full max-w-xl overflow-hidden border border-neutral-300 bg-white shadow-2xl">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-neutral-800 shadow"
+          aria-label="Close artwork preview"
+        >
+          <X size={18} />
+        </button>
+        <div className="relative h-[80vh] min-h-[420px] bg-neutral-50">
+          <Image
+            src={artwork.src}
+            alt={artwork.fileName}
+            fill
+            sizes="600px"
+            className="object-contain"
+            unoptimized
+          />
+        </div>
+        <div className="flex items-center justify-between border-t border-neutral-200 px-4 py-3 text-xs text-neutral-600">
+          <span className="truncate">{artwork.title}</span>
+          <span className="shrink-0">{artwork.fileName}</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -358,17 +437,23 @@ export default function CartExperience() {
   const {
     items: localItems,
     removeItem: removeLocalItem,
-    updateItemQuantity: updateLocalQuantity,
     clearCart: clearLocalCart,
+    getArtworkFile,
+    isArtworkReady,
   } = useCart() as {
     items: LocalCartItem[];
     removeItem: (id: string) => void;
-    updateItemQuantity: (id: string, quantity: number) => void;
     clearCart: () => void;
+    getArtworkFile: (id: string) => File | null;
+    isArtworkReady: boolean;
   };
   const [cart, setCart] = useState<WooCart | null>(null);
   const [error, setError] = useState("");
   const [isBusy, setIsBusy] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [previewArtwork, setPreviewArtwork] = useState<PreviewArtwork | null>(
+    null,
+  );
   const cartRequestSequenceRef = useRef(0);
   const visibleLocalItems = useMemo(
     () =>
@@ -394,7 +479,21 @@ export default function CartExperience() {
   const isDevelopment = process.env.NODE_ENV === "development";
   const hasLocalItems = visibleLocalItems.length > 0;
   const hasVisibleItems = hasLocalItems || visibleWooItems.length > 0;
+  const artworkLoading = isLocalArtworkLoading({
+    localItems: visibleLocalItems,
+    isArtworkReady,
+  });
   const displayTotal = money(cart?.totals.total_price, cart || undefined);
+
+  useEffect(() => {
+    const message = new URLSearchParams(window.location.search).get(
+      "gang_sheet_checkout_error",
+    );
+
+    if (message) {
+      window.queueMicrotask(() => setError(message));
+    }
+  }, []);
 
   const hydrateCart = useCallback(
     (nextCart: WooCart, sequenceId?: number) => {
@@ -405,6 +504,7 @@ export default function CartExperience() {
         return;
       }
 
+      acceptPendingWooCartIntent(nextCart);
       setCart(nextCart);
 
       if (nextCart.items_count === 0 && localItems.length > 0) {
@@ -425,7 +525,9 @@ export default function CartExperience() {
   const refreshCart = useCallback(async () => {
     const sequenceId = ++cartRequestSequenceRef.current;
     setIsBusy(true);
-    setError("");
+    if (!new URLSearchParams(window.location.search).get("gang_sheet_checkout_error")) {
+      setError("");
+    }
     try {
       hydrateCart(
         await removeDuplicateGangSheetItems(await getCurrentCart()),
@@ -494,15 +596,6 @@ export default function CartExperience() {
     return cart ? findMatchingWooCartItem(cart.items, localItem) : null;
   }
 
-  function updateLocalCartItem(localItem: LocalCartItem, quantity: number) {
-    updateLocalQuantity(localItem.id, quantity);
-
-    const wooItem = findWooCartItemForLocalItem(localItem);
-    if (wooItem) {
-      mutateCart(() => updateCartItemQuantity(wooItem.key, quantity));
-    }
-  }
-
   function removeLocalCartItem(localItem: LocalCartItem) {
     removeLocalItem(localItem.id);
 
@@ -526,6 +619,69 @@ export default function CartExperience() {
     }
 
     void removeWooCartKeys((cart?.items || []).map((item) => item.key));
+  }
+
+  async function proceedToPayment() {
+    if (!hasVisibleItems) {
+      setError("Your cart is empty.");
+      return;
+    }
+
+    if (artworkLoading) {
+      setError(
+        "Your artwork files are still loading. Please try again in a moment.",
+      );
+      return;
+    }
+
+    if (
+      hasMissingLocalArtwork({
+        localItems: visibleLocalItems,
+        isArtworkReady,
+        getArtworkFile,
+      })
+    ) {
+      setError(
+        "Artwork preview is unavailable. Please add the product with artwork again before payment.",
+      );
+      return;
+    }
+
+    setIsBusy(true);
+    setIsRedirecting(true);
+    setError("");
+
+    try {
+      const checkoutUrl = await createHostedCheckoutUrl({
+        localItems: visibleLocalItems,
+        getArtworkFile,
+      });
+      window.location.assign(checkoutUrl);
+    } catch (checkoutError) {
+      setIsRedirecting(false);
+      setError(
+        checkoutError instanceof Error
+          ? checkoutError.message
+          : "Unable to open secure WooCommerce payment.",
+      );
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  function openArtworkPreview(item: LocalCartItem) {
+    const file = getArtworkFile(item.id);
+    if (!file) return;
+    setPreviewArtwork({
+      title: item.name,
+      fileName: file.name,
+      src: URL.createObjectURL(file),
+    });
+  }
+
+  function closeArtworkPreview() {
+    if (previewArtwork) URL.revokeObjectURL(previewArtwork.src);
+    setPreviewArtwork(null);
   }
 
   async function clearWooCartSession() {
@@ -570,9 +726,9 @@ export default function CartExperience() {
   }
 
   return (
-    <main className="bg-white px-4 py-10 sm:px-6 lg:px-16">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-12">
+    <main className="bg-white px-4 py-12 sm:px-6 lg:px-16">
+      <div className="mx-auto max-w-[1152px]">
+        <div className="mb-12 md:mb-14">
           <p className="text-xs font-semibold uppercase tracking-[0.34em] text-pink-500">
             Checkout
           </p>
@@ -591,9 +747,9 @@ export default function CartExperience() {
           {!cart ? (
             <p className="text-sm text-neutral-500">Loading cart...</p>
           ) : hasVisibleItems ? (
-            <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_440px] lg:items-start">
+            <>
               <section className="min-w-0">
-                <div className="hidden bg-neutral-100 px-6 py-6 text-sm font-medium text-neutral-950 md:grid md:grid-cols-[minmax(320px,1fr)_130px_130px_130px_80px] md:items-center">
+                <div className="hidden bg-neutral-100 px-6 py-7 text-sm font-medium text-neutral-950 md:grid md:grid-cols-[minmax(420px,1fr)_120px_140px_140px_80px] md:items-center md:gap-5">
                   <span>Product</span>
                   <span className="text-center">Quantity</span>
                   <span className="text-center">Per Unit</span>
@@ -608,8 +764,9 @@ export default function CartExperience() {
                           key={item.id}
                           item={item}
                           isBusy={isBusy}
-                          onUpdate={updateLocalCartItem}
                           onRemove={removeLocalCartItem}
+                          onPreviewArtwork={openArtworkPreview}
+                          getArtworkFile={getArtworkFile}
                         />
                       ))
                     : null}
@@ -625,28 +782,35 @@ export default function CartExperience() {
                 </div>
               </section>
 
-              <aside className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.08)] lg:sticky lg:top-28">
-                <div className="text-2xl text-neutral-950">Checkout total</div>
-                <div className="mt-7 border-t border-neutral-200 pt-7">
-                  <div className="flex items-center justify-between gap-6">
-                    <span className="text-sm text-neutral-600">
-                      Product total
-                    </span>
-                    <span className="text-2xl font-medium text-neutral-950">
-                      {displayTotal}
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-8 border-t border-neutral-200 pt-6">
-                  <Link
-                    href="/checkout"
-                    className="inline-flex h-14 w-full items-center justify-center rounded-full bg-pink-500 px-6 text-sm font-bold text-white transition hover:bg-pink-600"
+              <div className="mt-16 grid gap-8 lg:grid-cols-[minmax(0,1fr)_440px] lg:items-start">
+                <div>
+                  <button
+                    type="button"
+                    onClick={clearVisibleCart}
+                    className="inline-flex h-12 min-w-23 items-center justify-center rounded-full border border-neutral-300 px-7 text-sm font-bold text-neutral-950 transition hover:border-neutral-950"
                   >
-                    Proceed to checkout
-                  </Link>
+                    Clear
+                  </button>
+                  {isDevelopment ? (
+                    <button
+                      type="button"
+                      onClick={clearWooCartSession}
+                      disabled={isBusy}
+                      className="ml-3 inline-flex h-12 items-center justify-center rounded-full border border-red-200 px-6 text-sm font-semibold text-red-700 disabled:opacity-50"
+                    >
+                      Clear Woo Cart
+                    </button>
+                  ) : null}
                 </div>
-              </aside>
-            </div>
+
+                <CartTotals
+                  total={displayTotal}
+                  isBusy={isBusy}
+                  isArtworkLoading={artworkLoading}
+                  onProceed={proceedToPayment}
+                />
+              </div>
+            </>
           ) : (
             <div className="py-12 text-center">
               <p className="text-sm text-neutral-500">Your cart is empty.</p>
@@ -658,27 +822,6 @@ export default function CartExperience() {
               </Link>
             </div>
           )}
-          {hasVisibleItems ? (
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={clearVisibleCart}
-                className="inline-flex h-11 items-center justify-center rounded-full border border-neutral-300 px-6 text-sm font-semibold"
-              >
-                Clear
-              </button>
-              {isDevelopment ? (
-                <button
-                  type="button"
-                  onClick={clearWooCartSession}
-                  disabled={isBusy}
-                  className="inline-flex h-11 items-center justify-center rounded-full border border-red-200 px-6 text-sm font-semibold text-red-700 disabled:opacity-50"
-                >
-                  Clear Woo Cart
-                </button>
-              ) : null}
-            </div>
-          ) : null}
           {!hasVisibleItems && isDevelopment ? (
             <button
               type="button"
@@ -691,6 +834,10 @@ export default function CartExperience() {
           ) : null}
         </div>
       </div>
+      {previewArtwork ? (
+        <ArtworkModal artwork={previewArtwork} onClose={closeArtworkPreview} />
+      ) : null}
+      {isRedirecting ? <CheckoutLoadingOverlay /> : null}
     </main>
   );
 }

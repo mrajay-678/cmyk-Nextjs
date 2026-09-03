@@ -14,6 +14,34 @@ const DISALLOWED_METADATA_KEYS = new Set([
   "rush_fee",
   "image_services_fee",
 ]);
+const GANG_SHEET_METADATA_LABELS = {
+  gs_design_id: "Gang sheet design ID",
+  product_type: "Gang sheet product type",
+  uploaded_file: "Uploaded file",
+  print_ready: "Print ready file",
+  gang_sheet_height: "Gang sheet height",
+  sheet_weight: "Sheet weight",
+  sheet_weight_unit: "Sheet weight unit",
+  gs_image_count: "Image count",
+  gs_image_services: "Image services",
+  gs_image_service_ids: "Image service IDs",
+  design_name: "Design name",
+};
+const GANG_SHEET_METADATA_KEYS = new Set(Object.keys(GANG_SHEET_METADATA_LABELS));
+const GANG_SHEET_METADATA_LABEL_TO_KEY = new Map(
+  Object.entries(GANG_SHEET_METADATA_LABELS).map(([key, label]) => [
+    normalizeMetadataKey(label),
+    key,
+  ]),
+);
+
+function normalizeMetadataKey(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
 
 function parseItems(value) {
   if (!value) {
@@ -26,6 +54,31 @@ function parseItems(value) {
   } catch {
     return [];
   }
+}
+
+function parseJsonFromText(text) {
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    for (let index = 0; index < text.length; index += 1) {
+      const char = text[index];
+      if (char !== "{" && char !== "[") {
+        continue;
+      }
+
+      try {
+        return JSON.parse(text.slice(index));
+      } catch {
+        continue;
+      }
+    }
+  }
+
+  return { message: text };
 }
 
 function getCheckoutProductId(item) {
@@ -90,6 +143,16 @@ function assertServerConfig() {
 
 function getWordPressApiUrl(path) {
   return new URL(path, new URL(storeUrl)).toString();
+}
+
+function getWooCheckoutHandoffUrl(checkoutRef) {
+  if (!checkoutRef) {
+    return "";
+  }
+
+  const url = new URL("/checkout/", new URL(storeUrl));
+  url.searchParams.set("cmyk_checkout_ref", String(checkoutRef));
+  return url.toString();
 }
 
 function getWooRestApiUrl(path, query = {}) {
@@ -198,7 +261,7 @@ function normalizeVariationAttributes(item) {
 
 function normalizeMetadataEntry(name, value) {
   const safeName = String(name || "").trim();
-  const safeKey = safeName.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  const safeKey = normalizeMetadataKey(safeName);
   if (!safeName || DISALLOWED_METADATA_KEYS.has(safeKey)) {
     return null;
   }
@@ -215,11 +278,97 @@ function normalizeMetadataEntry(name, value) {
   };
 }
 
+function getGangSheetMetadataValue(entry) {
+  if (entry && typeof entry === "object" && "value" in entry) {
+    return entry.value;
+  }
+
+  return entry;
+}
+
+function normalizeGangSheetValue(value) {
+  if (value === undefined || value === null) {
+    return "";
+  }
+
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+
+  return String(value);
+}
+
+function extractGangSheetData(item) {
+  const data = {};
+  const gangSheetMetadata = item?.extensions?.["cmyk-gang-sheet"]?.metadata;
+
+  if (gangSheetMetadata && typeof gangSheetMetadata === "object") {
+    Object.entries(gangSheetMetadata).forEach(([key, entry]) => {
+      const safeKey = normalizeMetadataKey(key);
+      if (!GANG_SHEET_METADATA_KEYS.has(safeKey)) {
+        return;
+      }
+
+      const value = normalizeGangSheetValue(getGangSheetMetadataValue(entry));
+      if (value) {
+        data[safeKey] = value;
+      }
+    });
+  }
+
+  if (Array.isArray(item?.item_data)) {
+    item.item_data.forEach((entry) => {
+      const safeKey = GANG_SHEET_METADATA_LABEL_TO_KEY.get(
+        normalizeMetadataKey(entry?.name || entry?.key),
+      );
+      if (!safeKey || data[safeKey]) {
+        return;
+      }
+
+      const value = normalizeGangSheetValue(entry?.value || entry?.display);
+      if (value) {
+        data[safeKey] = value;
+      }
+    });
+  }
+
+  return data;
+}
+
+function normalizeVariationMetadata(item) {
+  if (Array.isArray(item?.variation)) {
+    return item.variation
+      .map((entry) =>
+        normalizeMetadataEntry(
+          entry?.raw_attribute || entry?.attribute,
+          entry?.value,
+        ),
+      )
+      .filter(Boolean);
+  }
+
+  return Object.entries(normalizeVariationAttributes(item))
+    .map(([key, value]) => normalizeMetadataEntry(key, value))
+    .filter(Boolean);
+}
+
+function isGangSheetMetadataName(name) {
+  const safeKey = normalizeMetadataKey(name);
+  return (
+    GANG_SHEET_METADATA_KEYS.has(safeKey) ||
+    GANG_SHEET_METADATA_LABEL_TO_KEY.has(safeKey)
+  );
+}
+
 function normalizeMetadata(item) {
   const metadata = [];
 
   if (Array.isArray(item?.metadata)) {
     item.metadata.forEach((entry) => {
+      if (isGangSheetMetadataName(entry?.name || entry?.key)) {
+        return;
+      }
+
       const normalized = normalizeMetadataEntry(
         entry?.name || entry?.key,
         entry?.display || entry?.value,
@@ -230,18 +379,14 @@ function normalizeMetadata(item) {
 
   if (Array.isArray(item?.item_data)) {
     item.item_data.forEach((entry) => {
+      if (isGangSheetMetadataName(entry?.name || entry?.key)) {
+        return;
+      }
+
       const normalized = normalizeMetadataEntry(
         entry?.name,
         entry?.display || entry?.value,
       );
-      if (normalized) metadata.push(normalized);
-    });
-  }
-
-  const gangSheetMetadata = item?.extensions?.["cmyk-gang-sheet"]?.metadata;
-  if (gangSheetMetadata && typeof gangSheetMetadata === "object") {
-    Object.entries(gangSheetMetadata).forEach(([key, value]) => {
-      const normalized = normalizeMetadataEntry(key, value);
       if (normalized) metadata.push(normalized);
     });
   }
@@ -266,12 +411,7 @@ async function postToCmykEndpoint(path, body, headers = {}) {
   });
 
   const responseText = await response.text();
-  let payload = {};
-  try {
-    payload = responseText ? JSON.parse(responseText) : {};
-  } catch {
-    payload = { message: responseText };
-  }
+  const payload = parseJsonFromText(responseText);
 
   if (!response.ok) {
     throw new Error(
@@ -332,6 +472,7 @@ export async function POST(request) {
     for (const [index, item] of items.entries()) {
       const variationId = getVariationId(item);
       const productId = await resolveProductId(item, variationId);
+      const gangSheetData = extractGangSheetData(item);
       const checkoutItem = {
         lineId: getLineId(item, index),
         id: getCheckoutProductId(item),
@@ -343,7 +484,13 @@ export async function POST(request) {
         artworkOptions: item?.artworkOptions || {},
         artworkToken: "",
         variationAttributes: normalizeVariationAttributes(item),
-        metadata: normalizeMetadata(item),
+        gangSheetData,
+        metadata: [
+          ...normalizeMetadata(item),
+          ...(Object.keys(gangSheetData).length
+            ? normalizeVariationMetadata(item)
+            : []),
+        ],
       };
 
       if (!Number.isFinite(checkoutItem.id) || checkoutItem.id <= 0) {
@@ -378,6 +525,7 @@ export async function POST(request) {
         product_id: checkoutItem.productId,
         variation_id: checkoutItem.variationId,
         variation_attributes: checkoutItem.variationAttributes,
+        gang_sheet_data: checkoutItem.gangSheetData,
         metadata: checkoutItem.metadata,
         artwork_token: checkoutItem.artworkToken,
       });
@@ -405,11 +553,14 @@ export async function POST(request) {
       });
     }
 
-    if (!handoff.checkout_url) {
+    const checkoutUrl =
+      getWooCheckoutHandoffUrl(handoff.checkout_ref) || handoff.checkout_url;
+
+    if (!checkoutUrl) {
       throw new Error("WordPress did not return a checkout URL.");
     }
 
-    return NextResponse.json({ checkoutUrl: handoff.checkout_url });
+    return NextResponse.json({ checkoutUrl });
   } catch (error) {
     console.error("Error in checkout cart API:", error);
 

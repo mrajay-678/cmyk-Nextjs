@@ -39,7 +39,6 @@ async function ProductPurchaseSection({ product, variationsPromise }) {
   const currencySymbol = extractCurrencySymbol(product);
   const pricingRows = buildQuantityPriceTable(product, variations);
   const quantityOptions = pricingRows.map((row) => row.quantity);
-  console.log("pricingRows-", pricingRows);
   return (
     <ProductPurchasePanel
       product={product}
@@ -73,7 +72,6 @@ export default async function ProductDetailPage({ params }) {
     variations: variationsPromise,
   });
   const { variations } = await variationsPromise;
-  const currencySymbol = extractCurrencySymbol(product);
   const pricingRows = buildQuantityPriceTable(product, variations);
   const price = Math.min(
     ...pricingRows.map((row) => row.unitPrice / row.quantity),

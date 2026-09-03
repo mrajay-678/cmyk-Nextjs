@@ -7,9 +7,11 @@ export default function ArtToCraft() {
       <div className="grid items-center">
         <div className="relative flex flex-col items-center md:items-center">
           <div className="relative mb-6 w-full text-center sm:h-[56vh]">
-            <img
+            <Image
               src="https://cmykprint.shop/wp-content/uploads/2025/12/6-3.png"
               alt="Our Craft"
+              width={1200}
+              height={700}
               className="h-full w-full object-contain mx-auto"
             />
           </div>

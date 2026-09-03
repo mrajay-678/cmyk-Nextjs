@@ -1,4 +1,4 @@
-import { link } from "fs";
+import Image from "next/image";
 import Link from "next/link";
 
 export default function WhatWeOffer() {
@@ -40,9 +40,11 @@ export default function WhatWeOffer() {
         {items.map((item, index) => (
           <div key={index} className="flex flex-col items-center">
             <div className="mb-6 flex h-32 w-32 items-center justify-center rounded-full bg-[#4f61f3] text-white sm:h-36 sm:w-36 md:h-52 md:w-52">
-              <img
+              <Image
                 src={item.icon}
                 alt={item.title}
+                width={80}
+                height={80}
                 className="h-20 w-20 object-contain hover:scale-110 transition-all duration-500"
               />
             </div>

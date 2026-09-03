@@ -29,6 +29,31 @@ function buildApiUrl(path, query = {}) {
   return url.toString();
 }
 
+function parseJsonFromText(text) {
+  if (!text) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    for (let index = 0; index < text.length; index += 1) {
+      const char = text[index];
+      if (char !== "{" && char !== "[") {
+        continue;
+      }
+
+      try {
+        return JSON.parse(text.slice(index));
+      } catch {
+        continue;
+      }
+    }
+  }
+
+  return null;
+}
+
 function isNumericTaxonomyValue(value) {
   return /^\d+$/.test(String(value || "").trim());
 }
@@ -77,8 +102,18 @@ async function fetchWooCommerce(path, query) {
       };
     }
 
+    const data = parseJsonFromText(await response.text());
+
+    if (data === null) {
+      return {
+        data: [],
+        error: "WooCommerce returned an invalid JSON response.",
+        meta: {},
+      };
+    }
+
     return {
-      data: await response.json(),
+      data,
       error: null,
       meta: {
         total: Number(response.headers.get("x-wp-total") || 0),

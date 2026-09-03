@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import "animate.css";
+import Image from "next/image";
 import Link from "next/link";
 
 const services = [
@@ -84,7 +85,13 @@ export default function ServiceGuide() {
                 >
                   <div className="flex flex-col items-center">
                     <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F4F2F7] text-[#EF2987] hover:bg-black transition-colors duration-750">
-                      <img src={Icon} alt={service.title} className="h-5 w-5" />
+                      <Image
+                        src={Icon}
+                        alt={service.title}
+                        width={20}
+                        height={20}
+                        className="h-5 w-5"
+                      />
                     </div>
 
                     {index < services.length - 1 && (

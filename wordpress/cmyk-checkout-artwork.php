@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CMYK Checkout Artwork
  * Description: Securely hands off Next.js uploaded artwork to WooCommerce checkout and order line items.
- * Version: 1.1.0
+ * Version: 1.1.4
  */
 
 if (!defined('ABSPATH')) {
@@ -98,6 +98,41 @@ function cmyk_checkout_disallowed_metadata_keys() {
         'rush_fee',
         'image_services_fee',
     );
+}
+
+function cmyk_checkout_allowed_gang_sheet_fields() {
+    return array(
+        'gs_design_id',
+        'product_type',
+        'uploaded_file',
+        'print_ready',
+        'gang_sheet_height',
+        'sheet_weight',
+        'sheet_weight_unit',
+        'gs_image_count',
+        'gs_image_services',
+        'gs_image_service_ids',
+        'design_name',
+    );
+}
+
+function cmyk_checkout_clean_gang_sheet_data($value) {
+    if (!is_array($value)) {
+        return array();
+    }
+
+    $clean = array();
+    $allowed_fields = cmyk_checkout_allowed_gang_sheet_fields();
+
+    foreach ($allowed_fields as $field) {
+        if (!array_key_exists($field, $value) || !is_scalar($value[$field])) {
+            continue;
+        }
+
+        $clean[$field] = sanitize_text_field((string) $value[$field]);
+    }
+
+    return $clean;
 }
 
 function cmyk_checkout_clean_metadata($value) {
@@ -388,6 +423,7 @@ function cmyk_checkout_create_handoff($request) {
         $quantity = max(1, absint($item['quantity'] ?? 1));
         $artwork_token = sanitize_text_field($item['artwork_token'] ?? '');
         $variation_attributes = cmyk_checkout_clean_variation_attributes($item['variation_attributes'] ?? array());
+        $gang_sheet_data = cmyk_checkout_clean_gang_sheet_data($item['gang_sheet_data'] ?? array());
         $metadata = cmyk_checkout_clean_metadata($item['metadata'] ?? array());
 
         if (!$checkout_product_id || !$product_id || !cmyk_checkout_product_exists($product_id, $variation_id)) {
@@ -421,6 +457,7 @@ function cmyk_checkout_create_handoff($request) {
             'product_id' => $product_id,
             'variation_id' => $variation_id,
             'variation_attributes' => $variation_attributes,
+            'gang_sheet_data' => $gang_sheet_data,
             'metadata' => $metadata,
             'artwork_token' => $artwork_token,
         );
@@ -446,7 +483,7 @@ function cmyk_checkout_create_handoff($request) {
     $checkout_link = add_query_arg(
         'cmyk_checkout_ref',
         rawurlencode($handoff_token),
-        home_url('/checkout-link/')
+        wc_get_checkout_url()
     );
 
     return array(
@@ -469,8 +506,7 @@ function cmyk_checkout_delete_handoff($token) {
 }
 
 function cmyk_checkout_is_handoff_request() {
-    $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
-    return '/checkout-link/' === trailingslashit($path ?: '');
+    return !empty($_GET['cmyk_checkout_ref']);
 }
 
 add_action('template_redirect', function () {
@@ -514,7 +550,7 @@ add_action('template_redirect', function () {
             'cmyk_checkout_line_id' => $line_id,
             'unique_key' => hash(
                 'sha256',
-                $line_id . '|' . wp_json_encode($item['metadata'] ?? array()) . '|' . ($item['artwork_token'] ?? '')
+                $line_id . '|' . wp_json_encode($item['metadata'] ?? array()) . '|' . wp_json_encode($item['gang_sheet_data'] ?? array()) . '|' . ($item['artwork_token'] ?? '')
             ),
         );
         $variation_attributes = $variation_id
@@ -524,6 +560,16 @@ add_action('template_redirect', function () {
 
         if (!empty($metadata)) {
             $cart_item_data['cmyk_handoff_metadata'] = $metadata;
+        }
+
+        foreach (cmyk_checkout_clean_gang_sheet_data($item['gang_sheet_data'] ?? array()) as $key => $value) {
+            $cart_item_data[$key] = $value;
+        }
+
+        foreach ($variation_attributes as $key => $value) {
+            if (is_scalar($value)) {
+                $cart_item_data[$key] = sanitize_text_field((string) $value);
+            }
         }
 
         if (!empty($item['artwork_token'])) {
@@ -576,11 +622,30 @@ add_action('template_redirect', function () {
         }
     }
 
+    WC()->cart->calculate_totals();
+
+    if (WC()->cart->is_empty()) {
+        wp_die(
+            esc_html__('Checkout handoff completed but the WooCommerce cart is empty.', 'cmyk'),
+            '',
+            array('response' => 400)
+        );
+    }
+
+    // Persist the cart before redirecting so the checkout page sees it.
+    if (method_exists(WC()->cart, 'set_session')) {
+        WC()->cart->set_session();
+    }
+
+    if (WC()->session && method_exists(WC()->session, 'save_data')) {
+        WC()->session->save_data();
+    }
+
     cmyk_checkout_delete_handoff($handoff_token);
     WC()->customer->save();
     wp_safe_redirect(wc_get_checkout_url());
     exit;
-});
+}, 1);
 
 add_filter('woocommerce_checkout_get_value', function ($value, $input) {
     if ('order_comments' === $input && function_exists('WC') && WC()->session) {

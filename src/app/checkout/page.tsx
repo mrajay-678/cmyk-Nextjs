@@ -1,4 +1,4 @@
-import CheckoutExperience from "@/component/checkout/CheckoutExperience";
+import { redirect } from "next/navigation";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
@@ -9,5 +9,6 @@ export const metadata = buildMetadata({
 });
 
 export default function CheckoutPage() {
-  return <CheckoutExperience />;
+  // Cart is the only review step; payment handoff starts from /cart.
+  redirect("/cart");
 }

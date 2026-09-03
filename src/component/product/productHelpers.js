@@ -22,7 +22,7 @@ export function parseNumericPrice(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-export function extractCurrencySymbol(product) {
+export function extractCurrencySymbol() {
   return "$";
 }
 
@@ -166,7 +166,6 @@ export function buildQuantityPriceTable(product, variations = []) {
       { quantity: 250, unitPrice: 0 },
     ];
   }
-  console.log("basePrice", basePrice);
 
   return [
     { quantity: 25, unitPrice: basePrice },

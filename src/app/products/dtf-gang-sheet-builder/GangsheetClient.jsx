@@ -33,6 +33,15 @@ const gallery = [
   { src: "/assets/image/mug.png", alt: "Printed mug" },
 ];
 
+function getGangSheetCheckoutUrl(productId, productType) {
+  const params = new URLSearchParams({
+    product_id: String(productId || ""),
+    product_type: String(productType || ""),
+  });
+
+  return `/api/gang-sheet/checkout?${params.toString()}`;
+}
+
 export default function GangsheetPage() {
   const shopId =
     process.env.NEXT_PUBLIC_GS_SHOP_ID ||
@@ -200,7 +209,7 @@ export default function GangsheetPage() {
                 productType="1"
                 shopUuid={shopId}
                 variants={variants}
-                cartUrl="/cart"
+                cartUrl={getGangSheetCheckoutUrl("28471", "1")}
                 buttonClassName={styles.primary}
                 disabled={!builderReady || isOpening}
                 onReady={() => setBuilderReady(true)}

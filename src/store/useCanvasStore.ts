@@ -63,7 +63,7 @@ const computeDpi = (
   return Math.min(dpiW, dpiH);
 };
 
-export const useCanvasStore = create<CanvasState>((set, get) => ({
+export const useCanvasStore = create<CanvasState>((set) => ({
   sheet: { ...presetToSize("22x24"), preset: "22x24" },
   images: [],
   selectedId: null,

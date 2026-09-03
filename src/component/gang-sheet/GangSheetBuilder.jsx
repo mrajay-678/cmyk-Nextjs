@@ -91,34 +91,6 @@ function WooStyles({ appHost, version, productType }) {
     </>
   );
 }
-const handleDesignCreated = async (design) => {
-  try {
-    setLoading(true);
-
-    const result = await fetch("/api/gang-sheet/add-to-cart", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        productId: GANG_SHEET_PRODUCT_ID,
-        design,
-        quantity: 1,
-      }),
-    });
-
-    if (!result.ok) {
-      throw new Error("Unable to add Gang Sheet to cart");
-    }
-
-    // Do NOT go to WooCommerce /cart/
-    router.replace("/checkout");
-  } catch (error) {
-    console.error("Gang Sheet checkout error:", error);
-  } finally {
-    setLoading(false);
-  }
-};
 export default function GangSheetBuilder({
   mode = "external",
   productId,
@@ -144,7 +116,7 @@ export default function GangSheetBuilder({
   onOpen,
   onClose,
   onError,
-  onDesignCreated = { handleDesignCreated },
+  onDesignCreated,
   onDesignUpdated,
   children,
 }) {
@@ -206,15 +178,6 @@ export default function GangSheetBuilder({
     window.GangSheetShortcodeOptions = window.GangSheetShortcodeOptions || {};
     window.GangSheetShortcodeOptions[instanceId] = wooOptions;
     initializedWooInstances.set(instanceId, optionsSignature);
-    console.info("[BAGS cart] shortcode initialized", {
-      instanceId,
-      productId: wooOptions.product_id,
-      productType: wooOptions.product_type,
-      quantity: wooOptions.quantity,
-      ajaxUrl: resolvedAjaxUrl,
-      cartUrl: resolvedCartUrl,
-      variants: wooOptions.variants?.map((variant) => variant.id),
-    });
 
     if (typeof window.initializeGangSheetShortcodes === "function") {
       window.initializeGangSheetShortcodes();
@@ -273,21 +236,6 @@ export default function GangSheetBuilder({
       .on("design:updated", (event) => onDesignUpdated?.(event))
       .on("closed", (event) => onClose?.(event))
       .on("error", (event) => onError?.(event));
-
-    const redirectToCheckout = async () => {
-      try {
-        const cart = await getCurrentCart();
-
-        if (!cart.items?.length) {
-          console.error("[BAGS] Cart is empty after design creation");
-          return;
-        }
-
-        window.location.href = "/checkout/";
-      } catch (error) {
-        console.error("[BAGS] Failed to verify cart:", error);
-      }
-    };
   }, [
     disabled,
     externalSettings,
@@ -339,20 +287,11 @@ export default function GangSheetBuilder({
               if (wooClickLocked) {
                 event.preventDefault();
                 event.stopPropagation();
-                console.info("[BAGS cart] duplicate builder click blocked", {
-                  instanceId,
-                });
                 return;
               }
 
               setWooClickLocked(true);
               window.setTimeout(() => setWooClickLocked(false), 1500);
-              console.info("[BAGS cart] builder button clicked", {
-                instanceId,
-                productId: wooOptions.product_id,
-                productType: wooOptions.product_type,
-                quantity: wooOptions.quantity,
-              });
               onOpen?.();
             }}
             disabled={disabled || !scriptReady || wooClickLocked}

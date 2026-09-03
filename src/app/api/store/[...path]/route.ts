@@ -12,13 +12,16 @@ function getStoreUrl() {
   return new URL(storeUrl);
 }
 
-function copyRequestHeaders(request: NextRequest) {
+function copyRequestHeaders(
+  request: NextRequest,
+  options: { includeCartToken?: boolean } = {},
+) {
   const headers = new Headers();
   const contentType = request.headers.get("content-type");
   const requestCartToken = request.headers.get("cart-token");
   const nonce = request.headers.get("nonce");
-  const cookie = request.headers.get("cookie");
   const cookieCartToken = request.cookies.get(CART_TOKEN_COOKIE)?.value;
+  const includeCartToken = options.includeCartToken !== false;
 
   if (contentType) {
     headers.set("Content-Type", contentType);
@@ -27,10 +30,7 @@ function copyRequestHeaders(request: NextRequest) {
   headers.set("Cache-Control", "no-cache");
   headers.set("Pragma", "no-cache");
 
-  const cartToken = requestCartToken || cookieCartToken;
-  if (cookie && !cartToken) {
-    headers.set("Cookie", cookie);
-  }
+  const cartToken = includeCartToken ? requestCartToken || cookieCartToken : "";
 
   if (cartToken) {
     headers.set("Cart-Token", cartToken);
@@ -65,8 +65,25 @@ function parseJsonBody(body: ArrayBuffer) {
   try {
     return JSON.parse(text);
   } catch {
-    return null;
+    for (let index = 0; index < text.length; index += 1) {
+      const char = text[index];
+      if (char !== "{" && char !== "[") {
+        continue;
+      }
+
+      try {
+        return JSON.parse(text.slice(index));
+      } catch {
+        continue;
+      }
+    }
   }
+
+  return null;
+}
+
+function isJsonLikeBody(body: ArrayBuffer) {
+  return parseJsonBody(body) !== null;
 }
 
 function applyCartTokenCookie(response: NextResponse, cartToken: string | null) {
@@ -81,6 +98,34 @@ function applyCartTokenCookie(response: NextResponse, cartToken: string | null) 
     path: "/",
     maxAge: 60 * 60 * 24 * 14,
   });
+}
+
+function clearCartTokenCookie(response: NextResponse) {
+  response.cookies.delete(CART_TOKEN_COOKIE);
+  response.headers.set("X-CMYK-Clear-Cart-Token", "1");
+}
+
+async function fetchWooStoreApi({
+  request,
+  url,
+  body,
+  includeCartToken = true,
+}: {
+  request: NextRequest;
+  url: URL;
+  body?: ArrayBuffer;
+  includeCartToken?: boolean;
+}) {
+  const wooResponse = await fetch(url, {
+    method: request.method,
+    headers: copyRequestHeaders(request, { includeCartToken }),
+    body,
+    cache: "no-store",
+    redirect: "manual",
+  });
+  const responseBody = await wooResponse.arrayBuffer();
+
+  return { wooResponse, responseBody };
 }
 
 async function proxyStoreApi(
@@ -102,23 +147,37 @@ async function proxyStoreApi(
         ? undefined
         : await request.arrayBuffer();
 
-    const wooResponse = await fetch(url, {
-      method: request.method,
-      headers: copyRequestHeaders(request),
+    let { wooResponse, responseBody } = await fetchWooStoreApi({
+      request,
+      url,
       body,
-      cache: "no-store",
-      redirect: "manual",
     });
+    let shouldClearCartToken = false;
+
+    if (
+      request.method === "GET" &&
+      path?.[0] === "cart" &&
+      !wooResponse.headers.get("content-type")?.includes("application/json") &&
+      !isJsonLikeBody(responseBody) &&
+      (request.headers.get("cart-token") ||
+        request.cookies.get(CART_TOKEN_COOKIE)?.value)
+    ) {
+      ({ wooResponse, responseBody } = await fetchWooStoreApi({
+        request,
+        url,
+        body,
+        includeCartToken: false,
+      }));
+      shouldClearCartToken = true;
+    }
 
     const responseHeaders = new Headers();
     responseHeaders.set("Cache-Control", "no-store, max-age=0");
-    const contentType = wooResponse.headers.get("content-type");
+    const contentType = wooResponse.headers.get("content-type") || "";
     const cartToken = wooResponse.headers.get("cart-token");
     const nonce = wooResponse.headers.get("nonce");
     const location = wooResponse.headers.get("location");
-    const responseBody = await wooResponse.arrayBuffer();
-
-    if (contentType) {
+    if (contentType.includes("application/json")) {
       responseHeaders.set("Content-Type", contentType);
     }
     if (cartToken) {
@@ -147,11 +206,14 @@ async function proxyStoreApi(
         headers: responseHeaders,
       });
       applyCartTokenCookie(response, cartToken);
+      if (shouldClearCartToken) {
+        clearCartTokenCookie(response);
+      }
       return response;
     }
 
-    if (!contentType?.includes("application/json")) {
-      return NextResponse.json(
+    if (!contentType?.includes("application/json") && !isJsonLikeBody(responseBody)) {
+      const response = NextResponse.json(
         {
           code: "woocommerce_proxy_non_json_response",
           message: "WooCommerce Store API returned a non-JSON response.",
@@ -160,12 +222,16 @@ async function proxyStoreApi(
         },
         { status: wooResponse.ok ? 502 : wooResponse.status },
       );
+      if (shouldClearCartToken) {
+        clearCartTokenCookie(response);
+      }
+      return response;
     }
 
     const parsedBody = parseJsonBody(responseBody);
 
     if (parsedBody === null) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         {
           code: "woocommerce_proxy_invalid_json_response",
           message: "WooCommerce Store API returned invalid JSON.",
@@ -174,6 +240,10 @@ async function proxyStoreApi(
         },
         { status: wooResponse.ok ? 502 : wooResponse.status },
       );
+      if (shouldClearCartToken) {
+        clearCartTokenCookie(response);
+      }
+      return response;
     }
 
     const response = NextResponse.json(parsedBody, {
@@ -182,6 +252,9 @@ async function proxyStoreApi(
     });
 
     applyCartTokenCookie(response, cartToken);
+    if (shouldClearCartToken) {
+      clearCartTokenCookie(response);
+    }
 
     return response;
   } catch (error) {
