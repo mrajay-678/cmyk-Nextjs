@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import Header from "../component/Header/Header";
 import Footer from "../component/Footer/Footer";
@@ -65,7 +66,9 @@ export default function RootLayout({
     <html lang="en" className={`bg-gray`}>
       <body>
         <AppProviders>
-          <ScrollToTopOnRouteChange />
+          <Suspense fallback={null}>
+            <ScrollToTopOnRouteChange />
+          </Suspense>
           <Header />
           {children}
           <Footer />

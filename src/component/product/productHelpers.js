@@ -48,6 +48,52 @@ function parseVariationUnitPrice(variation) {
   return totalPrice / quantity;
 }
 
+function findProductAttribute(product, variationAttribute) {
+  const attributes = Array.isArray(product?.attributes) ? product.attributes : [];
+  return attributes.find((attribute) => {
+    if (attribute?.id && variationAttribute?.id) {
+      return Number(attribute.id) === Number(variationAttribute.id);
+    }
+
+    return (
+      attribute?.name &&
+      variationAttribute?.name &&
+      attribute.name.toLowerCase() === variationAttribute.name.toLowerCase()
+    );
+  });
+}
+
+function toWooGlobalAttributeSlug(attribute) {
+  const slug = attribute?.slug || "";
+  if (slug.startsWith("pa_") || slug.startsWith("attribute_")) {
+    return slug;
+  }
+
+  if (attribute?.id && slug) {
+    return `pa_${slug}`;
+  }
+
+  if (attribute?.id && attribute?.name) {
+    return `pa_${toSlug(attribute.name)}`;
+  }
+
+  return "";
+}
+
+function normalizeVariationAttributes(product, variation) {
+  return (variation?.attributes || []).map((attribute) => {
+    const productAttribute = findProductAttribute(product, attribute);
+
+    return {
+      ...attribute,
+      slug:
+        toWooGlobalAttributeSlug(productAttribute) ||
+        toWooGlobalAttributeSlug(attribute) ||
+        attribute.name,
+    };
+  });
+}
+
 export function getLowestUnitPrice(product, variations = []) {
   const variationUnitPrices = variations
     .map(parseVariationUnitPrice)
@@ -85,15 +131,11 @@ export function buildQuantityPriceTable(product, variations = []) {
       if (!quantity || totalPrice === null) {
         return null;
       }
-      let newQuantity = variation.attributes[0]["option"].replace(
-        /[^0-9]/g,
-        "",
-      );
       return {
-        quantity: newQuantity,
+        quantity,
         unitPrice: totalPrice,
         variationId: variation.id,
-        variationAttributes: variation.attributes || [],
+        variationAttributes: normalizeVariationAttributes(product, variation),
       };
     })
     .filter(Boolean);

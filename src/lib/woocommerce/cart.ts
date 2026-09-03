@@ -8,6 +8,20 @@ export type AddCartItemInput = {
   extensions?: Record<string, unknown>;
 };
 
+type LocalCartItemInput = {
+  id?: number | string;
+  productId?: number | string;
+  variationId?: number | string | null;
+  checkoutQuantity?: number | string;
+  cartQuantity?: number | string;
+  variationAttributes?: Array<{
+    slug?: string;
+    name?: string;
+    option?: string;
+    value?: string;
+  }>;
+};
+
 const inFlightAdds = new Map<string, Promise<WooCart>>();
 
 function debugCartMutation(message: string, data: Record<string, unknown>) {
@@ -29,6 +43,21 @@ function stableAddKey(input: AddCartItemInput) {
 
 export function getCurrentCart() {
   return storeApiFetch<WooCart>("/cart", { method: "GET" });
+}
+
+export function buildAddCartItemInput(item: LocalCartItemInput): AddCartItemInput {
+  const variation = (item.variationAttributes || [])
+    .map((attribute) => ({
+      attribute: attribute.slug || attribute.name || "",
+      value: attribute.option || attribute.value || "",
+    }))
+    .filter((attribute) => attribute.attribute && attribute.value);
+
+  return {
+    id: Number(item.variationId || item.productId || item.id),
+    quantity: Number(item.checkoutQuantity || item.cartQuantity || 1),
+    ...(variation.length ? { variation } : {}),
+  };
 }
 
 export function addCartItem(input: AddCartItemInput) {

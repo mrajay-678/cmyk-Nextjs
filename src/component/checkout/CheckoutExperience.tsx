@@ -231,7 +231,10 @@ export default function CheckoutExperience() {
     setIsBusy(true);
     setError("");
     try {
-      hydrateCart(await removeDuplicateGangSheetItems(await action()), sequenceId);
+      hydrateCart(
+        await removeDuplicateGangSheetItems(await action()),
+        sequenceId,
+      );
     } catch (cartError) {
       setError(normalizeError(cartError));
     } finally {
@@ -242,7 +245,9 @@ export default function CheckoutExperience() {
   }
 
   async function redirectToHostedCheckout() {
-    let latestCart = await removeDuplicateGangSheetItems(await getCurrentCart());
+    let latestCart = await removeDuplicateGangSheetItems(
+      await getCurrentCart(),
+    );
     const latestLocalItems = visibleLocalItems.filter((localItem) =>
       Boolean(findMatchingWooCartItem(latestCart.items, localItem)),
     );
@@ -378,9 +383,7 @@ export default function CheckoutExperience() {
           <p className="text-xs font-bold uppercase tracking-[0.25em] text-pink-500">
             Checkout
           </p>
-          <h1 className="mt-3 text-3xl font-semibold text-neutral-950">
-            Shopping cart
-          </h1>
+          <h1 className="mt-3 text-3xl text-neutral-950">Shopping cart</h1>
         </div>
 
         {error ? (
@@ -561,7 +564,10 @@ function LocalCartRow({
             Per Unit
           </span>
           <span className="text-sm font-semibold">
-            ${item.selectedQuantity ? item.totalPrice / item.selectedQuantity : 0}
+            $
+            {item.selectedQuantity
+              ? item.totalPrice / item.selectedQuantity
+              : 0}
           </span>
         </div>
         <div className="flex items-center justify-between gap-4 lg:block lg:text-center">
@@ -687,9 +693,7 @@ function ProductCell({
         ) : null}
       </div>
       <div>
-        <h2 className="text-base font-semibold leading-snug text-neutral-950">
-          {title}
-        </h2>
+        <div className="text-base leading-snug text-neutral-950">{title}</div>
         {subtitle ? (
           <p className="text-xs text-neutral-500">{subtitle}</p>
         ) : null}
@@ -751,11 +755,9 @@ function CartTotals({
 }) {
   return (
     <section className="rounded-2xl border border-neutral-200 bg-neutral-50 p-6 shadow-sm">
-      <h2 className="text-2xl font-semibold">Checkout total</h2>
+      <div className="text-2xl">Checkout total</div>
       <div className="mt-6 flex items-center justify-between border-y border-neutral-200 py-6">
-        <span className="text-sm font-semibold text-neutral-600">
-          Product total
-        </span>
+        <span className="text-sm text-neutral-600">Product total</span>
         <span className="text-2xl font-bold text-neutral-950">{total}</span>
       </div>
       <button

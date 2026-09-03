@@ -8,7 +8,11 @@ import AddToCartButton from "./AddToCartButton";
 import { useCart } from "@/component/product/CartContext";
 import { formatCurrency } from "./productHelpers";
 import GangSheetBuilder from "@/component/gang-sheet/GangSheetBuilder";
-import { addCartItem, getCurrentCart } from "@/lib/woocommerce/cart";
+import {
+  addCartItem,
+  buildAddCartItemInput,
+  getCurrentCart,
+} from "@/lib/woocommerce/cart";
 import {
   findNewWooCartItem,
   markWooCartIntentPending,
@@ -133,17 +137,6 @@ export default function ProductPurchasePanel({
     setPreviewUrl("");
   }
 
-  function getWooCartPayload() {
-    return {
-      id: Number(cartItem.variationId || cartItem.productId || cartItem.id),
-      quantity: Number(cartItem.checkoutQuantity || cartItem.cartQuantity || 1),
-      variation: (cartItem.variationAttributes || []).map((attribute) => ({
-        attribute: attribute.slug || attribute.name,
-        value: attribute.option,
-      })),
-    };
-  }
-
   async function handleBuyNow() {
     if (!isCheckoutReady || isBuyingNowRef.current) {
       return;
@@ -160,7 +153,7 @@ export default function ProductPurchasePanel({
       }
 
       const nextLocalItems = mergeLocalCartItems(items, cartItem);
-      const wooCart = await addCartItem(getWooCartPayload());
+      const wooCart = await addCartItem(buildAddCartItemInput(cartItem));
       const wooItem = findNewWooCartItem(wooCart.items, cartItem, items);
       const keyedLocalItems = nextLocalItems.map((item) =>
         item.id === cartItem.id ? { ...item, wooCartKey: wooItem?.key } : item,

@@ -4,7 +4,7 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useCart } from "./CartContext";
-import { addCartItem } from "@/lib/woocommerce/cart";
+import { addCartItem, buildAddCartItemInput } from "@/lib/woocommerce/cart";
 import {
   findNewWooCartItem,
   mergeLocalCartItems,
@@ -47,14 +47,7 @@ function AddToCartButton({
 
       try {
         const nextLocalItems = mergeLocalCartItems(items, item);
-        const wooCart = await addCartItem({
-          id: Number(item.variationId || item.productId || item.id),
-          quantity: Number(item.checkoutQuantity || item.cartQuantity || 1),
-          variation: (item.variationAttributes || []).map((attribute) => ({
-            attribute: attribute.slug || attribute.name,
-            value: attribute.option,
-          })),
-        });
+        const wooCart = await addCartItem(buildAddCartItemInput(item));
         const wooItem = findNewWooCartItem(wooCart.items, item, items);
         const keyedLocalItems = nextLocalItems.map((entry) =>
           entry.id === item.id ? { ...entry, wooCartKey: wooItem?.key } : entry,

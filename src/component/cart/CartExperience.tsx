@@ -63,7 +63,9 @@ function decodeText(value: string) {
 }
 
 function getMetaName(entry: WooCartItem["item_data"][number]) {
-  return decodeText(entry.name || ("key" in entry ? String(entry.key) : "")).trim();
+  return decodeText(
+    entry.name || ("key" in entry ? String(entry.key) : ""),
+  ).trim();
 }
 
 function getMetaValue(entry: WooCartItem["item_data"][number]) {
@@ -218,7 +220,9 @@ function WooCartRow({
           </h2>
           {item.variation.length ? (
             <p className="mt-1 text-sm text-neutral-500">
-              {item.variation.map((entry) => decodeText(entry.value)).join(", ")}
+              {item.variation
+                .map((entry) => decodeText(entry.value))
+                .join(", ")}
             </p>
           ) : null}
           {metaLines.length ? (
@@ -255,7 +259,9 @@ function WooCartRow({
       </div>
 
       <CartAmount label="Per Unit">{unitMoney(item, cart)}</CartAmount>
-      <CartAmount label="Subtotal">{money(item.totals.line_total, cart)}</CartAmount>
+      <CartAmount label="Subtotal">
+        {money(item.totals.line_total, cart)}
+      </CartAmount>
       <RemoveButton
         disabled={isBusy}
         label={`Remove ${item.name}`}
@@ -441,7 +447,10 @@ export default function CartExperience() {
     setIsBusy(true);
     setError("");
     try {
-      hydrateCart(await removeDuplicateGangSheetItems(await action()), sequenceId);
+      hydrateCart(
+        await removeDuplicateGangSheetItems(await action()),
+        sequenceId,
+      );
     } catch (cartError) {
       setError(
         cartError instanceof Error
@@ -567,7 +576,7 @@ export default function CartExperience() {
           <p className="text-xs font-semibold uppercase tracking-[0.34em] text-pink-500">
             Checkout
           </p>
-          <h1 className="mt-4 font-heading text-3xl font-bold text-neutral-950 sm:text-4xl">
+          <h1 className="mt-4 text-3xl text-neutral-950 sm:text-4xl">
             Shopping cart
           </h1>
         </div>
@@ -617,9 +626,7 @@ export default function CartExperience() {
               </section>
 
               <aside className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.08)] lg:sticky lg:top-28">
-                <h2 className="font-heading text-2xl font-bold text-neutral-950">
-                  Checkout total
-                </h2>
+                <div className="text-2xl text-neutral-950">Checkout total</div>
                 <div className="mt-7 border-t border-neutral-200 pt-7">
                   <div className="flex items-center justify-between gap-6">
                     <span className="text-sm text-neutral-600">
