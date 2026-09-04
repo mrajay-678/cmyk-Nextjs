@@ -58,3 +58,7 @@ div {
     @apply max-w-7xl;
   }
 }
+.gang-sheet-shortcode-button {
+  width: 100% !important;
+  background-color: #f12f88 !important;
+}

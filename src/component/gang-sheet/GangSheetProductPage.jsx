@@ -8,6 +8,8 @@ import { getCurrentCart } from "@/lib/woocommerce/cart";
 import { clearStoredCartToken } from "@/lib/woocommerce/store-api";
 import GangSheetBuilder from "@/component/gang-sheet/GangSheetBuilder";
 import styles from "@/app/products/dtf-gang-sheet-builder/Gangsheet.module.css";
+import { Headset } from "lucide-react";
+import Link from "next/link";
 
 function parsePrice(value) {
   const price = Number.parseFloat(String(value || "").replace(/[^0-9.]/g, ""));
@@ -173,11 +175,17 @@ export default function GangSheetProductPage({ product, variations, config }) {
                   ].price.toFixed(2)}`
                 : `$${(selectedSize?.price || 0).toFixed(2)}`}
             </div>
-            <p className={styles.copy}>
-              {product?.short_description
-                ? product.short_description.replace(/<[^>]*>/g, " ")
-                : config.description}
-            </p>
+            <div className={styles.copy}>
+              {product?.short_description ? (
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: product.short_description,
+                  }}
+                />
+              ) : (
+                <p>{config.description}</p>
+              )}
+            </div>
 
             <div className={styles.purchaseCard}>
               <div className={styles.formRow}>
@@ -212,7 +220,11 @@ export default function GangSheetProductPage({ product, variations, config }) {
               {isOpening && (
                 <div className={styles.loader}>Launching builder...</div>
               )}
-
+              <p className="text-sm leading-6 text-neutral-500">
+                Use artwork at 300 DPI for best print quality. CMYK color mode,
+                transparent backgrounds for stickers, and outlined fonts will
+                help avoid production issues.
+              </p>
               <div className={styles.actions}>
                 <GangSheetBuilder
                   mode="woo-product"
@@ -238,21 +250,56 @@ export default function GangSheetProductPage({ product, variations, config }) {
                 >
                   Build Your Own Gang Sheet
                 </GangSheetBuilder>
-                <button type="button" className={styles.secondary}>
-                  Product Inquiry
-                </button>
               </div>
 
               <div className={styles.metaRow}>
-                <span className={styles.metaPill}>
-                  Uses official DripApps builder
-                </span>
-                <span className={styles.metaPill}>
-                  Size + quantity sent automatically
-                </span>
-                <span className={styles.metaPill}>
-                  Keeps your checkout flow
-                </span>
+                <div>
+                  <div>Guaranteed safe checkout</div>
+                  <div className="flex gap-2 pt-5">
+                    <Image
+                      src="https://cmykprint.shop/wp-content/uploads/2026/01/download.png"
+                      alt="Secure checkout"
+                      width={60}
+                      className="object-contain border-2 "
+                      height={60}
+                    />
+                    <Image
+                      src="https://printy.themerex.net/wp-content/uploads/2024/01/ps-2.png"
+                      alt="Secure checkout"
+                      width={60}
+                      className="object-contain border-2 "
+                      height={60}
+                    />
+                    <Image
+                      src="https://printy.themerex.net/wp-content/uploads/2024/01/ps-3.png"
+                      alt="Secure checkout"
+                      width={60}
+                      className="object-contain border-2 "
+                      height={60}
+                    />
+                    <Image
+                      src="https://printy.themerex.net/wp-content/uploads/2024/01/ps-4.png"
+                      alt="Secure checkout"
+                      width={60}
+                      className="object-contain border-2 "
+                      height={60}
+                    />
+                  </div>
+                  <div className="flex gap-3 p-2 mt-5 rounded-lg bg-neutral-100 text-neutral-500 tex">
+                    <Headset strokeWidth={1} size={50} />
+                    <div>
+                      Need Help? Call Us{" "}
+                      <Link
+                        href="tel:+18183427822"
+                        className="transition-colors hover:text-pink-500"
+                      >
+                        +1 (818) 342-7822
+                      </Link>{" "}
+                      <br />
+                      Monday - Friday 9:00 AM - 5:00 PM
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
