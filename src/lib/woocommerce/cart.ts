@@ -24,6 +24,25 @@ type LocalCartItemInput = {
 
 const inFlightAdds = new Map<string, Promise<WooCart>>();
 
+function normalizeWooCart(cart: WooCart): WooCart {
+  if (!cart || typeof cart !== "object") {
+    throw new Error("WooCommerce cart response was invalid.");
+  }
+
+  if (!cart.totals || typeof cart.totals !== "object") {
+    throw new Error("WooCommerce cart response was missing totals.");
+  }
+
+  const items = Array.isArray(cart.items) ? cart.items : [];
+  const itemsCount = Number(cart.items_count);
+
+  return {
+    ...cart,
+    items,
+    items_count: Number.isFinite(itemsCount) ? itemsCount : items.length,
+  };
+}
+
 function debugCartMutation(message: string, data: Record<string, unknown>) {
   if (process.env.NODE_ENV !== "development") {
     return;
@@ -42,7 +61,9 @@ function stableAddKey(input: AddCartItemInput) {
 }
 
 export function getCurrentCart() {
-  return storeApiFetch<WooCart>("/cart", { method: "GET" });
+  return storeApiFetch<WooCart>("/cart", { method: "GET" }).then(
+    normalizeWooCart,
+  );
 }
 
 export function buildAddCartItemInput(item: LocalCartItemInput): AddCartItemInput {
@@ -73,7 +94,7 @@ export function addCartItem(input: AddCartItemInput) {
   const request = storeApiFetch<WooCart>("/cart/add-item", {
     method: "POST",
     json: input,
-  });
+  }).then(normalizeWooCart);
 
   inFlightAdds.set(key, request);
   request.finally(() => {
@@ -88,28 +109,28 @@ export function updateCartItemQuantity(key: string, quantity: number) {
   return storeApiFetch<WooCart>(`/cart/items/${encodeURIComponent(key)}`, {
     method: "POST",
     json: { quantity },
-  });
+  }).then(normalizeWooCart);
 }
 
 export function removeCartItem(key: string) {
   debugCartMutation("remove:start", { key });
   return storeApiFetch<WooCart>(`/cart/items/${encodeURIComponent(key)}`, {
     method: "DELETE",
-  });
+  }).then(normalizeWooCart);
 }
 
 export function applyCoupon(code: string) {
   return storeApiFetch<WooCart>("/cart/apply-coupon", {
     method: "POST",
     json: { code },
-  });
+  }).then(normalizeWooCart);
 }
 
 export function removeCoupon(code: string) {
   return storeApiFetch<WooCart>("/cart/remove-coupon", {
     method: "POST",
     json: { code },
-  });
+  }).then(normalizeWooCart);
 }
 
 export function updateCartCustomer(input: {
@@ -119,5 +140,5 @@ export function updateCartCustomer(input: {
   return storeApiFetch<WooCart>("/cart/update-customer", {
     method: "POST",
     json: input,
-  });
+  }).then(normalizeWooCart);
 }

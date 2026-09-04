@@ -3,6 +3,19 @@ import { NextRequest, NextResponse } from "next/server";
 const CART_TOKEN_COOKIE = "cmyk_cart_token";
 const STORE_API_PREFIX = "/wp-json/wc/store/v1";
 const ALLOWED_METHODS = new Set(["GET", "POST", "PUT", "PATCH", "DELETE"]);
+const WOO_SESSION_COOKIE_PREFIX = "wp_woocommerce_session_";
+const WOO_CART_COOKIE_NAMES = new Set([
+  "woocommerce_cart_hash",
+  "woocommerce_items_in_cart",
+]);
+
+function logBySizeStep(step: number, message: string, data: Record<string, unknown> = {}) {
+  if (process.env.NODE_ENV !== "development") {
+    return;
+  }
+
+  console.info(`[CMYK DTF By Size Step ${step}] ${message}`, data);
+}
 
 function getStoreUrl() {
   const storeUrl = process.env.NEXT_PUBLIC_WC_URL;
@@ -34,12 +47,29 @@ function copyRequestHeaders(
 
   if (cartToken) {
     headers.set("Cart-Token", cartToken);
+  } else {
+    const wooSessionCookie = getWooSessionCookieHeader(request);
+    if (wooSessionCookie) {
+      headers.set("Cookie", wooSessionCookie);
+    }
   }
   if (nonce) {
     headers.set("Nonce", nonce);
   }
 
   return headers;
+}
+
+function getWooSessionCookieHeader(request: NextRequest) {
+  return request.cookies
+    .getAll()
+    .filter(
+      (cookie) =>
+        cookie.name.startsWith(WOO_SESSION_COOKIE_PREFIX) ||
+        WOO_CART_COOKIE_NAMES.has(cookie.name),
+    )
+    .map((cookie) => `${cookie.name}=${cookie.value}`)
+    .join("; ");
 }
 
 function toStoreApiUrl(path: string[], search: string) {
@@ -142,6 +172,21 @@ async function proxyStoreApi(
   try {
     const { path } = await context.params;
     const url = toStoreApiUrl(path || [], request.nextUrl.search);
+    const isCartRead = request.method === "GET" && path?.[0] === "cart";
+    const incomingCartToken =
+      request.headers.get("cart-token") ||
+      request.cookies.get(CART_TOKEN_COOKIE)?.value ||
+      "";
+    const wooSessionCookie = getWooSessionCookieHeader(request);
+
+    if (isCartRead) {
+      logBySizeStep(8, "Next cart page requested Woo cart", {
+        hasCartToken: Boolean(incomingCartToken),
+        hasWooSessionCookie: Boolean(wooSessionCookie),
+        usingWooCookieFallback: !incomingCartToken && Boolean(wooSessionCookie),
+      });
+    }
+
     const body =
       request.method === "GET" || request.method === "HEAD"
         ? undefined
@@ -244,6 +289,18 @@ async function proxyStoreApi(
         clearCartTokenCookie(response);
       }
       return response;
+    }
+
+    if (isCartRead) {
+      logBySizeStep(9, "Woo cart response parsed", {
+        status: wooResponse.status,
+        itemCount:
+          parsedBody &&
+          typeof parsedBody === "object" &&
+          "items_count" in parsedBody
+            ? (parsedBody as { items_count?: unknown }).items_count
+            : "unknown",
+      });
     }
 
     const response = NextResponse.json(parsedBody, {

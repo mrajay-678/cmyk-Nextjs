@@ -19,6 +19,7 @@ import { formatCurrency } from "@/component/product/productHelpers";
 import {
   acceptPendingWooCartIntent,
   findMatchingWooCartItem,
+  getWooCartItems,
   removeDuplicateGangSheetItems,
 } from "@/lib/woocommerce/cart-sync";
 import {
@@ -61,6 +62,14 @@ function unitMoney(item: WooCart["items"][number], cart: WooCart) {
   const lineTotal = Number.parseInt(item.totals.line_total || "0", 10);
   const quantity = item.quantity || 1;
   return money(String(Math.round(lineTotal / quantity)), cart);
+}
+
+function debugBySizeStep(step: number, message: string, data = {}) {
+  if (process.env.NODE_ENV !== "development") {
+    return;
+  }
+
+  console.info(`[CMYK DTF By Size Step ${step}] ${message}`, data);
 }
 
 function decodeText(value: string) {
@@ -459,7 +468,7 @@ export default function CartExperience() {
     () =>
       cart
         ? localItems.filter((item) =>
-            Boolean(findMatchingWooCartItem(cart.items, item)),
+            Boolean(findMatchingWooCartItem(getWooCartItems(cart), item)),
           )
         : [],
     [cart, localItems],
@@ -468,12 +477,12 @@ export default function CartExperience() {
     () =>
       new Set(
         visibleLocalItems
-          .map((item) => findMatchingWooCartItem(cart?.items || [], item)?.key)
+          .map((item) => findMatchingWooCartItem(getWooCartItems(cart), item)?.key)
           .filter(Boolean),
       ),
     [cart, visibleLocalItems],
   );
-  const visibleWooItems = (cart?.items || []).filter(
+  const visibleWooItems = getWooCartItems(cart).filter(
     (item) => !visibleLocalWooKeys.has(item.key),
   );
   const isDevelopment = process.env.NODE_ENV === "development";
@@ -505,6 +514,12 @@ export default function CartExperience() {
       }
 
       acceptPendingWooCartIntent(nextCart);
+      debugBySizeStep(10, "Cart page hydrated Woo cart", {
+        sequenceId,
+        wooItemsCount: nextCart.items_count,
+        visibleWooItemsCount: getWooCartItems(nextCart).length,
+        localItemsCount: localItems.length,
+      });
       setCart(nextCart);
 
       if (nextCart.items_count === 0 && localItems.length > 0) {
@@ -524,13 +539,41 @@ export default function CartExperience() {
 
   const refreshCart = useCallback(async () => {
     const sequenceId = ++cartRequestSequenceRef.current;
+    const searchParams = new URLSearchParams(window.location.search);
+    const isBagsCartReturn = searchParams.get("cmyk_bags_cart") === "1";
+
+    if (isBagsCartReturn) {
+      clearStoredCartToken();
+      debugBySizeStep(8, "Cleared stale Store API token for BAGS cart return", {
+        sequenceId,
+      });
+    }
+
+    debugBySizeStep(8, "Cart page loading Woo cart", {
+      sequenceId,
+      isBagsCartReturn,
+    });
     setIsBusy(true);
-    if (!new URLSearchParams(window.location.search).get("gang_sheet_checkout_error")) {
+    if (!searchParams.get("gang_sheet_checkout_error")) {
       setError("");
     }
     try {
+      const currentCart = await getCurrentCart();
+
+      // BAGS By Size redirects here after WooCommerce has already created the
+      // cart row. Show that Woo cart first; cleanup can delete the fresh BAGS
+      // row before the user sees it.
+      if (isBagsCartReturn) {
+        debugBySizeStep(9, "Skipping duplicate cleanup for BAGS cart return", {
+          sequenceId,
+          wooItemsCount: currentCart.items_count,
+        });
+      }
+
       hydrateCart(
-        await removeDuplicateGangSheetItems(await getCurrentCart()),
+        isBagsCartReturn
+          ? currentCart
+          : await removeDuplicateGangSheetItems(currentCart),
         sequenceId,
       );
     } catch (cartError) {
@@ -593,7 +636,7 @@ export default function CartExperience() {
   }
 
   function findWooCartItemForLocalItem(localItem: LocalCartItem) {
-    return cart ? findMatchingWooCartItem(cart.items, localItem) : null;
+    return cart ? findMatchingWooCartItem(getWooCartItems(cart), localItem) : null;
   }
 
   function removeLocalCartItem(localItem: LocalCartItem) {
@@ -618,7 +661,7 @@ export default function CartExperience() {
       return;
     }
 
-    void removeWooCartKeys((cart?.items || []).map((item) => item.key));
+    void removeWooCartKeys(getWooCartItems(cart).map((item) => item.key));
   }
 
   async function proceedToPayment() {
@@ -656,6 +699,15 @@ export default function CartExperience() {
         localItems: visibleLocalItems,
         getArtworkFile,
       });
+      if (process.env.NODE_ENV === "development") {
+        const checkoutUrlObject = new URL(checkoutUrl);
+        console.info("[CMYK Checkout Step 5] Browser redirecting", {
+          checkoutHost: checkoutUrlObject.origin,
+          checkoutPath: checkoutUrlObject.pathname,
+          hasCheckoutRef:
+            checkoutUrlObject.searchParams.has("cmyk_checkout_ref"),
+        });
+      }
       window.location.assign(checkoutUrl);
     } catch (checkoutError) {
       setIsRedirecting(false);

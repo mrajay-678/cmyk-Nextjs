@@ -89,7 +89,7 @@ export default function CartButton() {
 
 		try {
 			const wooCart = await getCurrentCart()
-			const wooItem = findMatchingWooCartItem(wooCart.items, item)
+			const wooItem = findMatchingWooCartItem(wooCart?.items, item)
 			if (wooItem) {
 				await removeCartItem(wooItem.key)
 			}
@@ -105,7 +105,7 @@ export default function CartButton() {
 		try {
 			const wooCart = await getCurrentCart()
 			for (const item of currentItems) {
-				const wooItem = findMatchingWooCartItem(wooCart.items, item)
+				const wooItem = findMatchingWooCartItem(wooCart?.items, item)
 				if (wooItem) {
 					await removeCartItem(wooItem.key)
 				}

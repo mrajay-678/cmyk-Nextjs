@@ -15,6 +15,22 @@ const PENDING_WOO_CART_INTENT_STORAGE_KEY = "cmyk_pending_woo_cart_intent";
 const ACTIVE_WOO_CART_KEYS_STORAGE_KEY = "cmyk_active_woo_cart_keys";
 const PENDING_WOO_CART_INTENT_TTL_MS = 30 * 60 * 1000;
 
+export function getWooCartItems(cart?: WooCart | null) {
+  return Array.isArray(cart?.items) ? cart.items : [];
+}
+
+function getWooItemData(item: WooCartItem) {
+  return Array.isArray(item.item_data) ? item.item_data : [];
+}
+
+function getWooItemVariation(item: WooCartItem) {
+  return Array.isArray(item.variation) ? item.variation : [];
+}
+
+function getWooItems(items?: WooCartItem[] | null) {
+  return Array.isArray(items) ? items : [];
+}
+
 function readActiveWooCartKeys() {
   if (typeof window === "undefined") {
     return [];
@@ -82,7 +98,7 @@ export function markWooCartIntentPending(cart?: WooCart | null) {
     PENDING_WOO_CART_INTENT_STORAGE_KEY,
     JSON.stringify({
       updatedAt: Date.now(),
-      existingKeys: (cart?.items || []).map((item) => item.key),
+      existingKeys: getWooCartItems(cart).map((item) => item.key),
     }),
   );
 }
@@ -111,7 +127,7 @@ export function acceptPendingWooCartIntent(cart: WooCart) {
   }
 
   const existingKeys = new Set(pendingIntent.existingKeys);
-  const gangSheetItems = cart.items.filter(
+  const gangSheetItems = getWooCartItems(cart).filter(
     (item) => isGangSheetWooItem(item) && !existingKeys.has(item.key),
   );
   if (!gangSheetItems.length) {
@@ -129,7 +145,7 @@ export function getIntentionalWooItems(cart: WooCart | null) {
   }
 
   const activeKeys = new Set(readActiveWooCartKeys());
-  return cart.items.filter((item) => activeKeys.has(item.key));
+  return getWooCartItems(cart).filter((item) => activeKeys.has(item.key));
 }
 
 export function getLocalCheckoutId(item: SyncLocalCartItem) {
@@ -154,11 +170,13 @@ export function mergeLocalCartItems(
 }
 
 export function findMatchingWooCartItem(
-  wooItems: WooCartItem[],
+  wooItems: WooCartItem[] | null | undefined,
   localItem: SyncLocalCartItem,
 ) {
+  const items = getWooItems(wooItems);
+
   if (localItem.wooCartKey) {
-    const keyedItem = wooItems.find((item) => item.key === localItem.wooCartKey);
+    const keyedItem = items.find((item) => item.key === localItem.wooCartKey);
     if (keyedItem) {
       return keyedItem;
     }
@@ -173,15 +191,16 @@ export function findMatchingWooCartItem(
     return null;
   }
 
-  const candidates = wooItems.filter((item) => item.id === checkoutId);
+  const candidates = items.filter((item) => item.id === checkoutId);
   return candidates.length === 1 ? candidates[0] : null;
 }
 
 export function findNewWooCartItem(
-  wooItems: WooCartItem[],
+  wooItems: WooCartItem[] | null | undefined,
   localItem: SyncLocalCartItem,
   previousLocalItems: SyncLocalCartItem[] = [],
 ) {
+  const items = getWooItems(wooItems);
   const checkoutId = getLocalCheckoutId(localItem);
   if (!checkoutId) {
     return null;
@@ -190,7 +209,7 @@ export function findNewWooCartItem(
   const previousKeys = new Set(
     previousLocalItems.map((item) => item.wooCartKey).filter(Boolean),
   );
-  const candidates = wooItems.filter(
+  const candidates = items.filter(
     (item) => item.id === checkoutId && !previousKeys.has(item.key),
   );
 
@@ -202,7 +221,7 @@ export function isGangSheetWooItem(item: WooCartItem) {
     return true;
   }
 
-  return item.item_data.some((entry) =>
+  return getWooItemData(item).some((entry) =>
     `${entry.name} ${entry.value} ${entry.display || ""}`
       .toLowerCase()
       .includes("gang"),
@@ -210,7 +229,7 @@ export function isGangSheetWooItem(item: WooCartItem) {
 }
 
 function getGangSheetCartIdentity(item: WooCartItem) {
-  const variationKey = item.variation
+  const variationKey = getWooItemVariation(item)
     .map((entry) => `${entry.raw_attribute}:${entry.value}`)
     .join("|");
 
@@ -219,14 +238,15 @@ function getGangSheetCartIdentity(item: WooCartItem) {
 
 export async function removeDuplicateGangSheetItems(cart: WooCart) {
   const newestKeyByIdentity = new Map<string, string>();
+  const items = getWooCartItems(cart);
 
-  for (const item of cart.items) {
+  for (const item of items) {
     if (isGangSheetWooItem(item)) {
       newestKeyByIdentity.set(getGangSheetCartIdentity(item), item.key);
     }
   }
 
-  const duplicateKeys = cart.items
+  const duplicateKeys = items
     .filter((item) => isGangSheetWooItem(item))
     .filter(
       (item) => newestKeyByIdentity.get(getGangSheetCartIdentity(item)) !== item.key,
@@ -251,7 +271,7 @@ export async function reconcileWooCartToLocalItems(
   getIntentionalWooItems(cart).forEach((item) => validWooKeys.add(item.key));
   let nextCart = cart;
 
-  for (const item of cart.items) {
+  for (const item of getWooCartItems(cart)) {
     if (!validWooKeys.has(item.key)) {
       nextCart = await removeCartItem(item.key);
     }

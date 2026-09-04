@@ -45,13 +45,14 @@ function getWooAttributeKey(attribute) {
   return attribute?.name || "attribute_size";
 }
 
-function getGangSheetCheckoutUrl(productId, productType) {
+function getGangSheetCheckoutUrl(productId, productType, productSlug) {
   const params = new URLSearchParams({
     product_id: String(productId || ""),
     product_type: String(productType || ""),
+    product_slug: String(productSlug || ""),
   });
 
-  return `/api/gang-sheet/checkout?${params.toString()}`;
+  return `/api/gang-sheet/add-to-cart?${params.toString()}`;
 }
 
 export default function ProductPurchasePanel({
@@ -184,7 +185,7 @@ export default function ProductPurchasePanel({
 
       const nextLocalItems = mergeLocalCartItems(items, cartItem);
       const wooCart = await addCartItem(buildAddCartItemInput(cartItem));
-      const wooItem = findNewWooCartItem(wooCart.items, cartItem, items);
+      const wooItem = findNewWooCartItem(wooCart?.items, cartItem, items);
       const keyedLocalItems = nextLocalItems.map((item) =>
         item.id === cartItem.id ? { ...item, wooCartKey: wooItem?.key } : item,
       );
@@ -215,10 +216,11 @@ export default function ProductPurchasePanel({
           productType={isBySizeBuilderProduct ? "7" : "1"}
           variants={gangSheetVariants}
           sdkVersion="1.7.7"
-          cartUrl={getGangSheetCheckoutUrl(
-            product.id,
-            isBySizeBuilderProduct ? "7" : "1",
-          )}
+          cartUrl={
+            isGangSheetProduct
+              ? getGangSheetCheckoutUrl(product.id, "1", product.slug)
+              : "/cart?cmyk_bags_cart=1"
+          }
           label={
             isBySizeBuilderProduct
               ? "Upload Image By Size"

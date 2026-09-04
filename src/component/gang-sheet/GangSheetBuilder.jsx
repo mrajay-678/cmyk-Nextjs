@@ -1,7 +1,7 @@
 "use client";
 
 import Script from "next/script";
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 const DEFAULT_APP_HOST = "https://app.buildagangsheet.com";
 const DEFAULT_WOO_HOST = "https://cmykprint.shop";
@@ -14,6 +14,14 @@ const sdkState = {
   wooReady: false,
 };
 const initializedWooInstances = new Map();
+
+function debugGangStep(step, message, data = {}) {
+  if (process.env.NODE_ENV !== "development") {
+    return;
+  }
+
+  console.info(`[CMYK DTF By Size Step ${step}] ${message}`, data);
+}
 
 function normalizeInstanceId(value) {
   return String(value).replace(/[^a-zA-Z0-9_-]/g, "-");
@@ -33,6 +41,11 @@ function normalizeExternalSizes(sizes = []) {
 }
 
 function ensureWooGlobals({ ajaxUrl, cartUrl }) {
+  debugGangStep(2, "Woo globals configured", {
+    ajaxUrl,
+    cartUrl,
+  });
+
   window.appEnv = window.appEnv || "production";
   window.wc_add_to_cart_params = {
     ...(window.wc_add_to_cart_params || {}),
@@ -129,6 +142,8 @@ export default function GangSheetBuilder({
     mode === "external" ? sdkState.externalReady : sdkState.wooReady,
   );
   const [wooClickLocked, setWooClickLocked] = useState(false);
+  const wooButtonRef = useRef(null);
+  const wooClickLockedRef = useRef(false);
   const resolvedAjaxUrl = ajaxUrl || DEFAULT_AJAX_PROXY_PATH;
   const resolvedCartUrl = cartUrl || `${wooHost}/cart/`;
 
@@ -178,8 +193,20 @@ export default function GangSheetBuilder({
     window.GangSheetShortcodeOptions = window.GangSheetShortcodeOptions || {};
     window.GangSheetShortcodeOptions[instanceId] = wooOptions;
     initializedWooInstances.set(instanceId, optionsSignature);
+    debugGangStep(3, "BAGS shortcode options registered", {
+      instanceId,
+      productId: wooOptions.product_id,
+      productType: wooOptions.product_type,
+      variantsCount: Array.isArray(wooOptions.variants)
+        ? wooOptions.variants.length
+        : 0,
+      cartUrl: wooOptions.cart_url,
+    });
 
     if (typeof window.initializeGangSheetShortcodes === "function") {
+      debugGangStep(4, "Calling BAGS initializeGangSheetShortcodes", {
+        instanceId,
+      });
       window.initializeGangSheetShortcodes();
     }
   }, [
@@ -200,6 +227,59 @@ export default function GangSheetBuilder({
       }
     };
   }, [instanceId]);
+
+  useEffect(() => {
+    if (mode !== "woo-product") {
+      return undefined;
+    }
+
+    const button = wooButtonRef.current;
+    if (!button) {
+      return undefined;
+    }
+
+    let unlockTimer = null;
+
+    function handleWooButtonClick(event) {
+      if (disabled || !scriptReady || wooClickLockedRef.current) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+
+      // Keep our duplicate-click guard separate from the BAGS SDK's onclick hook.
+      wooClickLockedRef.current = true;
+      setWooClickLocked(true);
+      unlockTimer = window.setTimeout(() => {
+        wooClickLockedRef.current = false;
+        setWooClickLocked(false);
+      }, 1500);
+
+      debugGangStep(5, "Builder button clicked", {
+        productId,
+        productType,
+        cartUrl: resolvedCartUrl,
+      });
+      onOpen?.();
+    }
+
+    button.addEventListener("click", handleWooButtonClick, true);
+
+    return () => {
+      button.removeEventListener("click", handleWooButtonClick, true);
+      if (unlockTimer) {
+        window.clearTimeout(unlockTimer);
+      }
+    };
+  }, [
+    disabled,
+    mode,
+    onOpen,
+    productId,
+    productType,
+    resolvedCartUrl,
+    scriptReady,
+  ]);
 
   const openExternalBuilder = useCallback(() => {
     if (disabled) {
@@ -265,12 +345,20 @@ export default function GangSheetBuilder({
           onLoad={() => {
             sdkState.wooReady = true;
             setScriptReady(true);
+            debugGangStep(1, "BAGS Woo SDK loaded", {
+              productId,
+              productType,
+            });
             initializeWooShortcode();
             onReady?.();
           }}
           onReady={() => {
             sdkState.wooReady = true;
             setScriptReady(true);
+            debugGangStep(1, "BAGS Woo SDK ready", {
+              productId,
+              productType,
+            });
             initializeWooShortcode();
             onReady?.();
           }}
@@ -280,20 +368,10 @@ export default function GangSheetBuilder({
         />
         <div data-gs-instance-id={instanceId}>
           <button
+            ref={wooButtonRef}
             type="button"
             className={`gang-sheet-shortcode-button ${buttonClassName}`}
             style={buttonStyle}
-            onClick={(event) => {
-              if (wooClickLocked) {
-                event.preventDefault();
-                event.stopPropagation();
-                return;
-              }
-
-              setWooClickLocked(true);
-              window.setTimeout(() => setWooClickLocked(false), 1500);
-              onOpen?.();
-            }}
             disabled={disabled || !scriptReady || wooClickLocked}
           >
             {children || label}

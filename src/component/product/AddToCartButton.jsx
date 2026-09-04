@@ -48,7 +48,7 @@ function AddToCartButton({
       try {
         const nextLocalItems = mergeLocalCartItems(items, item);
         const wooCart = await addCartItem(buildAddCartItemInput(item));
-        const wooItem = findNewWooCartItem(wooCart.items, item, items);
+        const wooItem = findNewWooCartItem(wooCart?.items, item, items);
         const keyedLocalItems = nextLocalItems.map((entry) =>
           entry.id === item.id ? { ...entry, wooCartKey: wooItem?.key } : entry,
         );

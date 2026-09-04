@@ -71,9 +71,22 @@ export async function createHostedCheckoutUrl({
   localItems: CheckoutLocalItem[];
   getArtworkFile: (id: string) => File | null;
 }) {
-  let latestCart = await removeDuplicateGangSheetItems(await getCurrentCart());
+  const searchParams = new URLSearchParams(window.location.search);
+  const isBagsCartReturn = searchParams.get("cmyk_bags_cart") === "1";
+  const currentCart = await getCurrentCart();
+  let latestCart = isBagsCartReturn
+    ? currentCart
+    : await removeDuplicateGangSheetItems(currentCart);
+
+  if (process.env.NODE_ENV === "development") {
+    console.info("[CMYK Checkout Step 1] Preparing checkout handoff", JSON.stringify({
+      isBagsCartReturn,
+      wooItemsCount: latestCart.items_count,
+    }));
+  }
+
   const latestLocalItems = localItems.filter((localItem) =>
-    Boolean(findMatchingWooCartItem(latestCart.items, localItem)),
+    Boolean(findMatchingWooCartItem(latestCart?.items, localItem)),
   );
 
   // Keep locally uploaded artwork products and builder-created Woo items,
@@ -87,10 +100,10 @@ export async function createHostedCheckoutUrl({
 
   const latestLocalWooKeys = new Set(
     latestLocalItems
-      .map((item) => findMatchingWooCartItem(latestCart.items, item)?.key)
+      .map((item) => findMatchingWooCartItem(latestCart?.items, item)?.key)
       .filter(Boolean),
   );
-  const latestWooItems = latestCart.items.filter(
+  const latestWooItems = (latestCart?.items || []).filter(
     (item) => !latestLocalWooKeys.has(item.key),
   );
 
@@ -118,6 +131,7 @@ export async function createHostedCheckoutUrl({
   formData.append("billing_address", JSON.stringify(emptyAddress));
   formData.append("shipping_address", JSON.stringify(emptyAddress));
   formData.append("customer_note", "");
+  formData.append("source", isBagsCartReturn ? "bags-cart" : "next-cart");
 
   latestLocalItems.forEach((item, index) => {
     const artworkFile = getArtworkFile(item.id);
@@ -136,6 +150,16 @@ export async function createHostedCheckoutUrl({
     throw new Error(
       result.error || "Unable to open secure WooCommerce payment.",
     );
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    const checkoutUrl = new URL(String(result.checkoutUrl));
+    console.info("[CMYK Checkout Step 2] Redirect URL received", JSON.stringify({
+      checkoutHost: checkoutUrl.origin,
+      checkoutPath: checkoutUrl.pathname,
+      hasCheckoutRef: checkoutUrl.searchParams.has("cmyk_checkout_ref"),
+      source: isBagsCartReturn ? "bags-cart" : "next-cart",
+    }));
   }
 
   return String(result.checkoutUrl);

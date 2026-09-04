@@ -35,6 +35,14 @@ const GANG_SHEET_METADATA_LABEL_TO_KEY = new Map(
   ]),
 );
 
+function logCheckoutStep(step, message, data = {}) {
+  if (process.env.NODE_ENV !== "development") {
+    return;
+  }
+
+  console.info(`[CMYK Checkout Step ${step}] ${message} ${JSON.stringify(data)}`);
+}
+
 function normalizeMetadataKey(value) {
   return String(value || "")
     .trim()
@@ -459,6 +467,8 @@ export async function POST(request) {
     const billingAddress = parseObject(formData.get("billing_address"));
     const shippingAddress = parseObject(formData.get("shipping_address"));
     const customerNote = String(formData.get("customer_note") || "");
+    const source = String(formData.get("source") || "next-cart");
+    const replaceCart = source !== "bags-cart";
 
     if (!items.length) {
       return NextResponse.json(
@@ -543,13 +553,20 @@ export async function POST(request) {
       billing_address: billingAddress,
       shipping_address: shippingAddress,
       customer_note: customerNote,
+      replace_cart: replaceCart,
     });
 
     if (process.env.NODE_ENV === "development") {
-      console.info("[CMYK CART HANDOFF]", {
+      logCheckoutStep(3, "WordPress handoff created", {
+        source,
+        replaceCart,
         itemCount: checkoutItems.length,
         productIds: checkoutItems.map((item) => item.product_id),
         variationIds: checkoutItems.map((item) => item.variation_id || 0),
+        checkoutIds: checkoutItems.map((item) => item.id),
+        hasGangSheetData: checkoutItems.map(
+          (item) => Object.keys(item.gang_sheet_data || {}).length > 0,
+        ),
       });
     }
 
@@ -558,6 +575,16 @@ export async function POST(request) {
 
     if (!checkoutUrl) {
       throw new Error("WordPress did not return a checkout URL.");
+    }
+
+    if (process.env.NODE_ENV === "development") {
+      const checkoutUrlObject = new URL(checkoutUrl);
+      logCheckoutStep(4, "Returning Woo checkout URL", {
+        source,
+        checkoutHost: checkoutUrlObject.origin,
+        checkoutPath: checkoutUrlObject.pathname,
+        hasCheckoutRef: checkoutUrlObject.searchParams.has("cmyk_checkout_ref"),
+      });
     }
 
     return NextResponse.json({ checkoutUrl });

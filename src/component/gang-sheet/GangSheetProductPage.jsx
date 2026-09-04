@@ -57,13 +57,14 @@ function getWooAttributeKey(attribute) {
   return attribute?.name || "attribute_size";
 }
 
-function getGangSheetCheckoutUrl(productId, productType) {
+function getGangSheetCheckoutUrl(productId, productType, productSlug) {
   const params = new URLSearchParams({
     product_id: String(productId || ""),
     product_type: String(productType || ""),
+    product_slug: String(productSlug || ""),
   });
 
-  return `/api/gang-sheet/checkout?${params.toString()}`;
+  return `/api/gang-sheet/add-to-cart?${params.toString()}`;
 }
 
 export default function GangSheetProductPage({ product, variations, config }) {
@@ -202,39 +203,6 @@ export default function GangSheetProductPage({ product, variations, config }) {
                 </select>
               </div>
 
-              <div className={styles.formRow}>
-                <label className={styles.label} htmlFor="qty">
-                  Quantity
-                </label>
-                <div className={styles.quantityWrap}>
-                  <button
-                    type="button"
-                    aria-label="Decrease quantity"
-                    onClick={() =>
-                      setQuantity((value) => Math.max(1, value - 1))
-                    }
-                  >
-                    -
-                  </button>
-                  <input
-                    id="qty"
-                    type="number"
-                    min={1}
-                    value={quantity}
-                    onChange={(event) =>
-                      setQuantity(Math.max(1, Number(event.target.value) || 1))
-                    }
-                  />
-                  <button
-                    type="button"
-                    aria-label="Increase quantity"
-                    onClick={() => setQuantity((value) => value + 1)}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-
               <div className={styles.priceRow}>
                 <span className={styles.price}>${totalPrice}</span>
                 <span className={styles.subtle}>based on selected size</span>
@@ -253,7 +221,11 @@ export default function GangSheetProductPage({ product, variations, config }) {
                   shopUuid={shopId}
                   variants={variants}
                   quantity={quantity}
-                  cartUrl={getGangSheetCheckoutUrl(product.id, config.productType)}
+                  cartUrl={getGangSheetCheckoutUrl(
+                    product.id,
+                    config.productType,
+                    product.slug,
+                  )}
                   buttonClassName={styles.primary}
                   disabled={!builderReady || isOpening || !selectedSize}
                   onReady={() => setBuilderReady(true)}
@@ -278,7 +250,9 @@ export default function GangSheetProductPage({ product, variations, config }) {
                 <span className={styles.metaPill}>
                   Size + quantity sent automatically
                 </span>
-                <span className={styles.metaPill}>Keeps your checkout flow</span>
+                <span className={styles.metaPill}>
+                  Keeps your checkout flow
+                </span>
               </div>
             </div>
           </div>

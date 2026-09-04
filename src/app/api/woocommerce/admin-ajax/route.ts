@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const DEFAULT_WOO_HOST = "https://cmykprint.shop";
+const WOO_SESSION_COOKIE_PREFIX = "wp_woocommerce_session_";
+
+function logBySizeStep(step: number, message: string, data: Record<string, unknown> = {}) {
+  if (process.env.NODE_ENV !== "development") {
+    return;
+  }
+
+  console.info(`[CMYK DTF By Size Step ${step}] ${message}`, data);
+}
 
 function getWooAdminAjaxUrl() {
   const storeUrl = process.env.NEXT_PUBLIC_WC_URL || DEFAULT_WOO_HOST;
@@ -43,6 +52,12 @@ function getSetCookieHeaders(headers: Headers) {
   return setCookie ? [setCookie] : [];
 }
 
+function hasWooSessionCookie(cookies: string[]) {
+  return cookies.some((cookie) =>
+    cookie.toLowerCase().startsWith(WOO_SESSION_COOKIE_PREFIX),
+  );
+}
+
 function rewriteSetCookieForCurrentOrigin(cookie: string, request: NextRequest) {
   return cookie
     .replace(/;\s*Domain=[^;]*/gi, "")
@@ -53,6 +68,11 @@ function rewriteSetCookieForCurrentOrigin(cookie: string, request: NextRequest) 
 }
 
 async function proxyAdminAjax(request: NextRequest) {
+  logBySizeStep(6, "BAGS admin-ajax proxy request started", {
+    method: request.method,
+    hasIncomingCookie: Boolean(request.headers.get("cookie")),
+  });
+
   const wooResponse = await fetch(getWooAdminAjaxUrl(), {
     method: request.method,
     headers: copyAjaxRequestHeaders(request),
@@ -66,6 +86,14 @@ async function proxyAdminAjax(request: NextRequest) {
 
   const responseHeaders = new Headers();
   const contentType = wooResponse.headers.get("content-type");
+  const setCookieHeaders = getSetCookieHeaders(wooResponse.headers);
+
+  logBySizeStep(7, "Woo admin-ajax response received", {
+    status: wooResponse.status,
+    contentType: contentType || "none",
+    setCookieCount: setCookieHeaders.length,
+    hasWooSessionCookie: hasWooSessionCookie(setCookieHeaders),
+  });
 
   if (contentType) {
     responseHeaders.set("Content-Type", contentType);
@@ -76,7 +104,7 @@ async function proxyAdminAjax(request: NextRequest) {
     headers: responseHeaders,
   });
 
-  for (const cookie of getSetCookieHeaders(wooResponse.headers)) {
+  for (const cookie of setCookieHeaders) {
     response.headers.append(
       "Set-Cookie",
       rewriteSetCookieForCurrentOrigin(cookie, request),
