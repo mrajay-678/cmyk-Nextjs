@@ -121,16 +121,14 @@ export default function ProductPurchasePanel({
   const isCheckoutReady = isSizeBasedProduct
     ? Boolean(selectedSizeVariation) && Boolean(selectedFile)
     : hasSelectedQuantity && Boolean(selectedFile);
-  const cartQuantity = isSizeBasedProduct ? 1 : numericQuantity;
+  const cartQuantity = 1;
   const selectedOptionLabel = isSizeBasedProduct
     ? selectedSize
     : selectedQuantity || "no-quantity";
   const selectedQuantityForDisplay = isSizeBasedProduct
     ? 1
     : numericQuantity;
-  const selectedQuantityForPrice = isSizeBasedProduct
-    ? 1
-    : numericQuantity;
+  const selectedQuantityForPrice = 1;
   const cartItem = {
     id: [
       product.id,

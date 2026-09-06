@@ -5,10 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Eye, RefreshCw, X } from "lucide-react";
 
-import {
-  getCurrentCart,
-  removeCartItem,
-} from "@/lib/woocommerce/cart";
+import { getCurrentCart, removeCartItem } from "@/lib/woocommerce/cart";
 import {
   CART_NONCE_STORAGE_KEY,
   CART_TOKEN_STORAGE_KEY,
@@ -477,7 +474,9 @@ export default function CartExperience() {
     () =>
       new Set(
         visibleLocalItems
-          .map((item) => findMatchingWooCartItem(getWooCartItems(cart), item)?.key)
+          .map(
+            (item) => findMatchingWooCartItem(getWooCartItems(cart), item)?.key,
+          )
           .filter(Boolean),
       ),
     [cart, visibleLocalItems],
@@ -636,7 +635,9 @@ export default function CartExperience() {
   }
 
   function findWooCartItemForLocalItem(localItem: LocalCartItem) {
-    return cart ? findMatchingWooCartItem(getWooCartItems(cart), localItem) : null;
+    return cart
+      ? findMatchingWooCartItem(getWooCartItems(cart), localItem)
+      : null;
   }
 
   function removeLocalCartItem(localItem: LocalCartItem) {
@@ -776,7 +777,6 @@ export default function CartExperience() {
       setIsBusy(false);
     }
   }
-
   return (
     <main className="bg-white px-4 py-12 sm:px-6 lg:px-16">
       <div className="mx-auto max-w-[1152px]">
