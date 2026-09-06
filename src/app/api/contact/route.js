@@ -113,8 +113,7 @@ export async function POST(request) {
 		})
 
 		return Response.json({ message: "Message sent successfully." })
-	} catch (error) {
-		console.error("Contact email failed:", error)
+	} catch {
 		return Response.json({ message: "Email could not be sent right now." }, { status: 500 })
 	}
 }

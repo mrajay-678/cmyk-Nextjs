@@ -79,13 +79,6 @@ export async function createHostedCheckoutUrl({
     ? currentCart
     : await removeDuplicateGangSheetItems(currentCart);
 
-  if (process.env.NODE_ENV === "development") {
-    console.info("[CMYK Checkout Step 1] Preparing checkout handoff", JSON.stringify({
-      isBagsCartReturn,
-      wooItemsCount: latestCart.items_count,
-    }));
-  }
-
   const latestLocalItems = localItems.filter((localItem) =>
     Boolean(findMatchingWooCartItem(latestCart?.items, localItem)),
   );
@@ -152,16 +145,6 @@ export async function createHostedCheckoutUrl({
     throw new Error(
       result.error || "Unable to open secure WooCommerce payment.",
     );
-  }
-
-  if (process.env.NODE_ENV === "development") {
-    const checkoutUrl = new URL(String(result.checkoutUrl));
-    console.info("[CMYK Checkout Step 2] Redirect URL received", JSON.stringify({
-      checkoutHost: checkoutUrl.origin,
-      checkoutPath: checkoutUrl.pathname,
-      hasCheckoutRef: checkoutUrl.searchParams.has("cmyk_checkout_ref"),
-      source: checkoutSource,
-    }));
   }
 
   return String(result.checkoutUrl);

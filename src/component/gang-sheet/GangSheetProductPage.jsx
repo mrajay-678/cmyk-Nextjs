@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 
 import { markWooCartIntentPending } from "@/lib/woocommerce/cart-sync";
-import { getCurrentCart } from "@/lib/woocommerce/cart";
 import { clearStoredCartToken } from "@/lib/woocommerce/store-api";
 import GangSheetBuilder from "@/component/gang-sheet/GangSheetBuilder";
 import styles from "@/app/products/dtf-gang-sheet-builder/Gangsheet.module.css";
@@ -114,12 +113,9 @@ export default function GangSheetProductPage({ product, variations, config }) {
     });
   }, [selectedSize, sizeOptions]);
 
-  const handleOpenBuilder = async () => {
-    try {
-      markWooCartIntentPending(await getCurrentCart());
-    } catch {
-      markWooCartIntentPending();
-    }
+  const handleOpenBuilder = () => {
+    // Let the BAGS SDK create the Woo session, then make the cart page read it.
+    markWooCartIntentPending();
     clearStoredCartToken();
     setError(null);
   };

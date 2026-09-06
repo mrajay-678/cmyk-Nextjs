@@ -1,7 +1,14 @@
 "use client";
 
 import Script from "next/script";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 const DEFAULT_APP_HOST = "https://app.buildagangsheet.com";
 const DEFAULT_WOO_HOST = "https://cmykprint.shop";
@@ -14,13 +21,186 @@ const sdkState = {
   wooReady: false,
 };
 const initializedWooInstances = new Map();
+let dtfCartNetworkDebugInstalled = false;
 
 function debugGangStep(step, message, data = {}) {
   if (process.env.NODE_ENV !== "development") {
     return;
   }
 
-  console.info(`[CMYK DTF By Size Step ${step}] ${message}`, data);
+  console.info(`[CMYK DTF Cart Debug ${step}] ${message}`, data);
+}
+
+function isDtfCartDebugUrl(value) {
+  const url = typeof value === "string" ? value : value?.url || "";
+
+  return (
+    url.includes("/api/woocommerce/admin-ajax") ||
+    url.includes("/wp-admin/admin-ajax.php")
+  );
+}
+
+function getFetchBodyDebug(init) {
+  const body = init?.body;
+
+  if (!body) {
+    return { bodyType: "none", bodyKeys: [] };
+  }
+
+  if (body instanceof FormData) {
+    return {
+      bodyType: "FormData",
+      bodyAction: String(body.get("action") || "none"),
+      bodyProductId: String(
+        body.get("product_id") || body.get("add-to-cart") || "none",
+      ),
+      bodyVariationId: String(body.get("variation_id") || "none"),
+      bodyKeys: Array.from(body.keys()),
+    };
+  }
+
+  if (body instanceof URLSearchParams) {
+    return {
+      bodyType: "URLSearchParams",
+      bodyAction: body.get("action") || "none",
+      bodyProductId:
+        body.get("product_id") || body.get("add-to-cart") || "none",
+      bodyVariationId: body.get("variation_id") || "none",
+      bodyKeys: Array.from(body.keys()),
+    };
+  }
+
+  if (typeof body === "string") {
+    const params = new URLSearchParams(body);
+
+    return {
+      bodyType: "string",
+      bodyAction: params.get("action") || "none",
+      bodyProductId:
+        params.get("product_id") || params.get("add-to-cart") || "none",
+      bodyVariationId: params.get("variation_id") || "none",
+      bodyKeys: Array.from(params.keys()),
+    };
+  }
+
+  return {
+    bodyType: body.constructor?.name || "unknown",
+    bodyKeys: [],
+  };
+}
+
+function installDtfCartNetworkDebug() {
+  if (
+    process.env.NODE_ENV !== "development" ||
+    typeof window === "undefined" ||
+    dtfCartNetworkDebugInstalled
+  ) {
+    return;
+  }
+
+  dtfCartNetworkDebugInstalled = true;
+
+  const originalFetch = window.fetch?.bind(window);
+  if (originalFetch) {
+    window.fetch = async (...args) => {
+      const requestUrl = String(args[0]?.url || args[0] || "");
+      const shouldLog = isDtfCartDebugUrl(requestUrl);
+      const requestDebug = getFetchBodyDebug(args[1]);
+
+      if (shouldLog) {
+        debugGangStep("02A", "BAGS ajax request started", {
+          transport: "fetch",
+          url: requestUrl,
+          method: args[1]?.method || args[0]?.method || "GET",
+          ...requestDebug,
+        });
+      }
+
+      const response = await originalFetch(...args);
+
+      if (shouldLog) {
+        const responseDebug = {
+          transport: "fetch",
+          status: response.status,
+          redirected: response.redirected,
+          responseUrl: response.url,
+          requestUrl,
+        };
+
+        try {
+          window.sessionStorage.setItem(
+            "cmyk_dtf_cart_last_ajax_debug",
+            JSON.stringify({
+              ...responseDebug,
+              savedAt: new Date().toISOString(),
+            }),
+          );
+        } catch {
+          // Debug storage is best-effort only.
+        }
+        debugGangStep("02B", "BAGS ajax response received", responseDebug);
+      }
+
+      return response;
+    };
+  }
+
+  const originalOpen = XMLHttpRequest.prototype.open;
+  const originalSend = XMLHttpRequest.prototype.send;
+
+  XMLHttpRequest.prototype.open = function open(method, url, ...rest) {
+    this.__cmykDtfCartDebug = {
+      method,
+      url: String(url || ""),
+      shouldLog: isDtfCartDebugUrl(String(url || "")),
+    };
+
+    return originalOpen.call(this, method, url, ...rest);
+  };
+
+  XMLHttpRequest.prototype.send = function send(...args) {
+    const debug = this.__cmykDtfCartDebug;
+
+    if (debug?.shouldLog) {
+      debugGangStep("02A", "BAGS ajax request started", {
+        transport: "xhr",
+        method: debug.method,
+        url: debug.url,
+      });
+
+      this.addEventListener(
+        "loadend",
+        () => {
+          const responseDebug = {
+            transport: "xhr",
+            method: debug.method,
+            url: debug.url,
+            status: this.status,
+            responseUrl: this.responseURL,
+          };
+
+          try {
+            window.sessionStorage.setItem(
+              "cmyk_dtf_cart_last_ajax_debug",
+              JSON.stringify({
+                ...responseDebug,
+                savedAt: new Date().toISOString(),
+              }),
+            );
+          } catch {
+            // Debug storage is best-effort only.
+          }
+
+          debugGangStep("02B", "BAGS ajax response received", {
+            ...responseDebug,
+          });
+        },
+        { once: true },
+      );
+    }
+
+    return originalSend.apply(this, args);
+  };
 }
 
 function normalizeInstanceId(value) {
@@ -41,11 +221,6 @@ function normalizeExternalSizes(sizes = []) {
 }
 
 function ensureWooGlobals({ ajaxUrl, cartUrl }) {
-  debugGangStep(2, "Woo globals configured", {
-    ajaxUrl,
-    cartUrl,
-  });
-
   window.appEnv = window.appEnv || "production";
   window.wc_add_to_cart_params = {
     ...(window.wc_add_to_cart_params || {}),
@@ -193,20 +368,8 @@ export default function GangSheetBuilder({
     window.GangSheetShortcodeOptions = window.GangSheetShortcodeOptions || {};
     window.GangSheetShortcodeOptions[instanceId] = wooOptions;
     initializedWooInstances.set(instanceId, optionsSignature);
-    debugGangStep(3, "BAGS shortcode options registered", {
-      instanceId,
-      productId: wooOptions.product_id,
-      productType: wooOptions.product_type,
-      variantsCount: Array.isArray(wooOptions.variants)
-        ? wooOptions.variants.length
-        : 0,
-      cartUrl: wooOptions.cart_url,
-    });
 
     if (typeof window.initializeGangSheetShortcodes === "function") {
-      debugGangStep(4, "Calling BAGS initializeGangSheetShortcodes", {
-        instanceId,
-      });
       window.initializeGangSheetShortcodes();
     }
   }, [
@@ -233,6 +396,8 @@ export default function GangSheetBuilder({
       return undefined;
     }
 
+    installDtfCartNetworkDebug();
+
     const button = wooButtonRef.current;
     if (!button) {
       return undefined;
@@ -255,7 +420,7 @@ export default function GangSheetBuilder({
         setWooClickLocked(false);
       }, 1500);
 
-      debugGangStep(5, "Builder button clicked", {
+      debugGangStep("01", "builder button clicked", {
         productId,
         productType,
         cartUrl: resolvedCartUrl,
@@ -345,20 +510,12 @@ export default function GangSheetBuilder({
           onLoad={() => {
             sdkState.wooReady = true;
             setScriptReady(true);
-            debugGangStep(1, "BAGS Woo SDK loaded", {
-              productId,
-              productType,
-            });
             initializeWooShortcode();
             onReady?.();
           }}
           onReady={() => {
             sdkState.wooReady = true;
             setScriptReady(true);
-            debugGangStep(1, "BAGS Woo SDK ready", {
-              productId,
-              productType,
-            });
             initializeWooShortcode();
             onReady?.();
           }}

@@ -61,12 +61,44 @@ function unitMoney(item: WooCart["items"][number], cart: WooCart) {
   return money(String(Math.round(lineTotal / quantity)), cart);
 }
 
+function wooLineTotal(item: WooCartItem) {
+  return Number.parseInt(item.totals?.line_total || "0", 10) || 0;
+}
+
+function visibleRowsTotal({
+  cart,
+  localItems,
+  wooItems,
+}: {
+  cart: WooCart | null;
+  localItems: LocalCartItem[];
+  wooItems: WooCartItem[];
+}) {
+  if (!cart) {
+    return "$0.00";
+  }
+
+  const minorUnit = cart.totals.currency_minor_unit ?? 2;
+  const localTotal = localItems.reduce(
+    (sum, item) => sum + item.totalPrice * item.cartQuantity,
+    0,
+  );
+  const wooTotal =
+    wooItems.reduce((sum, item) => sum + wooLineTotal(item), 0) /
+    10 ** minorUnit;
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: cart.totals.currency_code || "USD",
+  }).format(localTotal + wooTotal);
+}
+
 function debugBySizeStep(step: number, message: string, data = {}) {
   if (process.env.NODE_ENV !== "development") {
     return;
   }
 
-  console.info(`[CMYK DTF By Size Step ${step}] ${message}`, data);
+  console.info(`[CMYK DTF Cart Debug ${step}] ${message}`, data);
 }
 
 function decodeText(value: string) {
@@ -457,6 +489,7 @@ export default function CartExperience() {
   const [error, setError] = useState("");
   const [isBusy, setIsBusy] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isBagsCartReturn, setIsBagsCartReturn] = useState(false);
   const [previewArtwork, setPreviewArtwork] = useState<PreviewArtwork | null>(
     null,
   );
@@ -481,9 +514,9 @@ export default function CartExperience() {
       ),
     [cart, visibleLocalItems],
   );
-  const visibleWooItems = getWooCartItems(cart).filter(
-    (item) => !visibleLocalWooKeys.has(item.key),
-  );
+  const visibleWooItems = isBagsCartReturn
+    ? getWooCartItems(cart)
+    : getWooCartItems(cart).filter((item) => !visibleLocalWooKeys.has(item.key));
   const isDevelopment = process.env.NODE_ENV === "development";
   const hasLocalItems = visibleLocalItems.length > 0;
   const hasVisibleItems = hasLocalItems || visibleWooItems.length > 0;
@@ -491,7 +524,36 @@ export default function CartExperience() {
     localItems: visibleLocalItems,
     isArtworkReady,
   });
-  const displayTotal = money(cart?.totals.total_price, cart || undefined);
+  const displayTotal = visibleRowsTotal({
+    cart,
+    localItems: visibleLocalItems,
+    wooItems: visibleWooItems,
+  });
+
+  useEffect(() => {
+    if (!cart || process.env.NODE_ENV !== "development") {
+      return;
+    }
+
+    debugBySizeStep(4, "cart render decision", {
+      pageUrl: window.location.href,
+      isBagsCartReturn,
+      wooItemsCount: cart.items_count,
+      wooItemNames: getWooCartItems(cart).map((item) => item.name),
+      visibleWooItemsCount: visibleWooItems.length,
+      visibleWooItemNames: visibleWooItems.map((item) => item.name),
+      visibleLocalItemsCount: visibleLocalItems.length,
+      hasVisibleItems,
+      displayTotal,
+    });
+  }, [
+    cart,
+    displayTotal,
+    hasVisibleItems,
+    isBagsCartReturn,
+    visibleLocalItems.length,
+    visibleWooItems,
+  ]);
 
   useEffect(() => {
     const message = new URLSearchParams(window.location.search).get(
@@ -500,6 +562,29 @@ export default function CartExperience() {
 
     if (message) {
       window.queueMicrotask(() => setError(message));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") {
+      return;
+    }
+
+    try {
+      const stored = window.sessionStorage.getItem(
+        "cmyk_dtf_cart_last_ajax_debug",
+      );
+
+      if (!stored) {
+        return;
+      }
+
+      window.sessionStorage.removeItem("cmyk_dtf_cart_last_ajax_debug");
+      debugBySizeStep(2, "previous BAGS ajax response before cart redirect", {
+        ...JSON.parse(stored),
+      });
+    } catch {
+      window.sessionStorage.removeItem("cmyk_dtf_cart_last_ajax_debug");
     }
   }, []);
 
@@ -513,24 +598,24 @@ export default function CartExperience() {
       }
 
       acceptPendingWooCartIntent(nextCart);
-      debugBySizeStep(10, "Cart page hydrated Woo cart", {
-        sequenceId,
-        wooItemsCount: nextCart.items_count,
-        visibleWooItemsCount: getWooCartItems(nextCart).length,
-        localItemsCount: localItems.length,
-      });
       setCart(nextCart);
+
+      if (getWooCartItems(nextCart).length > 0) {
+        const searchParams = new URLSearchParams(window.location.search);
+        if (searchParams.has("gang_sheet_checkout_error")) {
+          searchParams.delete("gang_sheet_checkout_error");
+          const nextQuery = searchParams.toString();
+          window.history.replaceState(
+            null,
+            "",
+            `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}`,
+          );
+          setError("");
+        }
+      }
 
       if (nextCart.items_count === 0 && localItems.length > 0) {
         clearLocalCart();
-      }
-
-      if (process.env.NODE_ENV === "development") {
-        console.info("[cart page] state", {
-          sequenceId,
-          wooItemsCount: nextCart.items_count,
-          localItemsCount: nextCart.items_count === 0 ? 0 : localItems.length,
-        });
       }
     },
     [clearLocalCart, localItems.length],
@@ -539,19 +624,15 @@ export default function CartExperience() {
   const refreshCart = useCallback(async () => {
     const sequenceId = ++cartRequestSequenceRef.current;
     const searchParams = new URLSearchParams(window.location.search);
-    const isBagsCartReturn = searchParams.get("cmyk_bags_cart") === "1";
+    const nextIsBagsCartReturn = searchParams.get("cmyk_bags_cart") === "1";
+    setIsBagsCartReturn(nextIsBagsCartReturn);
 
-    if (isBagsCartReturn) {
+    if (nextIsBagsCartReturn) {
       clearStoredCartToken();
-      debugBySizeStep(8, "Cleared stale Store API token for BAGS cart return", {
+      debugBySizeStep(3, "cart page detected BAGS return and cleared token", {
         sequenceId,
       });
     }
-
-    debugBySizeStep(8, "Cart page loading Woo cart", {
-      sequenceId,
-      isBagsCartReturn,
-    });
     setIsBusy(true);
     if (!searchParams.get("gang_sheet_checkout_error")) {
       setError("");
@@ -562,15 +643,8 @@ export default function CartExperience() {
       // BAGS By Size redirects here after WooCommerce has already created the
       // cart row. Show that Woo cart first; cleanup can delete the fresh BAGS
       // row before the user sees it.
-      if (isBagsCartReturn) {
-        debugBySizeStep(9, "Skipping duplicate cleanup for BAGS cart return", {
-          sequenceId,
-          wooItemsCount: currentCart.items_count,
-        });
-      }
-
       hydrateCart(
-        isBagsCartReturn
+        nextIsBagsCartReturn
           ? currentCart
           : await removeDuplicateGangSheetItems(currentCart),
         sequenceId,
@@ -700,15 +774,6 @@ export default function CartExperience() {
         localItems: visibleLocalItems,
         getArtworkFile,
       });
-      if (process.env.NODE_ENV === "development") {
-        const checkoutUrlObject = new URL(checkoutUrl);
-        console.info("[CMYK Checkout Step 5] Browser redirecting", {
-          checkoutHost: checkoutUrlObject.origin,
-          checkoutPath: checkoutUrlObject.pathname,
-          hasCheckoutRef:
-            checkoutUrlObject.searchParams.has("cmyk_checkout_ref"),
-        });
-      }
       window.location.assign(checkoutUrl);
     } catch (checkoutError) {
       setIsRedirecting(false);

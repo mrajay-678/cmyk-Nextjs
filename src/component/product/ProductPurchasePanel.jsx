@@ -11,7 +11,6 @@ import GangSheetBuilder from "@/component/gang-sheet/GangSheetBuilder";
 import {
   addCartItem,
   buildAddCartItemInput,
-  getCurrentCart,
 } from "@/lib/woocommerce/cart";
 import {
   findNewWooCartItem,
@@ -178,12 +177,10 @@ export default function ProductPurchasePanel({
       },
     };
   });
-  async function markGangSheetIntent() {
-    try {
-      markWooCartIntentPending(await getCurrentCart());
-    } catch {
-      markWooCartIntentPending();
-    }
+  function markGangSheetIntent() {
+    // The BAGS SDK owns the actual add-to-cart request; clear the Store API token
+    // before it runs so the cart page reads the WooCommerce session cookie it creates.
+    markWooCartIntentPending();
     clearStoredCartToken();
   }
 

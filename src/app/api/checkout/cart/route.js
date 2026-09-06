@@ -35,14 +35,6 @@ const GANG_SHEET_METADATA_LABEL_TO_KEY = new Map(
   ]),
 );
 
-function logCheckoutStep(step, message, data = {}) {
-  if (process.env.NODE_ENV !== "development") {
-    return;
-  }
-
-  console.info(`[CMYK Checkout Step ${step}] ${message} ${JSON.stringify(data)}`);
-}
-
 function normalizeMetadataKey(value) {
   return String(value || "")
     .trim()
@@ -563,20 +555,6 @@ export async function POST(request) {
       replace_cart: replaceCart,
     });
 
-    if (process.env.NODE_ENV === "development") {
-      logCheckoutStep(3, "WordPress handoff created", {
-        source,
-        replaceCart,
-        itemCount: checkoutItems.length,
-        productIds: checkoutItems.map((item) => item.product_id),
-        variationIds: checkoutItems.map((item) => item.variation_id || 0),
-        checkoutIds: checkoutItems.map((item) => item.id),
-        hasGangSheetData: checkoutItems.map(
-          (item) => Object.keys(item.gang_sheet_data || {}).length > 0,
-        ),
-      });
-    }
-
     const checkoutUrl =
       getWooCheckoutHandoffUrl(handoff.checkout_ref) || handoff.checkout_url;
 
@@ -584,20 +562,8 @@ export async function POST(request) {
       throw new Error("WordPress did not return a checkout URL.");
     }
 
-    if (process.env.NODE_ENV === "development") {
-      const checkoutUrlObject = new URL(checkoutUrl);
-      logCheckoutStep(4, "Returning Woo checkout URL", {
-        source,
-        checkoutHost: checkoutUrlObject.origin,
-        checkoutPath: checkoutUrlObject.pathname,
-        hasCheckoutRef: checkoutUrlObject.searchParams.has("cmyk_checkout_ref"),
-      });
-    }
-
     return NextResponse.json({ checkoutUrl });
   } catch (error) {
-    console.error("Error in checkout cart API:", error);
-
     return NextResponse.json(
       {
         error:

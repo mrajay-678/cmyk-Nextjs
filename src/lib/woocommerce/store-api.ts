@@ -85,20 +85,12 @@ function persistCartToken(response: Response) {
   }
 }
 
-function maskToken(token: string) {
-  if (!token) {
-    return "none";
-  }
-
-  return `${token.slice(0, 6)}...${token.slice(-4)}`;
-}
-
-function debugCartRequest(message: string, data: Record<string, unknown>) {
+function debugDtfCartRequest(step: string, message: string, data: Record<string, unknown>) {
   if (process.env.NODE_ENV !== "development") {
     return;
   }
 
-  console.info(`[cart] ${message}`, data);
+  console.info(`[CMYK DTF Cart Debug ${step}] ${message}`, data);
 }
 
 function isMutatingRequest(method?: string) {
@@ -174,13 +166,6 @@ async function runStoreApiFetch<T>(
   const url = `${STORE_API_BASE}${normalizePath(path)}`;
   const method = (init.method || "GET").toUpperCase();
 
-  debugCartRequest("request:start", {
-    sequenceId,
-    method,
-    url,
-    cartToken: maskToken(token),
-  });
-
   const response = await fetch(url, {
     ...init,
     headers,
@@ -196,17 +181,23 @@ async function runStoreApiFetch<T>(
     | T
     | null;
 
-  debugCartRequest("request:end", {
-    sequenceId,
-    method,
-    url,
-    status: response.status,
-    cartToken: maskToken(response.headers.get("Cart-Token") || token),
-    itemsCount:
-      parsedBody && "items_count" in (parsedBody as Record<string, unknown>)
-        ? (parsedBody as Record<string, unknown>).items_count
-        : undefined,
-  });
+  if (method === "GET" && normalizePath(path) === "/cart") {
+    const cartBody = parsedBody as Partial<WooCart> | null;
+    const responseCartToken = response.headers.get("Cart-Token") || token;
+    debugDtfCartRequest("03", "Store API cart response received in browser", {
+      sequenceId,
+      status: response.status,
+      hasCartToken: Boolean(responseCartToken),
+      itemsCount:
+        cartBody && "items_count" in cartBody ? cartBody.items_count : undefined,
+      itemNames: Array.isArray(cartBody?.items)
+        ? cartBody.items.map((item) => item.name)
+        : [],
+      itemKeys: Array.isArray(cartBody?.items)
+        ? cartBody.items.map((item) => item.key)
+        : [],
+    });
+  }
 
   if (!response.ok) {
     const error = parsedBody as StoreApiError | null;

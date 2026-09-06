@@ -9,12 +9,12 @@ const WOO_CART_COOKIE_NAMES = new Set([
   "woocommerce_items_in_cart",
 ]);
 
-function logBySizeStep(step: number, message: string, data: Record<string, unknown> = {}) {
+function logBySizeStep(step: string, message: string, data: Record<string, unknown> = {}) {
   if (process.env.NODE_ENV !== "development") {
     return;
   }
 
-  console.info(`[CMYK DTF By Size Step ${step}] ${message}`, data);
+  console.info(`[CMYK DTF Cart Debug ${step}] ${message}`, data);
 }
 
 function getStoreUrl() {
@@ -180,7 +180,7 @@ async function proxyStoreApi(
     const wooSessionCookie = getWooSessionCookieHeader(request);
 
     if (isCartRead) {
-      logBySizeStep(8, "Next cart page requested Woo cart", {
+      logBySizeStep("03A", "Store API proxy received cart request", {
         hasCartToken: Boolean(incomingCartToken),
         hasWooSessionCookie: Boolean(wooSessionCookie),
         usingWooCookieFallback: !incomingCartToken && Boolean(wooSessionCookie),
@@ -292,7 +292,12 @@ async function proxyStoreApi(
     }
 
     if (isCartRead) {
-      logBySizeStep(9, "Woo cart response parsed", {
+      const cartItems =
+        parsedBody && typeof parsedBody === "object" && "items" in parsedBody
+          ? (parsedBody as { items?: Array<{ name?: string; key?: string }> }).items
+          : [];
+
+      logBySizeStep("03B", "Store API proxy parsed Woo cart", {
         status: wooResponse.status,
         itemCount:
           parsedBody &&
@@ -300,6 +305,12 @@ async function proxyStoreApi(
           "items_count" in parsedBody
             ? (parsedBody as { items_count?: unknown }).items_count
             : "unknown",
+        itemNames: Array.isArray(cartItems)
+          ? cartItems.map((item) => item.name)
+          : [],
+        itemKeys: Array.isArray(cartItems)
+          ? cartItems.map((item) => item.key)
+          : [],
       });
     }
 

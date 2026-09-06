@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CMYK Checkout Artwork
  * Description: Securely hands off Next.js uploaded artwork to WooCommerce checkout and order line items.
- * Version: 1.1.6
+ * Version: 1.1.7
  */
 
 if (!defined('ABSPATH')) {
@@ -12,7 +12,8 @@ if (!defined('ABSPATH')) {
 const CMYK_CHECKOUT_ARTWORK_TRANSIENT_PREFIX = 'cmyk_artwork_';
 const CMYK_CHECKOUT_HANDOFF_TRANSIENT_PREFIX = 'cmyk_checkout_';
 const CMYK_CHECKOUT_TTL = 2 * HOUR_IN_SECONDS;
-const CMYK_CHECKOUT_PLUGIN_VERSION = '1.1.6';
+const CMYK_CHECKOUT_PLUGIN_VERSION = '1.1.7';
+const CMYK_CHECKOUT_CLEAR_CART_SESSION_KEY = 'cmyk_checkout_clear_cart_after_order';
 
 function cmyk_checkout_artwork_secret() {
     if (defined('CMYK_ARTWORK_UPLOAD_SECRET')) {
@@ -727,6 +728,8 @@ add_action('template_redirect', function () {
     }
 
     if (WC()->session && method_exists(WC()->session, 'save_data')) {
+        WC()->session->set(CMYK_CHECKOUT_CLEAR_CART_SESSION_KEY, 'yes');
+        WC()->session->set('cmyk_checkout_last_handoff', $handoff_token);
         WC()->session->save_data();
     }
 
@@ -735,6 +738,35 @@ add_action('template_redirect', function () {
     wp_safe_redirect(wc_get_checkout_url());
     exit;
 }, 1);
+
+function cmyk_checkout_clear_handoff_cart_after_order($order_id = 0) {
+    if (!function_exists('WC') || !WC()->session) {
+        return;
+    }
+
+    if ('yes' !== WC()->session->get(CMYK_CHECKOUT_CLEAR_CART_SESSION_KEY)) {
+        return;
+    }
+
+    if (WC()->cart && method_exists(WC()->cart, 'empty_cart')) {
+        WC()->cart->empty_cart(true);
+    }
+
+    foreach (array(CMYK_CHECKOUT_CLEAR_CART_SESSION_KEY, 'cmyk_checkout_last_handoff', 'cmyk_customer_note') as $key) {
+        if (method_exists(WC()->session, '__unset')) {
+            WC()->session->__unset($key);
+        } else {
+            WC()->session->set($key, null);
+        }
+    }
+
+    if (method_exists(WC()->session, 'save_data')) {
+        WC()->session->save_data();
+    }
+}
+
+add_action('woocommerce_checkout_order_processed', 'cmyk_checkout_clear_handoff_cart_after_order', 100, 1);
+add_action('woocommerce_thankyou', 'cmyk_checkout_clear_handoff_cart_after_order', 100, 1);
 
 add_action('woocommerce_before_calculate_totals', function ($cart) {
     if (is_admin() && !defined('DOING_AJAX')) {

@@ -43,14 +43,6 @@ function normalizeWooCart(cart: WooCart): WooCart {
   };
 }
 
-function debugCartMutation(message: string, data: Record<string, unknown>) {
-  if (process.env.NODE_ENV !== "development") {
-    return;
-  }
-
-  console.info(`[cart] ${message}`, data);
-}
-
 function stableAddKey(input: AddCartItemInput) {
   return JSON.stringify({
     id: input.id,
@@ -91,15 +83,9 @@ export function addCartItem(input: AddCartItemInput) {
   const existingRequest = inFlightAdds.get(key);
 
   if (existingRequest) {
-    debugCartMutation("add:deduped", { productId: input.id });
     return existingRequest;
   }
 
-  debugCartMutation("add:start", {
-    productId: input.id,
-    quantity: input.quantity,
-    variation: input.variation,
-  });
   const request = storeApiFetch<WooCart>("/cart/add-item", {
     method: "POST",
     json: input,
@@ -108,7 +94,6 @@ export function addCartItem(input: AddCartItemInput) {
   inFlightAdds.set(key, request);
   request.finally(() => {
     inFlightAdds.delete(key);
-    debugCartMutation("add:end", { productId: input.id });
   });
 
   return request;
@@ -122,7 +107,6 @@ export function updateCartItemQuantity(key: string, quantity: number) {
 }
 
 export function removeCartItem(key: string) {
-  debugCartMutation("remove:start", { key });
   return storeApiFetch<WooCart>(`/cart/items/${encodeURIComponent(key)}`, {
     method: "DELETE",
   }).then(normalizeWooCart);

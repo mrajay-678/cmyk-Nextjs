@@ -50,14 +50,6 @@ type WooCart = {
   items?: WooCartItem[];
 };
 
-function logGangSheet(message: string, data?: Record<string, unknown>) {
-  if (process.env.NODE_ENV !== "development") {
-    return;
-  }
-
-  console.info(`[CMYK GangSheet] ${message}`, data || {});
-}
-
 function normalizeMetadataKey(value: unknown) {
   return String(value || "")
     .trim()
@@ -68,6 +60,14 @@ function normalizeMetadataKey(value: unknown) {
 
 function stripHtml(value: unknown) {
   return String(value || "").replace(/<[^>]*>/g, "").trim();
+}
+
+function normalizeText(value: unknown) {
+  return stripHtml(value)
+    .toLowerCase()
+    .replace(/&quot;/g, '"')
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }
 
 function parseJsonFromText(text: string) {
@@ -173,6 +173,10 @@ function getGangSheetMetadataFallback(item: WooCartItem) {
       data.product_type = entry.value;
     }
 
+    if (key === "gang_sheet_design_id" || key === "gs_design_id") {
+      data.gs_design_id = entry.value;
+    }
+
     if (key === "gang_sheet_height") {
       data.gang_sheet_height = entry.value;
     }
@@ -193,9 +197,17 @@ function isExpectedGangSheetProduct(item: WooCartItem, expectedSlug: string) {
     return true;
   }
 
-  return String(item.permalink || "")
+  const permalinkMatch = String(item.permalink || "")
     .toLowerCase()
     .includes(`/product/${expectedSlug.toLowerCase()}`);
+  if (permalinkMatch) {
+    return true;
+  }
+
+  const expectedName = normalizeText(expectedSlug);
+  const itemName = normalizeText(item.name);
+
+  return Boolean(expectedName && itemName.includes(expectedName));
 }
 
 function isGangSheetItem(
@@ -325,16 +337,7 @@ export async function GET(request: NextRequest) {
       return buildErrorRedirect(request, "Invalid Gang Sheet checkout product.");
     }
 
-    logGangSheet("Add-to-cart redirect started", {
-      productId: expectedProductId,
-      productType: expectedProductType || "unknown",
-      productSlug: expectedSlug,
-    });
-
     const cart = await fetchVerifiedWooCart(request);
-    logGangSheet("Cart verification", {
-      cartItemCount: Array.isArray(cart.items) ? cart.items.length : 0,
-    });
 
     const gangSheetItems = (cart.items || []).filter((item) =>
       isGangSheetItem(item, expectedProductType, expectedSlug),
@@ -371,22 +374,8 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(checkoutUrl);
     response.cookies.delete(CART_TOKEN_COOKIE);
 
-    logGangSheet("verified checkout handoff", {
-      productId: expectedProductId,
-      productType: expectedProductType || "unknown",
-      productSlug: expectedSlug || "unknown",
-      cartItemId: item.id,
-    });
-    console.info("[CMYK Checkout] Redirecting to WooCommerce", {
-      checkoutHost: checkoutUrl.origin,
-    });
-
     return response;
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[CMYK GangSheet] checkout handoff failed", error);
-    }
-
     return buildErrorRedirect(
       request,
       error instanceof Error
@@ -418,11 +407,6 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-
-    logGangSheet("Add-to-cart started", {
-      productId: Number(productId),
-      quantity: Number(quantity),
-    });
 
     const cartToken =
       request.cookies.get(CART_TOKEN_COOKIE)?.value ||
@@ -480,14 +464,6 @@ export async function POST(request: NextRequest) {
     }
 
     const newCartToken = response.headers.get("Cart-Token");
-    logGangSheet("WooCommerce add-to-cart success", {
-      productId: Number(productId),
-      cartItemCount:
-        cart && typeof cart === "object" && Array.isArray((cart as WooCart).items)
-          ? (cart as WooCart).items?.length
-          : 0,
-    });
-
     const result = NextResponse.json({
       success: true,
       cart,
@@ -506,8 +482,6 @@ export async function POST(request: NextRequest) {
 
     return result;
   } catch (error) {
-    console.error("[gang-sheet/add-to-cart]", error);
-
     return NextResponse.json(
       {
         success: false,
