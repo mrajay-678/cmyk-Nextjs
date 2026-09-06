@@ -73,6 +73,7 @@ export async function createHostedCheckoutUrl({
 }) {
   const searchParams = new URLSearchParams(window.location.search);
   const isBagsCartReturn = searchParams.get("cmyk_bags_cart") === "1";
+  const checkoutSource = isBagsCartReturn ? "bags-cart-rebuild" : "next-cart";
   const currentCart = await getCurrentCart();
   let latestCart = isBagsCartReturn
     ? currentCart
@@ -119,6 +120,7 @@ export async function createHostedCheckoutUrl({
       variation: item.variation,
       item_data: item.item_data,
       extensions: item.extensions,
+      custom_price: getWooItemUnitPrice(item, latestCart),
     })),
   ];
 
@@ -131,7 +133,7 @@ export async function createHostedCheckoutUrl({
   formData.append("billing_address", JSON.stringify(emptyAddress));
   formData.append("shipping_address", JSON.stringify(emptyAddress));
   formData.append("customer_note", "");
-  formData.append("source", isBagsCartReturn ? "bags-cart" : "next-cart");
+  formData.append("source", checkoutSource);
 
   latestLocalItems.forEach((item, index) => {
     const artworkFile = getArtworkFile(item.id);
@@ -158,9 +160,24 @@ export async function createHostedCheckoutUrl({
       checkoutHost: checkoutUrl.origin,
       checkoutPath: checkoutUrl.pathname,
       hasCheckoutRef: checkoutUrl.searchParams.has("cmyk_checkout_ref"),
-      source: isBagsCartReturn ? "bags-cart" : "next-cart",
+      source: checkoutSource,
     }));
   }
 
   return String(result.checkoutUrl);
+}
+
+function getWooItemUnitPrice(
+  item: Awaited<ReturnType<typeof getCurrentCart>>["items"][number],
+  cart: Awaited<ReturnType<typeof getCurrentCart>>,
+) {
+  const lineTotal = Number.parseInt(item.totals?.line_total || "0", 10);
+  const quantity = item.quantity || 1;
+  const minorUnit = cart.totals?.currency_minor_unit ?? 2;
+
+  if (!Number.isFinite(lineTotal) || lineTotal <= 0 || quantity <= 0) {
+    return "";
+  }
+
+  return String(lineTotal / 10 ** minorUnit / quantity);
 }

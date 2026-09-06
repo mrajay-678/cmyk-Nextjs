@@ -110,6 +110,11 @@ function getCheckoutQuantity(item) {
   );
 }
 
+function getCheckoutCustomPrice(item) {
+  const price = Number.parseFloat(String(item?.custom_price || ""));
+  return Number.isFinite(price) && price > 0 ? price : null;
+}
+
 function getLineId(item, index) {
   const raw = String(item?.wooCartKey || item?.key || item?.id || `checkout-line-${index}`);
   const safe = raw.replace(/[^a-zA-Z0-9._:-]+/g, "-").slice(0, 120);
@@ -494,6 +499,7 @@ export async function POST(request) {
         artworkOptions: item?.artworkOptions || {},
         artworkToken: "",
         variationAttributes: normalizeVariationAttributes(item),
+        customPrice: getCheckoutCustomPrice(item),
         gangSheetData,
         metadata: [
           ...normalizeMetadata(item),
@@ -535,6 +541,7 @@ export async function POST(request) {
         product_id: checkoutItem.productId,
         variation_id: checkoutItem.variationId,
         variation_attributes: checkoutItem.variationAttributes,
+        custom_price: checkoutItem.customPrice,
         gang_sheet_data: checkoutItem.gangSheetData,
         metadata: checkoutItem.metadata,
         artwork_token: checkoutItem.artworkToken,

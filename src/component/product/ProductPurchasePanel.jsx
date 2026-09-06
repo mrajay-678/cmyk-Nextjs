@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 
 import AddToCartButton from "./AddToCartButton";
 import { useCart } from "@/component/product/CartContext";
-import { formatCurrency } from "./productHelpers";
+import { formatCurrency, parseNumericPrice } from "./productHelpers";
 import GangSheetBuilder from "@/component/gang-sheet/GangSheetBuilder";
 import {
   addCartItem,
@@ -45,14 +45,22 @@ function getWooAttributeKey(attribute) {
   return attribute?.name || "attribute_size";
 }
 
-function getGangSheetCheckoutUrl(productId, productType, productSlug) {
-  const params = new URLSearchParams({
-    product_id: String(productId || ""),
-    product_type: String(productType || ""),
-    product_slug: String(productSlug || ""),
-  });
+function getVariationLabel(variationItem) {
+  return (
+    variationItem?.attributes
+      ?.map((attribute) => attribute.option || attribute.name || "")
+      .filter(Boolean)
+      .join(" / ") ||
+    variationItem?.name ||
+    ""
+  );
+}
 
-  return `/api/gang-sheet/add-to-cart?${params.toString()}`;
+function normalizeVariationAttributes(attributes = []) {
+  return attributes.map((attribute) => ({
+    ...attribute,
+    slug: getWooAttributeKey(attribute),
+  }));
 }
 
 export default function ProductPurchasePanel({
@@ -77,24 +85,56 @@ export default function ProductPurchasePanel({
   const [previewUrl, setPreviewUrl] = useState("");
   const [checkoutError, setCheckoutError] = useState("");
   const [isBuyingNow, setIsBuyingNow] = useState(false);
+  const isSizeBasedProduct = sizeOptions.length > 0;
   const numericQuantity = Number.parseInt(selectedQuantity, 10);
   const hasSelectedQuantity =
     Number.isFinite(numericQuantity) && numericQuantity > 0;
-  const selectedQuantityRow = quantityRows.find(
-    (row) => row.quantity === numericQuantity,
-  );
-  const selectedTotalPrice = hasSelectedQuantity
-    ? (lowestPrice[numericQuantity] ?? null)
+  const selectedSizeVariation = isSizeBasedProduct
+    ? variation?.find(
+        (variationItem) => getVariationLabel(variationItem) === selectedSize,
+      )
     : null;
-  const selectedUnitPrice =
-    selectedTotalPrice && numericQuantity
+  const selectedQuantityRow = isSizeBasedProduct
+    ? selectedSizeVariation
+      ? {
+          quantity: 1,
+          unitPrice: parseNumericPrice(
+            selectedSizeVariation.price || selectedSizeVariation.regular_price,
+          ),
+          variationId: selectedSizeVariation.id,
+          variationAttributes: normalizeVariationAttributes(
+            selectedSizeVariation.attributes || [],
+          ),
+        }
+      : null
+    : quantityRows.find((row) => row.quantity === numericQuantity);
+  const selectedTotalPrice = isSizeBasedProduct
+    ? selectedQuantityRow?.unitPrice
+    : hasSelectedQuantity
+      ? (lowestPrice[numericQuantity] ?? null)
+      : null;
+  const selectedUnitPrice = isSizeBasedProduct
+    ? selectedTotalPrice
+    : selectedTotalPrice && numericQuantity
       ? selectedTotalPrice / numericQuantity
       : null;
-  const isCheckoutReady = hasSelectedQuantity && Boolean(selectedFile);
+  const isCheckoutReady = isSizeBasedProduct
+    ? Boolean(selectedSizeVariation) && Boolean(selectedFile)
+    : hasSelectedQuantity && Boolean(selectedFile);
+  const cartQuantity = isSizeBasedProduct ? 1 : numericQuantity;
+  const selectedOptionLabel = isSizeBasedProduct
+    ? selectedSize
+    : selectedQuantity || "no-quantity";
+  const selectedQuantityForDisplay = isSizeBasedProduct
+    ? 1
+    : numericQuantity;
+  const selectedQuantityForPrice = isSizeBasedProduct
+    ? 1
+    : numericQuantity;
   const cartItem = {
     id: [
       product.id,
-      numericQuantity,
+      selectedOptionLabel,
       selectedFile?.name || "no-artwork",
       selectedFile?.size || 0,
       selectedFile?.lastModified || 0,
@@ -105,7 +145,9 @@ export default function ProductPurchasePanel({
     name: product.name,
     productUrl: `/products/${product.slug || ""}`,
     image: product.images?.[0]?.src || "",
-    selectedQuantity: numericQuantity,
+    selectedQuantity: selectedQuantityForDisplay,
+    cartQuantity,
+    checkoutQuantity: selectedQuantityForPrice,
     totalPrice: selectedTotalPrice || 0,
     unitPrice: selectedUnitPrice || 0,
     currencySymbol,
@@ -122,10 +164,6 @@ export default function ProductPurchasePanel({
   const isBySizeBuilderProduct = new Set(["dtf-by-size", "uv-dtf-by-size"]).has(
     productSlug,
   );
-  const isGangSheetProduct = new Set([
-    "dtf-gang-sheet",
-    "uv-dtf-gang-sheet",
-  ]).has(productSlug);
   const gangSheetVariants = (variation || []).map((variationItem) => {
     const attribute = variationItem.attributes?.[0];
     const attributeKey = getWooAttributeKey(attribute);
@@ -207,31 +245,21 @@ export default function ProductPurchasePanel({
     }
   }
 
-  if (isBySizeBuilderProduct || isGangSheetProduct) {
+  if (isBySizeBuilderProduct) {
     return (
       <div className="space-y-5 rounded-[1.5rem] border border-neutral-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:rounded-[2rem] sm:p-6">
         <GangSheetBuilder
           mode="woo-product"
           productId={String(product.id)}
-          productType={isBySizeBuilderProduct ? "7" : "1"}
+          productType="7"
           variants={gangSheetVariants}
           sdkVersion="1.7.7"
-          cartUrl={
-            isGangSheetProduct
-              ? getGangSheetCheckoutUrl(product.id, "1", product.slug)
-              : "/cart?cmyk_bags_cart=1"
-          }
-          label={
-            isBySizeBuilderProduct
-              ? "Upload Image By Size"
-              : "Build Your Own Gang Sheet"
-          }
+          cartUrl="/cart?cmyk_bags_cart=1"
+          label="Upload Image By Size"
           onOpen={markGangSheetIntent}
           buttonClassName="inline-flex h-13 w-full items-center justify-center rounded-full bg-pink-500 px-6 text-base font-semibold text-white transition hover:bg-pink-600 disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-500"
         >
-          {isBySizeBuilderProduct
-            ? "Upload Image By Size"
-            : "Build Your Own Gang Sheet"}
+          Upload Image By Size
         </GangSheetBuilder>
       </div>
     );

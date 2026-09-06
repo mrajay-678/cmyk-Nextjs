@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CMYK Checkout Artwork
  * Description: Securely hands off Next.js uploaded artwork to WooCommerce checkout and order line items.
- * Version: 1.1.5
+ * Version: 1.1.6
  */
 
 if (!defined('ABSPATH')) {
@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
 const CMYK_CHECKOUT_ARTWORK_TRANSIENT_PREFIX = 'cmyk_artwork_';
 const CMYK_CHECKOUT_HANDOFF_TRANSIENT_PREFIX = 'cmyk_checkout_';
 const CMYK_CHECKOUT_TTL = 2 * HOUR_IN_SECONDS;
-const CMYK_CHECKOUT_PLUGIN_VERSION = '1.1.5';
+const CMYK_CHECKOUT_PLUGIN_VERSION = '1.1.6';
 
 function cmyk_checkout_artwork_secret() {
     if (defined('CMYK_ARTWORK_UPLOAD_SECRET')) {
@@ -171,6 +171,18 @@ function cmyk_checkout_clean_metadata($value) {
     return $clean;
 }
 
+function cmyk_checkout_clean_custom_price($value) {
+    if ('' === $value || null === $value) {
+        return null;
+    }
+
+    $decimal = function_exists('wc_format_decimal')
+        ? wc_format_decimal($value)
+        : preg_replace('/[^0-9.]/', '', (string) $value);
+    $price = (float) $decimal;
+    return $price > 0 ? $price : null;
+}
+
 function cmyk_checkout_clean_variation_attributes($value) {
     if (!is_array($value)) {
         return array();
@@ -326,6 +338,7 @@ function cmyk_checkout_health() {
         'cart_url' => function_exists('wc_get_cart_url') ? wc_get_cart_url() : '',
         'replace_cart_supported' => true,
         'gang_sheet_supported' => true,
+        'custom_price_supported' => true,
     );
 }
 
@@ -452,6 +465,7 @@ function cmyk_checkout_create_handoff($request) {
         $variation_attributes = cmyk_checkout_clean_variation_attributes($item['variation_attributes'] ?? array());
         $gang_sheet_data = cmyk_checkout_clean_gang_sheet_data($item['gang_sheet_data'] ?? array());
         $metadata = cmyk_checkout_clean_metadata($item['metadata'] ?? array());
+        $custom_price = cmyk_checkout_clean_custom_price($item['custom_price'] ?? null);
 
         if (!$checkout_product_id || !$product_id || !cmyk_checkout_product_exists($product_id, $variation_id)) {
             return new WP_Error('cmyk_checkout_product_invalid', 'Checkout product reference is invalid.', array('status' => 400));
@@ -486,6 +500,7 @@ function cmyk_checkout_create_handoff($request) {
             'variation_attributes' => $variation_attributes,
             'gang_sheet_data' => $gang_sheet_data,
             'metadata' => $metadata,
+            'custom_price' => $custom_price,
             'artwork_token' => $artwork_token,
         );
     }
@@ -632,6 +647,10 @@ add_action('template_redirect', function () {
             $cart_item_data['cmyk_handoff_metadata'] = $metadata;
         }
 
+        if (!empty($item['custom_price'])) {
+            $cart_item_data['cmyk_custom_unit_price'] = cmyk_checkout_clean_custom_price($item['custom_price']);
+        }
+
         foreach (cmyk_checkout_clean_gang_sheet_data($item['gang_sheet_data'] ?? array()) as $key => $value) {
             $cart_item_data[$key] = $value;
         }
@@ -716,6 +735,25 @@ add_action('template_redirect', function () {
     wp_safe_redirect(wc_get_checkout_url());
     exit;
 }, 1);
+
+add_action('woocommerce_before_calculate_totals', function ($cart) {
+    if (is_admin() && !defined('DOING_AJAX')) {
+        return;
+    }
+
+    if (!$cart || !method_exists($cart, 'get_cart')) {
+        return;
+    }
+
+    foreach ($cart->get_cart() as $cart_item) {
+        $custom_price = cmyk_checkout_clean_custom_price($cart_item['cmyk_custom_unit_price'] ?? null);
+        if (!$custom_price || empty($cart_item['data']) || !method_exists($cart_item['data'], 'set_price')) {
+            continue;
+        }
+
+        $cart_item['data']->set_price($custom_price);
+    }
+}, 20);
 
 add_filter('woocommerce_checkout_get_value', function ($value, $input) {
     if ('order_comments' === $input && function_exists('WC') && WC()->session) {

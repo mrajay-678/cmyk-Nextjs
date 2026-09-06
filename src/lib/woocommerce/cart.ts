@@ -73,9 +73,14 @@ export function buildAddCartItemInput(item: LocalCartItemInput): AddCartItemInpu
       value: attribute.option || attribute.value || "",
     }))
     .filter((attribute) => attribute.attribute && attribute.value);
+  const productId = Number(item.productId || item.id);
+  const variationId = Number(item.variationId || 0);
 
   return {
-    id: Number(item.variationId || item.productId || item.id),
+    id:
+      variation.length && Number.isFinite(productId)
+        ? productId
+        : variationId || productId,
     quantity: Number(item.checkoutQuantity || item.cartQuantity || 1),
     ...(variation.length ? { variation } : {}),
   };
@@ -90,7 +95,11 @@ export function addCartItem(input: AddCartItemInput) {
     return existingRequest;
   }
 
-  debugCartMutation("add:start", { productId: input.id });
+  debugCartMutation("add:start", {
+    productId: input.id,
+    quantity: input.quantity,
+    variation: input.variation,
+  });
   const request = storeApiFetch<WooCart>("/cart/add-item", {
     method: "POST",
     json: input,
