@@ -36,7 +36,7 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 <!--
-NEXT_PUBLIC_WC_URL=https://cmykprint.shop/
+NEXT_PUBLIC_WC_URL=https://wp.cmykprint.shop/
 NEXT_PUBLIC_GS_SHOP_ID=e28e4f98-a0b2-4b75-b1fd-e809863d91de
 WC_CONSUMER_KEY=your-woocommerce-consumer-key
 WC_CONSUMER_SECRET=your-woocommerce-consumer-secret
@@ -55,7 +55,7 @@ Here’s what’s still pending outside the code I changed:
    - Right now .env has media credentials, but I did not see CMYK_ARTWORK_UPLOAD_SECRET.
 3. Confirm WooCommerce /checkout-link/ works
    - The Next app redirects artwork orders to:
-   - https://cmykprint.shop/checkout-link/?products=...&cmyk_artwork=...
+   - https://wp.cmykprint.shop/checkout-link/?products=...&cmyk_artwork=...
    - WordPress must have that checkout-link behavior/plugin/page active.
 4. Configure WooCommerce payment gateways
    - WooPayments / Stripe / PayPal must be active and tested in WooCommerce.

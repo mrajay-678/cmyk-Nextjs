@@ -6,7 +6,7 @@ WordPress and WooCommerce remain the ecommerce source of truth. Next.js does not
 
 The browser talks to the local Next.js proxy at `/api/store/*`.
 
-The proxy forwards requests to `https://cmykprint.shop/wp-json/wc/store/v1/*`, copies `Cart-Token` into WooCommerce requests, persists the returned token in the `cmyk_cart_token` httpOnly cookie, and exposes the returned `Cart-Token` header back to browser code so guest carts survive refreshes.
+The proxy forwards requests to `https://wp.cmykprint.shop/wp-json/wc/store/v1/*`, copies `Cart-Token` into WooCommerce requests, persists the returned token in the `cmyk_cart_token` httpOnly cookie, and exposes the returned `Cart-Token` header back to browser code so guest carts survive refreshes.
 
 Customer-facing operations use the Store API:
 

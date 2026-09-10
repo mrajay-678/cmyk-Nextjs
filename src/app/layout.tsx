@@ -24,18 +24,18 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "https://cmykprint.shop/wp-content/uploads/2025/11/cropped-Vector-32x32.png",
+        url: "https://wp.cmykprint.shop/wp-content/uploads/2025/11/cropped-Vector-32x32.png",
         sizes: "32x32",
         type: "image/png",
       },
       {
-        url: "https://cmykprint.shop/wp-content/uploads/2025/11/cropped-Vector-192x192.png",
+        url: "https://wp.cmykprint.shop/wp-content/uploads/2025/11/cropped-Vector-192x192.png",
         sizes: "192x192",
         type: "image/png",
       },
     ],
     apple: {
-      url: "https://cmykprint.shop/wp-content/uploads/2025/11/cropped-Vector-180x180.png",
+      url: "https://wp.cmykprint.shop/wp-content/uploads/2025/11/cropped-Vector-180x180.png",
       sizes: "180x180",
       type: "image/png",
     },

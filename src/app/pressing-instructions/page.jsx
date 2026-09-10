@@ -22,7 +22,7 @@ const dtfTransferSection = {
     link: "#",
   },
   video: {
-    src: "https://cmykprint.shop/wp-content/uploads/2025/12/place-it.mp4",
+    src: "https://wp.cmykprint.shop/wp-content/uploads/2025/12/place-it.mp4",
     alt: "Applying DTF transfer on garment",
   },
 };
@@ -40,7 +40,7 @@ const careTipsSection = {
     link: "#",
   },
   video: {
-    src: "https://cmykprint.shop/wp-content/uploads/2025/12/press-it.mp4",
+    src: "https://wp.cmykprint.shop/wp-content/uploads/2025/12/press-it.mp4",
     alt: "DTF garment care process",
   },
 };
@@ -59,7 +59,7 @@ const heatPressGuideSection = {
     link: "#",
   },
   video: {
-    src: "https://cmykprint.shop/wp-content/uploads/2025/12/peel-it.mp4",
+    src: "https://wp.cmykprint.shop/wp-content/uploads/2025/12/peel-it.mp4",
     alt: "Heat press temperature guide",
   },
 };
@@ -68,15 +68,15 @@ export const page = () => {
   return (
     <div>
       <section className="overflow-hidden max-w-screen">
-        <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')] max-w-screen h-4"></div>
-        <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Group-13-scaled.png.webp')] bg-center px-6 py-24 sm:py-32 md:py-24">
+        <div className="bg-[url('https://wp.cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')] max-w-screen h-4"></div>
+        <div className="bg-[url('https://wp.cmykprint.shop/wp-content/uploads/2025/11/Group-13-scaled.png.webp')] bg-center px-6 py-24 sm:py-32 md:py-24">
           <div className="mx-auto flex justify-center gap-6 text-center text-4xl sm:text-5xl md:text-7xl">
             <span className="font-bold font-heading text-white">
               Pressing Instructions
             </span>
           </div>
         </div>
-        <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')] max-w-screen h-4"></div>
+        <div className="bg-[url('https://wp.cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')] max-w-screen h-4"></div>
         <div className="max-w-7xl mx-auto grid grid-cols-1 items-center gap-10 pb-20 pt-40 lg:grid-cols-2">
           {/* Left Content */}
           <div>

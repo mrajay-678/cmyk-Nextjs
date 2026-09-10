@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const DEFAULT_WOO_HOST = "https://cmykprint.shop";
+const DEFAULT_WOO_HOST = "https://wp.cmykprint.shop";
 const WC_URL = process.env.NEXT_PUBLIC_WC_URL || DEFAULT_WOO_HOST;
 const CART_TOKEN_COOKIE = "cmyk_cart_token";
 const CHECKOUT_SECRET = process.env.CMYK_ARTWORK_UPLOAD_SECRET;

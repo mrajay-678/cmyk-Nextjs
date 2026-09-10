@@ -47,9 +47,9 @@ export default function TypeWriter({ appendClass }) {
 
   return (
     <section className={`max-w-screen overflow-hidden ${className}`}>
-      <div className="h-8 max-w-screen bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')]" />
+      <div className="h-8 max-w-screen bg-[url('https://wp.cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')]" />
 
-      <div className="bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Group-13-scaled.png.webp')] bg-center px-6 py-20 sm:py-32 md:py-40">
+      <div className="bg-[url('https://wp.cmykprint.shop/wp-content/uploads/2025/11/Group-13-scaled.png.webp')] bg-center px-6 py-20 sm:py-32 md:py-40">
         <div className="font-heading mx-auto flex max-w-5xl flex-col items-center justify-center gap-3 text-center text-4xl sm:flex-row sm:gap-6 sm:text-5xl md:text-6xl">
           <span className="font-heading font-bold text-white">
             Made for real
@@ -67,7 +67,7 @@ export default function TypeWriter({ appendClass }) {
         </div>
       </div>
 
-      <div className="h-8 max-w-screen bg-[url('https://cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')]" />
+      <div className="h-8 max-w-screen bg-[url('https://wp.cmykprint.shop/wp-content/uploads/2025/11/Frame-1.png.webp')]" />
     </section>
   );
 }

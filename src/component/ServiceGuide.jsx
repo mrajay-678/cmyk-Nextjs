@@ -7,19 +7,19 @@ import Link from "next/link";
 
 const services = [
   {
-    icon: "https://cmykprint.shop/wp-content/uploads/2020/04/Vector-1.png.webp",
+    icon: "https://wp.cmykprint.shop/wp-content/uploads/2020/04/Vector-1.png.webp",
     title: "DTF Transfers",
     description:
       "If you have a heat press and want to apply the transfers to your own apparel, get DTF Transfers.",
   },
   {
-    icon: "https://cmykprint.shop/wp-content/uploads/2020/04/Vector-2.png.webp",
+    icon: "https://wp.cmykprint.shop/wp-content/uploads/2020/04/Vector-2.png.webp",
     title: "UV DTF Stickers",
     description:
       "If you're decorating hard surfaces like glasses, bottles or phone cases, go with UV DTF Stickers.",
   },
   {
-    icon: "https://cmykprint.shop/wp-content/uploads/2020/04/IOE_1.png.webp",
+    icon: "https://wp.cmykprint.shop/wp-content/uploads/2020/04/IOE_1.png.webp",
     title: "Custom Products",
     description:
       "If you want us to handle everything and ship the finished products ready to hand out, shop Custom Products.",

@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "wp.cmykprint.shop",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
         hostname: "placehold.co",
         pathname: "/**",
       },

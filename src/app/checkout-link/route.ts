@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const DEFAULT_WOO_HOST = "https://cmykprint.shop";
+const DEFAULT_WOO_HOST = "https://wp.cmykprint.shop";
 
 function getWooCheckoutLinkUrl(request: NextRequest) {
   const storeUrl = process.env.NEXT_PUBLIC_WC_URL || DEFAULT_WOO_HOST;

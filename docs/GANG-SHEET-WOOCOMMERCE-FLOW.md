@@ -25,7 +25,7 @@ cart review flow unless a shared WooCommerce session fix is required.
 7. That route fetches the Woo cart using the browser Woo session cookies.
 8. The route verifies a matching gang sheet item exists in Woo.
 9. The route creates a secure checkout handoff through the WordPress plugin.
-10. The browser is redirected to `https://cmykprint.shop/checkout/` with the
+10. The browser is redirected to `https://wp.cmykprint.shop/checkout/` with the
     handoff reference.
 11. WooCommerce owns shipping, tax, payment, and order creation.
 
@@ -113,4 +113,3 @@ Not fully validated in this environment:
 
 - A complete browser BAGS design creation followed by Woo checkout payment.
 - Live Woo order creation after payment.
-

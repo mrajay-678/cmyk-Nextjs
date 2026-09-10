@@ -5,42 +5,42 @@ const products = [
   {
     title: "Drinkware",
     href: "./products/25-oz-hydrapeak-stainless-steel-insulated-oasis-water-bottle/",
-    url: "https://cmykprint.shop/wp-content/uploads/2025/11/Gemini_Generated_Image_5uyf8h5uyf8h5uyf-e1766170470865.png.webp",
+    url: "https://wp.cmykprint.shop/wp-content/uploads/2025/11/Gemini_Generated_Image_5uyf8h5uyf8h5uyf-e1766170470865.png.webp",
   },
   {
     title: "Buttons",
     href: "./products/2-25-round-button-w-pin/",
-    url: "https://cmykprint.shop/wp-content/uploads/2025/11/pin-e1766176511733.png.webp",
+    url: "https://wp.cmykprint.shop/wp-content/uploads/2025/11/pin-e1766176511733.png.webp",
   },
   {
     title: "Hoodies",
     href: "./products/gildan-50-50-cotton-polyester-fleece-hoodie-7-75-oz/",
-    url: "https://cmykprint.shop/wp-content/uploads/2025/12/Gemini_Generated_Image_jybgfvjybgfvjybg.png.webp",
+    url: "https://wp.cmykprint.shop/wp-content/uploads/2025/12/Gemini_Generated_Image_jybgfvjybgfvjybg.png.webp",
   },
   {
     title: "Mugs",
     href: "./products/11-oz-ceramic-mug/",
-    url: "https://cmykprint.shop/wp-content/uploads/2025/12/Gemini_Generated_Image_1qlwyb1qlwyb1qlw.png.webp",
+    url: "https://wp.cmykprint.shop/wp-content/uploads/2025/12/Gemini_Generated_Image_1qlwyb1qlwyb1qlw.png.webp",
   },
   {
     title: "Sticker Sheets",
     href: "/products?category=labels&sort=date-desc",
-    url: "https://cmykprint.shop/wp-content/uploads/2025/12/MKE-KG-2-211-2-scaled.jpg",
+    url: "https://wp.cmykprint.shop/wp-content/uploads/2025/12/MKE-KG-2-211-2-scaled.jpg",
   },
   {
     title: "Tees",
     href: "./products/100-preshrunk-cotton-t-shirt-with-custom-imprint/",
-    url: "https://cmykprint.shop/wp-content/uploads/2025/12/Gemini_Generated_Image_4zhh8x4zhh8x4zhh.png",
+    url: "https://wp.cmykprint.shop/wp-content/uploads/2025/12/Gemini_Generated_Image_4zhh8x4zhh8x4zhh.png",
   },
   {
     title: "Packaging",
     href: "./products/full-color-5-x-7-mylar-bag",
-    url: "https://cmykprint.shop/wp-content/uploads/2025/12/Gemini_Generated_Image_pedxrwpedxrwpedx.png",
+    url: "https://wp.cmykprint.shop/wp-content/uploads/2025/12/Gemini_Generated_Image_pedxrwpedxrwpedx.png",
   },
   {
     title: "Tote Bags",
     href: "./products/usa-union-made-union-printed-grocery-tote/",
-    url: "https://cmykprint.shop/wp-content/uploads/2025/12/Gemini_Generated_Image_nz5rrnnz5rrnnz5r-e1766555560955.png",
+    url: "https://wp.cmykprint.shop/wp-content/uploads/2025/12/Gemini_Generated_Image_nz5rrnnz5rrnnz5r-e1766555560955.png",
   },
 ];
 

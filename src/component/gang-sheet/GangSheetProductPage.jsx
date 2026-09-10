@@ -253,7 +253,7 @@ export default function GangSheetProductPage({ product, variations, config }) {
                   <div>Guaranteed safe checkout</div>
                   <div className="flex gap-2 pt-5">
                     <Image
-                      src="https://cmykprint.shop/wp-content/uploads/2026/01/download.png"
+                      src="https://wp.cmykprint.shop/wp-content/uploads/2026/01/download.png"
                       alt="Secure checkout"
                       width={60}
                       className="object-contain border-2 "

@@ -20,7 +20,7 @@ const Header = async () => {
           <div className="relative h-16 w-28 sm:h-20 sm:w-32 lg:h-24 lg:w-36 translate-x-[-50%]">
             <Link href={"./"}>
               <Image
-                src="https://cmykprint.shop/wp-content/uploads/2025/11/cropped-logocymk-1.webp"
+                src="https://wp.cmykprint.shop/wp-content/uploads/2025/11/cropped-logocymk-1.webp"
                 fill
                 className="object-contain"
                 alt="CMYK Print Shop"

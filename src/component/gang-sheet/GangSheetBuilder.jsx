@@ -11,7 +11,7 @@ import {
 } from "react";
 
 const DEFAULT_APP_HOST = "https://app.buildagangsheet.com";
-const DEFAULT_WOO_HOST = "https://cmykprint.shop";
+const DEFAULT_WOO_HOST = "https://wp.cmykprint.shop";
 const DEFAULT_AJAX_PROXY_PATH = "/api/woocommerce/admin-ajax";
 const DEFAULT_SHOP_UUID = "e28e4f98-a0b2-4b75-b1fd-e809863d91de";
 const DEFAULT_SHOP_SLUG = "cmyk-print";

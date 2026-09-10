@@ -4,19 +4,19 @@ import Link from "next/link";
 export default function WhatWeOffer() {
   const items = [
     {
-      icon: "https://cmykprint.shop/wp-content/uploads/2025/11/Vector-3.png.webp",
+      icon: "https://wp.cmykprint.shop/wp-content/uploads/2025/11/Vector-3.png.webp",
       title: "DTF Transfers",
       desc: "Perfect for events, businesses and DIY lovers. We print the film and you press it onto the apparel yourself.",
       link: "/products?category=dtf-transfer&sort=date-desc",
     },
     {
-      icon: "https://cmykprint.shop/wp-content/uploads/2025/11/image-8.png.webp",
+      icon: "https://wp.cmykprint.shop/wp-content/uploads/2025/11/image-8.png.webp",
       title: "UV DTF Stickers",
       desc: "Great for tumblers, phone cases and accessories. These are peel-and-stick transfers for solid surfaces.",
       link: "/products?category=uv-dtf-transfer&sort=date-desc",
     },
     {
-      icon: "https://cmykprint.shop/wp-content/uploads/2025/11/Vector-4.png.webp",
+      icon: "https://wp.cmykprint.shop/wp-content/uploads/2025/11/Vector-4.png.webp",
       title: "Custom Products",
       desc: "For anyone who wants the finished product. Pick your product, upload your design, we’ll print and ship it.",
       link: "/products",

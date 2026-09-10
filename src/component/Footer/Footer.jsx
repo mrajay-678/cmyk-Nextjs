@@ -24,7 +24,7 @@ export default function Footer() {
               <span className="whitespace-nowrap font-heading">{item}</span>
 
               <Image
-                src="https://cmykprint.shop/wp-content/uploads/2025/11/Vector.png.webp"
+                src="https://wp.cmykprint.shop/wp-content/uploads/2025/11/Vector.png.webp"
                 alt="CMYK"
                 className="object-contain ms-0 md:ms-9"
                 width={80}
@@ -45,12 +45,12 @@ export default function Footer() {
             <Image
               width={154}
               height={77}
-              src="https://cmykprint.shop/wp-content/uploads/2023/11/UnionBug_Final-white.png.webp"
+              src="https://wp.cmykprint.shop/wp-content/uploads/2023/11/UnionBug_Final-white.png.webp"
               alt="Union Bug"
               className="object-contain"
             />
             <Image
-              src="https://cmykprint.shop/wp-content/uploads/2023/11/Distributor_Member_Grayscale-white.png.webp"
+              src="https://wp.cmykprint.shop/wp-content/uploads/2023/11/Distributor_Member_Grayscale-white.png.webp"
               alt="Sage Member"
               width={154}
               height={77}
