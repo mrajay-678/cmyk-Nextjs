@@ -64,11 +64,13 @@ export default function Footer() {
             Address
           </p>
           <p className="text-lg leading-6">
-            9611 Canoga Ave,
-            <br />
-            Chatsworth,
-            <br />
-            CA 91311
+            <Link className="text-white hover:text-[#f12f88]" href="https://maps.app.goo.gl/eQEr1ExkGPBfyhoM8" target="_blank" rel="noopener noreferrer">
+              9611 Canoga Ave,
+              <br />
+              Chatsworth,
+              <br />
+              CA 91311
+            </Link>
           </p>
         </div>
 
@@ -77,15 +79,15 @@ export default function Footer() {
             Say Hello
           </h3>
           <p className="text-lg">
-            <Link href="mailto:hello@cmykprint.shop">hello@cmykprint.shop</Link>{" "}
+            <Link className="text-white hover:text-[#f12f88]" href="mailto:hello@cmykprint.shop">hello@cmykprint.shop</Link>{" "}
             <br />
-            <Link href="tel:+18183427822">+1 (818) 342-7822</Link>
+            <Link className="text-white hover:text-[#f12f88]" href="tel:+18183427822">+1 (818) 342-7822</Link>
           </p>
         </div>
       </div>
 
       <div className="flex flex-col gap-2 border-t border-white px-5 md:px-0 py-4 text-sm md:text-lg md:flex-row md:justify-between max-w-7xl mx-auto">
-        <div>Privacy Policy | Terms of Service</div>
+        <div><Link href="/privacy-policy" className="text-white hover:text-[#f12f88]">Privacy Policy</Link> | <Link href="/terms-of-service" className="text-white hover:text-[#f12f88]">Terms of Service</Link></div>
         <div>© 2025 CMYK Print Shop. All rights reserved</div>
       </div>
     </footer>

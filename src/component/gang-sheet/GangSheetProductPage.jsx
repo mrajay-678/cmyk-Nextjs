@@ -18,7 +18,7 @@ function parsePrice(value) {
 function getVariationLabel(variation) {
   return (
     variation?.attributes
-      ?.map((attribute) => attribute.option || attribute.name || "")
+      ?.map(attribute => attribute.option || attribute.name || "")
       .filter(Boolean)
       .join(" / ") ||
     variation?.name ||
@@ -28,13 +28,13 @@ function getVariationLabel(variation) {
 
 function mapVariationsToSizeOptions(variations) {
   return variations
-    .map((variation) => ({
+    .map(variation => ({
       id: variation.id,
       label: getVariationLabel(variation),
       price: parsePrice(variation.price || variation.regular_price),
       attributes: variation.attributes || [],
     }))
-    .filter((option) => option.id && option.label);
+    .filter(option => option.id && option.label);
 }
 
 function getWooAttributeKey(attribute) {
@@ -69,36 +69,40 @@ function getGangSheetCheckoutUrl(productId, productType, productSlug) {
 }
 
 export default function GangSheetProductPage({ product, variations, config }) {
-  const shopId =
-    process.env.NEXT_PUBLIC_GS_SHOP_ID ||
-    "e28e4f98-a0b2-4b75-b1fd-e809863d91de";
+  const shopId = process.env.NEXT_PUBLIC_GS_SHOP_ID || "e28e4f98-a0b2-4b75-b1fd-e809863d91de";
   const gallery = product?.images?.length
-    ? product.images.map((image) => ({
+    ? product.images.map(image => ({
         src: image.src,
         alt: image.alt || product.name || config.title,
       }))
     : config.gallery;
   const sizeOptions = mapVariationsToSizeOptions(variations);
+  const seenSizes = new Set();
+
+  const uniqueSizeOptions = sizeOptions
+    .filter(option => {
+      if (option.price <= 0 || seenSizes.has(option.label)) {
+        return false;
+      }
+
+      seenSizes.add(option.label);
+      return true;
+    })
+    .sort((a, b) => a.price - b.price);
   const [activeImage, setActiveImage] = useState(gallery[0]);
   const [selectedSize, setSelectedSize] = useState(sizeOptions[0] || null);
   const [quantity, setQuantity] = useState(1);
   const [builderReady, setBuilderReady] = useState(false);
   const [error, setError] = useState(null);
   const [isOpening, setIsOpening] = useState(false);
-
-  const totalPrice = useMemo(
-    () => ((selectedSize?.price || 0) * quantity).toFixed(2),
-    [selectedSize?.price, quantity],
-  );
+  console.log("sizeOptions", uniqueSizeOptions);
+  const totalPrice = useMemo(() => ((selectedSize?.price || 0) * quantity).toFixed(2), [selectedSize?.price, quantity]);
   const variants = useMemo(() => {
     if (!selectedSize) {
       return [];
     }
 
-    return [
-      selectedSize,
-      ...sizeOptions.filter((option) => option.id !== selectedSize.id),
-    ].map((option) => {
+    return [selectedSize, ...sizeOptions.filter(option => option.id !== selectedSize.id)].map(option => {
       const attribute = option.attributes[0];
       const attributeKey = getWooAttributeKey(attribute);
       return {
@@ -126,15 +130,11 @@ export default function GangSheetProductPage({ product, variations, config }) {
         <section className={styles.hero}>
           <div className={styles.media}>
             <div className={styles.thumbnailRail}>
-              {gallery.map((item) => (
+              {gallery.map(item => (
                 <button
                   key={item.src}
                   type="button"
-                  className={
-                    item.src === activeImage.src
-                      ? `${styles.thumbnail} ${styles.thumbnailActive}`
-                      : styles.thumbnail
-                  }
+                  className={item.src === activeImage.src ? `${styles.thumbnail} ${styles.thumbnailActive}` : styles.thumbnail}
                   onClick={() => setActiveImage(item)}
                   aria-label={`Preview ${item.alt}`}
                 >
@@ -165,10 +165,8 @@ export default function GangSheetProductPage({ product, variations, config }) {
             <div className={styles.breadcrumbs}>{config.breadcrumb}</div>
             <h1 className={styles.title}>{product?.name || config.title}</h1>
             <div className={styles.priceRange}>
-              {sizeOptions.length > 1
-                ? `$${sizeOptions[0].price.toFixed(2)} - $${sizeOptions[
-                    sizeOptions.length - 1
-                  ].price.toFixed(2)}`
+              {uniqueSizeOptions.length > 1
+                ? `$${uniqueSizeOptions[0].price.toFixed(2)} - $${uniqueSizeOptions[uniqueSizeOptions.length - 1].price.toFixed(2)}`
                 : `$${(selectedSize?.price || 0).toFixed(2)}`}
             </div>
             <div className={styles.copy}>
@@ -185,22 +183,26 @@ export default function GangSheetProductPage({ product, variations, config }) {
 
             <div className={styles.purchaseCard}>
               <div className={styles.formRow}>
-                <label className={styles.label} htmlFor="size">
+                <label
+                  className={styles.label}
+                  htmlFor="size"
+                >
                   Size
                 </label>
                 <select
                   id="size"
                   className={styles.select}
                   value={selectedSize?.id || ""}
-                  onChange={(event) => {
-                    const next = sizeOptions.find(
-                      (option) => option.id === Number(event.target.value),
-                    );
+                  onChange={event => {
+                    const next = uniqueSizeOptions.find(option => option.id === Number(event.target.value));
                     if (next) setSelectedSize(next);
                   }}
                 >
-                  {sizeOptions.map((option) => (
-                    <option key={option.id} value={option.id}>
+                  {uniqueSizeOptions.map(option => (
+                    <option
+                      key={option.id}
+                      value={option.id}
+                    >
                       {option.label}
                     </option>
                   ))}
@@ -213,13 +215,9 @@ export default function GangSheetProductPage({ product, variations, config }) {
               </div>
 
               {error && <div className={styles.error}>{error}</div>}
-              {isOpening && (
-                <div className={styles.loader}>Launching builder...</div>
-              )}
+              {isOpening && <div className={styles.loader}>Launching builder...</div>}
               <p className="text-sm leading-6 text-neutral-500">
-                Use artwork at 300 DPI for best print quality. CMYK color mode,
-                transparent backgrounds for stickers, and outlined fonts will
-                help avoid production issues.
+                Use artwork at 300 DPI for best print quality. CMYK color mode, transparent backgrounds for stickers, and outlined fonts will help avoid production issues.
               </p>
               <div className={styles.actions}>
                 <GangSheetBuilder
@@ -229,17 +227,13 @@ export default function GangSheetProductPage({ product, variations, config }) {
                   shopUuid={shopId}
                   variants={variants}
                   quantity={quantity}
-                  cartUrl={getGangSheetCheckoutUrl(
-                    product.id,
-                    config.productType,
-                    product.slug,
-                  )}
+                  cartUrl={getGangSheetCheckoutUrl(product.id, config.productType, product.slug)}
                   buttonClassName={styles.primary}
                   disabled={!builderReady || isOpening || !selectedSize}
                   onReady={() => setBuilderReady(true)}
                   onOpen={handleOpenBuilder}
                   onClose={() => setIsOpening(false)}
-                  onError={(event) => {
+                  onError={event => {
                     setError(event?.reason ?? "Builder error");
                     setIsOpening(false);
                   }}
@@ -282,7 +276,10 @@ export default function GangSheetProductPage({ product, variations, config }) {
                     />
                   </div>
                   <div className="flex gap-3 p-2 mt-5 rounded-lg bg-neutral-100 text-neutral-500 tex">
-                    <Headset strokeWidth={1} size={50} />
+                    <Headset
+                      strokeWidth={1}
+                      size={50}
+                    />
                     <div>
                       Need Help? Call Us{" "}
                       <Link
