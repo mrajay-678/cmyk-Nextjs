@@ -25,8 +25,8 @@ const privacyPolicyContent = [
     content: [
       `When you leave comments on our site, we collect the data provided in the comments form, along with your IP address and browser user agent string to assist with spam detection.`,
 
-      `If you use Gravatar for your profile picture, an anonymized string created from your email address may be shared with the Gravatar service. Their privacy policy is available at: https://automattic.com/privacy/. Once your comment is approved, your profile picture becomes visible to the public alongside your comment.`,
-    ],
+      `If you use Gravatar for your profile picture, an anonymized string created from your email address may be shared with the Gravatar service. Their privacy policy is available at: <a href="https://automattic.com/privacy/" class="hover:text-[#f12f88]"> https://automattic.com/privacy/ </a>. Once your comment is approved, your profile picture becomes visible to the public alongside your comment.`,
+    ], 
   },
 
   {
@@ -122,8 +122,8 @@ export const page = () => {
                     <p
                       key={i}
                       className="text-lg leading-8 text-neutral-600"
+                      dangerouslySetInnerHTML={{ __html: paragraph.replace(/\n/g, "<br />") }}
                     >
-                      {paragraph}
                     </p>
                   ))}
 
