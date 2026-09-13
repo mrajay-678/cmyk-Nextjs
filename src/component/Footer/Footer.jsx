@@ -87,7 +87,7 @@ export default function Footer() {
       </div>
 
       <div className="flex flex-col gap-2 border-t border-white px-5 md:px-0 py-4 text-sm md:text-lg md:flex-row md:justify-between max-w-7xl mx-auto">
-        <div><Link href="/privacy-policy" className="text-white hover:text-[#f12f88]">Privacy Policy</Link> | <Link href="/terms-of-service" className="text-white hover:text-[#f12f88]">Terms of Service</Link></div>
+        <div><Link href="/privacy-policy" className="text-white hover:text-[#f12f88]">Privacy Policy</Link> | <Link href="/terms-of-services" className="text-white hover:text-[#f12f88]">Terms of Service</Link></div>
         <div>© 2025 CMYK Print Shop. All rights reserved</div>
       </div>
     </footer>
