@@ -39,7 +39,7 @@ export default function TypeWriter({ appendClass }) {
     return () => clearTimeout(timeout);
   }, [text, isDeleting, wordIndex]);
 
-  let className = "flex flex-col gap-4";
+  let className = "flex flex-col ";
 
   if (appendClass) {
     className += ` ${appendClass}`;

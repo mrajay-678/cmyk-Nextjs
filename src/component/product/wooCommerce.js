@@ -340,14 +340,13 @@ export async function getProductMenuItems() {
 }
 
 export async function getProductBySlug(slug) {
-  const { data, error } = await fetchWooCommerceCached(
+  const { data, error } = await fetchWooCommerce(
     "/products",
     {
       slug,
       status: "publish",
       per_page: 1,
-    },
-    ["woocommerce-products", `woocommerce-product-${slug}`],
+    }
   );
 
   return {

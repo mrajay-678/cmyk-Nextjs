@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 
 import AddToCartButton from "./AddToCartButton";
 import { useCart } from "@/component/product/CartContext";
-import { formatCurrency, parseNumericPrice } from "./productHelpers";
+import { formatCurrency, parseNumericPrice, stripHtml } from "./productHelpers";
 import GangSheetBuilder from "@/component/gang-sheet/GangSheetBuilder";
 import {
   addCartItem,
@@ -60,6 +60,11 @@ function normalizeVariationAttributes(attributes = []) {
     ...attribute,
     slug: getWooAttributeKey(attribute),
   }));
+}
+
+function getFirstTableCellText(html = "") {
+  const firstCellMatch = String(html).match(/<td\b[^>]*>([\s\S]*?)<\/td>/i);
+  return stripHtml(firstCellMatch?.[1] || "");
 }
 
 export default function ProductPurchasePanel({
@@ -260,13 +265,7 @@ export default function ProductPurchasePanel({
     );
   }
   const shortDescription = product.short_description;
-
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(shortDescription, "text/html");
-
-  const text = doc
-    .querySelector("table tbody tr td:first-child")
-    ?.textContent.trim();
+  const text = getFirstTableCellText(shortDescription);
 
   const actualOptions = product["attributes"][0].options.map((item) =>
     item.replace(/[^0-9]/g, ""),
