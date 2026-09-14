@@ -113,7 +113,7 @@ export default async function ProductDetailPage({ params }) {
                 </span>
               </nav>
               <p className="break-words text-sm">
-                SKU: {product.sku || "Not available"}
+                {product.sku && ` SKU: ${product.sku}`}
               </p>
               <h1 className="break-words text-2xl  leading-tight sm:text-4xl md:text-4xl">
                 {product.name}
