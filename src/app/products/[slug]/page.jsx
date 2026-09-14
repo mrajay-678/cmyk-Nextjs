@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 
 import ProductImageZoom from "@/component/product/ProductImageZoom";
 import ProductPurchasePanel from "@/component/product/ProductPurchasePanel";
@@ -57,6 +58,8 @@ async function ProductRecommendationsSection({ relatedProductsPromise }) {
 }
 
 export default async function ProductDetailPage({ params }) {
+  await connection();
+
   const { slug } = await params;
   const { product, error } = await getProductBySlug(slug);
 
